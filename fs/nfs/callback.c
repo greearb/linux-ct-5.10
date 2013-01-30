@@ -303,7 +303,7 @@ static struct svc_serv *nfs_callback_create_svc(int minorversion)
 	/* As there is only one thread we need to over-ride the
 	 * default maximum of 80 connections
 	 */
-	serv->sv_maxconn = 1024;
+	serv->sv_maxconn = 5000;
 	dprintk("nfs_callback_create_svc: service created\n");
 	return serv;
 }
