@@ -289,6 +289,9 @@ static struct nfs_client *nfs_match_client(const struct nfs_client_initdata *dat
 again:
 	list_for_each_entry(clp, &nn->nfs_client_list, cl_share_link) {
 	        const struct sockaddr *clap = (struct sockaddr *)&clp->cl_addr;
+		const struct sockaddr *sa;
+		sa = (const struct sockaddr *)&clp->srcaddr;
+
 		/* Don't match clients that failed to initialise properly */
 		if (clp->cl_cons_state < 0)
 			continue;
@@ -327,6 +330,13 @@ again:
                             !rpc_clnt_xprt_switch_has_addr(clp->cl_rpcclient,
 							   sap))
 				continue;
+
+		/* Check to make sure local-IP bindings match,
+		 * but just the IP-addr.
+		 */
+		if (data->srcaddr &&
+		    !rpc_cmp_addr(data->srcaddr, sa))
+			continue;
 
 		refcount_inc(&clp->cl_count);
 		return clp;
