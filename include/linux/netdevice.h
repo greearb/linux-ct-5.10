@@ -101,6 +101,7 @@ void netdev_set_default_ethtool_ops(struct net_device *dev,
 #define NET_XMIT_SUCCESS	0x00
 #define NET_XMIT_DROP		0x01	/* skb dropped			*/
 #define NET_XMIT_CN		0x02	/* congestion notification	*/
+#define NET_XMIT_BUSY	  	0x04	/* congestion, but skb was NOT freed */
 #define NET_XMIT_MASK		0x0f	/* qdisc flags in net/sch_generic.h */
 
 /* NET_XMIT_CN is special. It does not guarantee that this packet is lost. It
@@ -2855,6 +2856,10 @@ u16 dev_pick_tx_cpu_id(struct net_device *dev, struct sk_buff *skb,
 		       struct net_device *sb_dev);
 
 int dev_queue_xmit(struct sk_buff *skb);
+/* Similar to dev_queue_xmit, but if try_no_consume != 0,
+ * it may return NET_XMIT_BUSY and NOT free the skb if it detects congestion
+ */
+int try_dev_queue_xmit(struct sk_buff *skb, int try_no_consume);
 int dev_queue_xmit_accel(struct sk_buff *skb, struct net_device *sb_dev);
 int __dev_direct_xmit(struct sk_buff *skb, u16 queue_id);
 
