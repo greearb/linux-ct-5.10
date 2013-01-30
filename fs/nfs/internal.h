@@ -217,8 +217,10 @@ extern void nfs_put_client(struct nfs_client *);
 extern void nfs_free_client(struct nfs_client *);
 extern struct nfs_client *nfs4_find_client_ident(struct net *, int);
 extern struct nfs_client *
-nfs4_find_client_sessionid(struct net *, const struct sockaddr *,
-				struct nfs4_sessionid *, u32);
+nfs4_find_client_sessionid(struct net *,
+			   const struct sockaddr *srcaddr,
+			   const struct sockaddr *addr,
+			   struct nfs4_sessionid *, u32);
 extern struct nfs_server *nfs_create_server(struct fs_context *);
 extern struct nfs_server *nfs4_create_server(struct fs_context *);
 extern struct nfs_server *nfs4_create_referral_server(struct fs_context *);

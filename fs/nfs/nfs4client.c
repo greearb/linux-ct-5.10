@@ -815,11 +815,13 @@ static bool nfs4_cb_match_client(const struct sockaddr *addr,
  * Returns NULL if no such client
  */
 struct nfs_client *
-nfs4_find_client_sessionid(struct net *net, const struct sockaddr *addr,
+nfs4_find_client_sessionid(struct net *net, const struct sockaddr *srcaddr,
+			   const struct sockaddr *addr,
 			   struct nfs4_sessionid *sid, u32 minorversion)
 {
 	struct nfs_client *clp;
 	struct nfs_net *nn = net_generic(net, nfs_net_id);
+	struct nfs_client *ok_fit = NULL;
 
 	spin_lock(&nn->nfs_client_lock);
 	list_for_each_entry(clp, &nn->nfs_client_list, cl_share_link) {
@@ -834,10 +836,31 @@ nfs4_find_client_sessionid(struct net *net, const struct sockaddr *addr,
 		    sid->data, NFS4_MAX_SESSIONID_LEN) != 0)
 			continue;
 
+		if (srcaddr) {
+			const struct sockaddr *sa;
+			sa = (const struct sockaddr *)&clp->cl_addr;
+			if (!rpc_cmp_addr(srcaddr, sa)) {
+				/* If clp doesn't bind to srcaddr, then
+				 * it is a potential match if we don't find
+				 * a better one.
+				 */
+				if (sa->sa_family == AF_UNSPEC && !ok_fit)
+					ok_fit = clp;
+				continue;
+			}
+		}
+
+	found_one:
 		refcount_inc(&clp->cl_count);
 		spin_unlock(&nn->nfs_client_lock);
 		return clp;
 	}
+
+	if (ok_fit) {
+		clp = ok_fit;
+		goto found_one;
+	}
+
 	spin_unlock(&nn->nfs_client_lock);
 	return NULL;
 }
