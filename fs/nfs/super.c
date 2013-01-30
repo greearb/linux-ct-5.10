@@ -807,6 +807,7 @@ static int nfs_request_mount(struct fs_context *fc,
 	struct nfs_mount_request request = {
 		.sap		= (struct sockaddr *)
 						&ctx->mount_server.address,
+		.srcaddr	= &ctx->srcaddr.address,
 		.dirpath	= ctx->nfs_server.export_path,
 		.protocol	= ctx->mount_server.protocol,
 		.fh		= root_fh,

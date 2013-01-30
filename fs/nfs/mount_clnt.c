@@ -156,6 +156,7 @@ int nfs_mount(struct nfs_mount_request *info)
 	struct rpc_create_args args = {
 		.net		= info->net,
 		.protocol	= info->protocol,
+		.saddress	= info->srcaddr,
 		.address	= info->sap,
 		.addrsize	= info->salen,
 		.servername	= info->hostname,
