@@ -53,6 +53,7 @@ static void			nlm_gc_hosts(struct net *net);
 struct nlm_lookup_host_info {
 	const int		server;		/* search for server|client */
 	const struct sockaddr	*sap;		/* address to search for */
+	const struct sockaddr   *src_addr;      /* source address */
 	const size_t		salen;		/* it's length */
 	const unsigned short	protocol;	/* transport to search for*/
 	const u32		version;	/* NLM version to search for */
@@ -137,7 +138,12 @@ static struct nlm_host *nlm_alloc_host(struct nlm_lookup_host_info *ni,
 	memcpy(nlm_addr(host), ni->sap, ni->salen);
 	host->h_addrlen    = ni->salen;
 	rpc_set_port(nlm_addr(host), 0);
-	host->h_srcaddrlen = 0;
+	if (ni->src_addr && ni->src_addr->sa_family != AF_UNSPEC) {
+		memcpy(nlm_srcaddr(host), ni->src_addr, ni->salen);
+		host->h_srcaddrlen = ni->salen;
+	} else {
+		host->h_srcaddrlen = 0;
+	}
 
 	host->h_rpcclnt    = NULL;
 	host->h_name	   = nsm->sm_name;
@@ -214,6 +220,7 @@ static void nlm_destroy_host_locked(struct nlm_host *host)
  * created and returned.
  */
 struct nlm_host *nlmclnt_lookup_host(const struct sockaddr *sap,
+				     const struct sockaddr *srcaddr,
 				     const size_t salen,
 				     const unsigned short protocol,
 				     const u32 version,
@@ -230,6 +237,7 @@ struct nlm_host *nlmclnt_lookup_host(const struct sockaddr *sap,
 		.version	= version,
 		.hostname	= hostname,
 		.hostname_len	= strlen(hostname),
+		.src_addr       = srcaddr,
 		.noresvport	= noresvport,
 		.net		= net,
 		.cred		= cred,
@@ -250,6 +258,13 @@ struct nlm_host *nlmclnt_lookup_host(const struct sockaddr *sap,
 		if (host->net != net)
 			continue;
 		if (!rpc_cmp_addr(nlm_addr(host), sap))
+			continue;
+
+		/* Check for local binding match only if user
+		 * has specified the source-address.
+		 */
+		if (srcaddr && srcaddr->sa_family != AF_UNSPEC &&
+		    !rpc_cmp_addr(nlm_srcaddr(host), srcaddr))
 			continue;
 
 		/* Same address. Share an NSM handle if we already have one */
