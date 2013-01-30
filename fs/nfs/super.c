@@ -487,6 +487,15 @@ static void nfs_show_mount_options(struct seq_file *m, struct nfs_server *nfss,
 	else
 		nfs_show_nfsv4_options(m, nfss, showdefaults);
 
+	if (clp->srcaddr.ss_family == AF_INET6) {
+		struct sockaddr_in6 *sin6;
+		sin6 = (struct sockaddr_in6 *)(&clp->srcaddr);
+		seq_printf(m, ",srcaddr=%pI6c", &sin6->sin6_addr);
+	} else if (clp->srcaddr.ss_family == AF_INET) {
+		struct sockaddr_in *sin = (struct sockaddr_in *)&clp->srcaddr;
+		seq_printf(m, ",srcaddr=%pI4", &sin->sin_addr.s_addr);
+	}
+
 	if (nfss->options & NFS_OPTION_FSCACHE)
 		seq_puts(m, ",fsc");
 
