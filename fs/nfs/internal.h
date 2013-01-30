@@ -109,6 +109,14 @@ struct nfs_fs_context {
 			struct sockaddr_storage	_address;
 		};
 		size_t			addrlen;
+	} srcaddr;
+
+	struct {
+		union {
+			struct sockaddr address;
+			struct sockaddr_storage _address;
+		};
+		size_t                  addrlen;
 		char			*hostname;
 		u32			version;
 		int			port;

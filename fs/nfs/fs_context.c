@@ -1444,6 +1444,8 @@ static int nfs_init_fs_context(struct fs_context *fc)
 	ctx->protofamily	= AF_UNSPEC;
 	ctx->mountfamily	= AF_UNSPEC;
 	ctx->mount_server.port	= NFS_UNSPEC_PORT;
+	ctx->srcaddr.address.sa_family = AF_UNSPEC;
+	ctx->srcaddr.addrlen = sizeof(data->srcaddr._address);
 
 	if (fc->root) {
 		/* reconfigure, start with the current config */
