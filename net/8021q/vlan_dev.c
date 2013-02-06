@@ -100,8 +100,14 @@ static netdev_tx_t vlan_dev_hard_start_xmit(struct sk_buff *skb,
 {
 	struct vlan_dev_priv *vlan = vlan_dev_priv(dev);
 	struct vlan_ethhdr *veth = (struct vlan_ethhdr *)(skb->data);
+	struct sk_buff *oskb = skb;
 	unsigned int len;
 	int ret;
+
+	ret = -ENOMEM;
+	skb = skb_share_check(skb, GFP_ATOMIC);
+	if (skb == NULL)
+		goto err;
 
 	/* Handle non-VLAN frames if they are sent to us, for example by DHCP.
 	 *
@@ -121,7 +127,7 @@ static netdev_tx_t vlan_dev_hard_start_xmit(struct sk_buff *skb,
 	if (unlikely(netpoll_tx_running(dev)))
 		return vlan_netpoll_send_skb(vlan, skb);
 
-	ret = dev_queue_xmit(skb);
+	ret = try_dev_queue_xmit(skb, oskb == skb);
 
 	if (likely(ret == NET_XMIT_SUCCESS || ret == NET_XMIT_CN)) {
 		struct vlan_pcpu_stats *stats;
@@ -131,7 +137,13 @@ static netdev_tx_t vlan_dev_hard_start_xmit(struct sk_buff *skb,
 		stats->tx_packets++;
 		stats->tx_bytes += len;
 		u64_stats_update_end(&stats->syncp);
+	} else if (ret == NET_XMIT_BUSY) {
+		/* Calling code should retry, skb was NOT freed. */
+		/* sort of a collision, at least */
+		this_cpu_inc(vlan_dev_priv(dev)->vlan_pcpu_stats->collisions);
+		return NETDEV_TX_BUSY;
 	} else {
+err:
 		this_cpu_inc(vlan->vlan_pcpu_stats->tx_dropped);
 	}
 
@@ -687,7 +699,7 @@ static void vlan_dev_get_stats64(struct net_device *dev,
 				 struct rtnl_link_stats64 *stats)
 {
 	struct vlan_pcpu_stats *p;
-	u32 rx_errors = 0, tx_dropped = 0;
+	u32 rx_errors = 0, tx_dropped = 0, collisions = 0;
 	int i;
 
 	for_each_possible_cpu(i) {
@@ -712,9 +724,11 @@ static void vlan_dev_get_stats64(struct net_device *dev,
 		/* rx_errors & tx_dropped are u32 */
 		rx_errors	+= p->rx_errors;
 		tx_dropped	+= p->tx_dropped;
+		collisions	+= p->collisions;
 	}
 	stats->rx_errors  = rx_errors;
 	stats->tx_dropped = tx_dropped;
+	stats->collisions = collisions;
 }
 
 #ifdef CONFIG_NET_POLL_CONTROLLER

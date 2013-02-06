@@ -539,6 +539,7 @@ static int macvlan_queue_xmit(struct sk_buff *skb, struct net_device *dev)
 	}
 xmit_world:
 	skb->dev = vlan->lowerdev;
+	// TODO-BEN:  Implement try_dev_queue_xmit here?
 	return dev_queue_xmit_accel(skb,
 				    netdev_get_sb_channel(dev) ? dev : NULL);
 }
@@ -573,6 +574,11 @@ static netdev_tx_t macvlan_start_xmit(struct sk_buff *skb,
 		pcpu_stats->tx_packets++;
 		pcpu_stats->tx_bytes += len;
 		u64_stats_update_end(&pcpu_stats->syncp);
+	} else if (ret == NET_XMIT_BUSY) {
+		/* Calling code should retry, skb was NOT freed. */
+		/* sort of a collision, at least */
+		this_cpu_inc(vlan->pcpu_stats->collisions);
+		return NETDEV_TX_BUSY;
 	} else {
 		this_cpu_inc(vlan->pcpu_stats->tx_dropped);
 	}
@@ -933,7 +939,7 @@ static void macvlan_dev_get_stats64(struct net_device *dev,
 	if (vlan->pcpu_stats) {
 		struct vlan_pcpu_stats *p;
 		u64 rx_packets, rx_bytes, rx_multicast, tx_packets, tx_bytes;
-		u32 rx_errors = 0, tx_dropped = 0;
+		u32 rx_errors = 0, tx_dropped = 0, collisions = 0;
 		unsigned int start;
 		int i;
 
@@ -958,10 +964,12 @@ static void macvlan_dev_get_stats64(struct net_device *dev,
 			 */
 			rx_errors	+= p->rx_errors;
 			tx_dropped	+= p->tx_dropped;
+			collisions	+= p->collisions;
 		}
 		stats->rx_errors	= rx_errors;
 		stats->rx_dropped	= rx_errors;
 		stats->tx_dropped	= tx_dropped;
+		stats->collisions	= collisions;
 	}
 }
 
