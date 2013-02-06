@@ -194,6 +194,9 @@ do {									\
 	_sdata_dbg(MAC80211_MLME_DEBUG,					\
 		   sdata, fmt, ##__VA_ARGS__)
 
+#define mlme_wrn(sdata, fmt, ...)					\
+	_sdata_err(sdata, fmt, ##__VA_ARGS__)
+
 #define mlme_dbg_ratelimited(sdata, fmt, ...)				\
 	_sdata_dbg(MAC80211_MLME_DEBUG && net_ratelimit(),		\
 		   sdata, fmt, ##__VA_ARGS__)
