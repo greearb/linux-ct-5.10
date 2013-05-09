@@ -35,6 +35,17 @@
 #include "wpa.h"
 #include "wme.h"
 #include "rate.h"
+#include <linux/moduleparam.h>
+
+/*
+ * Maximum number of skbs that may be queued in a pending
+ * queue.  After that, packets will just be dropped.
+ */
+static int max_pending_qsize = 1000;
+module_param(max_pending_qsize, int, 0644);
+MODULE_PARM_DESC(max_pending_qsize,
+		 "Maximum number of skbs that may be queued in a pending queue.");
+
 
 /* misc utils */
 
@@ -1677,15 +1688,28 @@ static bool ieee80211_tx_frags(struct ieee80211_local *local,
 				 * later transmission from the tx-pending
 				 * tasklet when the queue is woken again.
 				 */
-				if (txpending)
+				bool do_free = false;
+				if (txpending) {
 					skb_queue_splice_init(skbs,
 							      &local->pending[q]);
-				else
-					skb_queue_splice_tail_init(skbs,
-								   &local->pending[q]);
+				} else {
+					u32 len = skb_queue_len(&local->pending[q]);
+					if (len >= max_pending_qsize) {
+						__skb_unlink(skb, skbs);
+						do_free = true;
+					} else {
+						skb_queue_splice_tail_init(skbs,
+									   &local->pending[q]);
+					}
+				}
 
 				spin_unlock_irqrestore(&local->queue_stop_reason_lock,
 						       flags);
+				if (do_free) {
+					dev_kfree_skb_any(skb);
+					/* TODO:  Add counter for this */
+				}
+
 				return false;
 			}
 		}
