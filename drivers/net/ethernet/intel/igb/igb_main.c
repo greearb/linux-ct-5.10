@@ -2448,7 +2448,7 @@ static int igb_set_features(struct net_device *netdev,
 	if (changed & NETIF_F_HW_VLAN_CTAG_RX)
 		igb_vlan_mode(netdev, features);
 
-	if (!(changed & (NETIF_F_RXALL | NETIF_F_NTUPLE)))
+	if (!(changed & (NETIF_F_RXALL | NETIF_F_RXFCS | NETIF_F_NTUPLE)))
 		return 0;
 
 	if (!(features & NETIF_F_NTUPLE)) {
@@ -3286,6 +3286,7 @@ static int igb_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	netdev->hw_features |= netdev->features |
 			       NETIF_F_HW_VLAN_CTAG_RX |
 			       NETIF_F_HW_VLAN_CTAG_TX |
+			       NETIF_F_RXFCS |
 			       NETIF_F_RXALL;
 
 	if (hw->mac.type >= e1000_i350)
@@ -4496,6 +4497,7 @@ static void igb_setup_mrqc(struct igb_adapter *adapter)
 void igb_setup_rctl(struct igb_adapter *adapter)
 {
 	struct e1000_hw *hw = &adapter->hw;
+	struct net_device *netdev = adapter->netdev;
 	u32 rctl;
 
 	rctl = rd32(E1000_RCTL);
@@ -4510,7 +4512,10 @@ void igb_setup_rctl(struct igb_adapter *adapter)
 	 * redirection as it did with e1000. Newer features require
 	 * that the HW strips the CRC.
 	 */
-	rctl |= E1000_RCTL_SECRC;
+	if (netdev->features & NETIF_F_RXFCS)
+		rctl &= ~E1000_RCTL_SECRC;
+	else
+		rctl |= E1000_RCTL_SECRC;
 
 	/* disable store bad packets and clear size bits. */
 	rctl &= ~(E1000_RCTL_SBP | E1000_RCTL_SZ_256);
@@ -8775,8 +8780,10 @@ static int igb_clean_rx_irq(struct igb_q_vector *q_vector, const int budget)
 			continue;
 		}
 
-		/* probably a little skewed due to removing CRC */
-		total_bytes += skb->len;
+		if (unlikely(rx_ring->netdev->features & NETIF_F_RXFCS))
+			total_bytes += (skb->len - 4);
+		else
+			total_bytes += skb->len;
 
 		/* populate checksum, timestamp, VLAN, and protocol */
 		igb_process_skb_fields(rx_ring, rx_desc, skb);
