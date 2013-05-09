@@ -154,6 +154,23 @@
 /* This should be increased if a protocol with a bigger head is added. */
 #define GRO_MAX_HEAD (MAX_HEADER + 128)
 
+#if defined(CONFIG_NET_PKTGEN) || defined(CONFIG_NET_PKTGEN_MODULE)
+#include "pktgen.h"
+
+#warning "Compiling dev.c for pktgen.";
+
+int (*handle_pktgen_hook)(struct sk_buff *skb) = NULL;
+EXPORT_SYMBOL(handle_pktgen_hook);
+
+static __inline__ int handle_pktgen_rcv(struct sk_buff* skb) {
+	if (handle_pktgen_hook) {
+		return handle_pktgen_hook(skb);
+	}
+	return -1;
+}
+#endif
+
+
 static DEFINE_SPINLOCK(ptype_lock);
 static DEFINE_SPINLOCK(offload_lock);
 struct list_head ptype_base[PTYPE_HASH_SIZE] __read_mostly;
@@ -5300,6 +5317,17 @@ check_vlan_id:
 		 */
 		__vlan_hwaccel_clear_tag(skb);
 	}
+
+#if defined(CONFIG_NET_PKTGEN) || defined(CONFIG_NET_PKTGEN_MODULE)
+	if ((skb->dev->pkt_dev) &&
+	    (handle_pktgen_rcv(skb) >= 0)) {
+		/* Pktgen may consume the packet, no need to send
+		 * to further protocols.
+		 */
+		ret = NET_RX_SUCCESS;
+		goto out;
+	}
+#endif
 
 	type = skb->protocol;
 
