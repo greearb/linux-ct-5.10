@@ -748,14 +748,15 @@ ieee80211_tx_h_rate_ctrl(struct ieee80211_tx_data *tx)
 	 * Lets not bother rate control if we're associated and cannot
 	 * talk to the sta. This should not happen.
 	 */
-	if (WARN(test_bit(SCAN_SW_SCANNING, &tx->local->scanning) && assoc &&
-		 !rate_usable_index_exists(sband, &tx->sta->sta),
-		 "%s: Dropped data frame as no usable bitrate found while "
-		 "scanning and associated. Target station: "
-		 "%pM on %d GHz band\n",
-		 tx->sdata->name, hdr->addr1,
-		 info->band ? 5 : 2))
+	if (unlikely(test_bit(SCAN_SW_SCANNING, &tx->local->scanning) && assoc &&
+		     !rate_usable_index_exists(sband, &tx->sta->sta))) {
+		net_info_ratelimited("%s: Dropped data frame as no usable bitrate found while "
+				     "scanning and associated. Target station: "
+				     "%pM on %d GHz band\n",
+				     tx->sdata->name, hdr->addr1,
+				     info->band ? 5 : 2);
 		return TX_DROP;
+	}
 
 	/*
 	 * If we're associated with the sta at this point we know we can at
