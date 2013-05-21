@@ -165,10 +165,14 @@ do_survey:
 		} while (channel != survey.channel);
 	}
 
-	if (survey.filled)
-		data[i++] = survey.channel->center_freq;
-	else
-		data[i++] = 0;
+	if (channel) {
+		data[i++] = channel->center_freq;
+	} else {
+		if (local->_oper_chandef.chan)
+			data[i++] = local->_oper_chandef.chan->center_freq;
+		else
+			data[i++] = 0;
+	}
 	if (survey.filled & SURVEY_INFO_NOISE_DBM)
 		data[i++] = (u8)survey.noise;
 	else
