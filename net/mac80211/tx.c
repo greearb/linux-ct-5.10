@@ -2051,6 +2051,18 @@ void ieee80211_xmit(struct ieee80211_sub_if_data *sdata,
 		}
 	}
 
+	/* This check needs to go in before the QoS header is set below. */
+	if (skb->priority > 7 ||
+	    skb->queue_mapping != ieee802_1d_to_ac[skb->priority]) {
+		WARN_ONCE(1, "Invalid queue-mapping, priority: %i  queue-mapping: %i.  This is an expected warning if you are using pktgen, but otherwise may indicate a bug.\n",
+			  (int)(skb->priority), (int)(skb->queue_mapping));
+		/* Adjust queue-mapping to match what the wifi stack expects.
+		 * pktgen will just have to set QoS bits accordingly instead
+		 * of trying to set the queue_mapping directly.
+		 */
+		skb_set_queue_mapping(skb, ieee80211_select_queue(sdata, skb));
+	}
+
 	ieee80211_set_qos_hdr(sdata, skb);
 	ieee80211_tx(sdata, sta, skb, false);
 }
