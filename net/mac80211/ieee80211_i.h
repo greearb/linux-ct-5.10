@@ -109,6 +109,7 @@ struct ieee80211_bss {
 
 	/* Keep track of what bits of information we have valid info for. */
 	u8 valid_data;
+	char corrupt_elems_msg[80];
 };
 
 /**
@@ -1550,6 +1551,7 @@ struct ieee802_11_elems {
 
 	/* whether a parse error occurred while retrieving these elements */
 	bool parse_error;
+	char parse_err_msg[80];
 };
 
 static inline struct ieee80211_local *hw_to_local(

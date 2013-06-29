@@ -5773,8 +5773,8 @@ int ieee80211_mgd_assoc(struct ieee80211_sub_if_data *sdata,
 				corrupt_type = "beacon";
 		} else if (bss->corrupt_data & IEEE80211_BSS_CORRUPT_PROBE_RESP)
 			corrupt_type = "probe response";
-		sdata_info(sdata, "associating with AP with corrupt %s\n",
-			   corrupt_type);
+		sdata_info(sdata, "associating with AP with corrupt %s, reason: %s\n",
+			   corrupt_type, bss->corrupt_elems_msg);
 	}
 
 	return 0;
