@@ -1091,7 +1091,9 @@ static void __sta_info_destroy_part2(struct sta_info *sta)
 	if (sta->uploaded) {
 		ret = drv_sta_state(local, sdata, sta, IEEE80211_STA_NONE,
 				    IEEE80211_STA_NOTEXIST);
-		WARN_ON_ONCE(ret != 0);
+		if (WARN_ON_ONCE(ret != 0))
+			sdata_info(sdata, "sta-info-destroy: drv-sta-state error: %i, sta: %pM\n",
+				   ret, sta->sta.addr);
 	}
 
 	sta_dbg(sdata, "Removed STA %pM\n", sta->sta.addr);
