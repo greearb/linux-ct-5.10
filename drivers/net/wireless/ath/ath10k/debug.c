@@ -751,6 +751,63 @@ exit:
 	return ret;
 }
 
+static void ath10k_dbg_drop_dbg_buffer(struct ath10k *ar)
+{
+	/* Find next message boundary */
+	u32 lg_hdr;
+	int acnt;
+	int tail_idx = ar->debug.dbglog_entry_data.tail_idx;
+	int h_idx = (tail_idx + 1) % ATH10K_DBGLOG_DATA_LEN;
+
+	lockdep_assert_held(&ar->data_lock);
+
+	/* Log header is second 32-bit word */
+	lg_hdr = le32_to_cpu(ar->debug.dbglog_entry_data.data[h_idx]);
+
+	acnt = (lg_hdr & DBGLOG_NUM_ARGS_MASK) >> DBGLOG_NUM_ARGS_OFFSET;
+
+	if (acnt > DBGLOG_NUM_ARGS_MAX) {
+		/* Some sort of corruption it seems, recover as best we can. */
+		ath10k_err(ar, "invalid dbglog arg-count: %i %i %i\n",
+			   acnt, ar->debug.dbglog_entry_data.tail_idx,
+			   ar->debug.dbglog_entry_data.head_idx);
+		ar->debug.dbglog_entry_data.tail_idx =
+			ar->debug.dbglog_entry_data.head_idx;
+		return;
+	}
+
+	/* Move forward over the args and the two header fields */
+	ar->debug.dbglog_entry_data.tail_idx =
+		(tail_idx + acnt + 2) % ATH10K_DBGLOG_DATA_LEN;
+}
+
+void ath10k_dbg_save_fw_dbg_buffer(struct ath10k *ar, __le32 *buffer, int len)
+{
+	int i;
+	int z;
+
+	lockdep_assert_held(&ar->data_lock);
+
+	z = ar->debug.dbglog_entry_data.head_idx;
+
+	for (i = 0; i < len; i++) {
+		ar->debug.dbglog_entry_data.data[z] = buffer[i];
+		z++;
+		if (z >= ATH10K_DBGLOG_DATA_LEN)
+			z = 0;
+
+		/* If we are about to over-write an old message, move the
+		 * tail_idx to the next message.  If idx's are same, we
+		 * are empty.
+		 */
+		if (z == ar->debug.dbglog_entry_data.tail_idx)
+			ath10k_dbg_drop_dbg_buffer(ar);
+
+		ar->debug.dbglog_entry_data.head_idx = z;
+	}
+}
+EXPORT_SYMBOL(ath10k_dbg_save_fw_dbg_buffer);
+
 static const struct file_operations fops_reg_value = {
 	.read = ath10k_reg_value_read,
 	.write = ath10k_reg_value_write,

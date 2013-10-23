@@ -74,6 +74,12 @@ struct ath10k_pktlog_hdr {
 #define ATH10K_TX_POWER_MAX_VAL 70
 #define ATH10K_TX_POWER_MIN_VAL 0
 
+struct ath10k_dbglog_entry_storage_user {
+	__le32 head_idx; /* Where to write next chunk of data */
+	__le32 tail_idx; /* Index of first msg */
+	__le32 data[ATH10K_DBGLOG_DATA_LEN];
+} __packed;
+
 extern unsigned int ath10k_debug_mask;
 
 __printf(2, 3) void ath10k_info(struct ath10k *ar, const char *fmt, ...);
@@ -258,6 +264,7 @@ void ath10k_dbg_dump(struct ath10k *ar,
 		     enum ath10k_debug_mask mask,
 		     const char *msg, const char *prefix,
 		     const void *buf, size_t len);
+void ath10k_dbg_save_fw_dbg_buffer(struct ath10k *ar, __le32 *buffer, int len);
 #else /* CONFIG_ATH10K_DEBUG */
 
 static inline int __ath10k_dbg(struct ath10k *ar,
@@ -271,6 +278,10 @@ static inline void ath10k_dbg_dump(struct ath10k *ar,
 				   enum ath10k_debug_mask mask,
 				   const char *msg, const char *prefix,
 				   const void *buf, size_t len)
+{
+}
+static inline void ath10k_dbg_save_fw_dbg_buffer(struct ath10k *ar,
+						 __le32 *buffer, int len)
 {
 }
 #endif /* CONFIG_ATH10K_DEBUG */

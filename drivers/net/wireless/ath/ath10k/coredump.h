@@ -13,6 +13,7 @@
 /**
  * enum ath10k_fw_crash_dump_type - types of data in the dump file
  * @ATH10K_FW_CRASH_DUMP_REGDUMP: Register crash dump in binary format
+ * @ATH10K_FW_ERROR_DUMP_DBGLOG:  Recent firmware debug log entries
  */
 enum ath10k_fw_crash_dump_type {
 	ATH10K_FW_CRASH_DUMP_REGISTERS = 0,
@@ -20,7 +21,7 @@ enum ath10k_fw_crash_dump_type {
 
 	/* contains multiple struct ath10k_dump_ram_data_hdr */
 	ATH10K_FW_CRASH_DUMP_RAM_DATA = 2,
-
+	ATH10K_FW_CRASH_DUMP_DBGLOG = 20,
 	ATH10K_FW_CRASH_DUMP_MAX,
 };
 

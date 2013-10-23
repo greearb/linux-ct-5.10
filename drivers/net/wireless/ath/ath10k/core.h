@@ -658,6 +658,22 @@ struct ath10k_ce_crash_hdr {
 
 #define MAX_MEM_DUMP_TYPE	5
 
+/* This will store at least the last 128 entries.  Each dbglog message
+ * is a max of 7 32-bit integers in length, but the length can be less
+ * than that as well.
+ */
+#define ATH10K_DBGLOG_DATA_LEN (128 * 7)
+struct ath10k_dbglog_entry_storage {
+	u32 head_idx; /* Where to write next chunk of data */
+	u32 tail_idx; /* Index of first msg */
+	__le32 data[ATH10K_DBGLOG_DATA_LEN];
+};
+
+/* Just enough info to decode firmware debug-log argument length */
+#define DBGLOG_NUM_ARGS_OFFSET           26
+#define DBGLOG_NUM_ARGS_MASK             0xFC000000 /* Bit 26-31 */
+#define DBGLOG_NUM_ARGS_MAX              5 /* firmware tool chain limit */
+
 /* used for crash-dump storage, protected by data-lock */
 struct ath10k_fw_crash_data {
 	guid_t guid;
@@ -696,6 +712,8 @@ struct ath10k_debug {
 	void *cal_data;
 	u32 enable_extd_tx_stats;
 	u8 fw_dbglog_mode;
+
+	struct ath10k_dbglog_entry_storage dbglog_entry_data;
 };
 
 enum ath10k_state {

@@ -2833,10 +2833,23 @@ void ath10k_wmi_event_echo(struct ath10k *ar, struct sk_buff *skb)
 
 int ath10k_wmi_event_debug_mesg(struct ath10k *ar, struct sk_buff *skb)
 {
+	struct ath10k_fw_dbglog_report *ev;
+
 	ath10k_dbg(ar, ATH10K_DBG_WMI, "wmi event debug mesg len %d\n",
 		   skb->len);
 
 	trace_ath10k_wmi_dbglog(ar, skb->data, skb->len);
+	ev = (struct ath10k_fw_dbglog_report *)skb->data;
+
+	spin_lock_bh(&ar->data_lock);
+	/* First 4 bytes are a messages-dropped-due-to-overflow counter,
+	 * and should not be recorded in the dbglog buffer, so we skip
+	 * them.
+	 */
+	WARN_ON(skb->len & 0x3);
+	ath10k_dbg_save_fw_dbg_buffer(ar, ev->messages,
+				      (skb->len - 4)/sizeof(__le32));
+	spin_unlock_bh(&ar->data_lock);
 
 	return 0;
 }
