@@ -2447,6 +2447,19 @@ static int ath10k_core_init_firmware_features(struct ath10k *ar)
 		ar->max_spatial_stream = WMI_MAX_SPATIAL_STREAM;
 		break;
 	case ATH10K_FW_WMI_OP_VERSION_10_1:
+		if (test_bit(ATH10K_FW_FEATURE_WMI_10X_CT, fw_file->fw_features)) {
+			ar->max_num_peers = TARGET_10X_NUM_PEERS_CT;
+			ar->max_num_stations = TARGET_10X_NUM_STATIONS;
+			ar->max_num_vdevs = TARGET_10X_NUM_VDEVS_CT;
+		} else {
+			ar->max_num_peers = TARGET_10X_NUM_PEERS;
+			ar->max_num_stations = TARGET_10X_NUM_STATIONS;
+			ar->max_num_vdevs = TARGET_10X_NUM_VDEVS;
+		}
+		ar->htt.max_num_pending_tx = TARGET_10X_NUM_MSDU_DESC;
+		ar->fw_stats_req_mask = WMI_STAT_PEER;
+		ar->max_spatial_stream = WMI_MAX_SPATIAL_STREAM;
+		break;
 	case ATH10K_FW_WMI_OP_VERSION_10_2:
 	case ATH10K_FW_WMI_OP_VERSION_10_2_4:
 		if (ath10k_peer_stats_enabled(ar)) {
