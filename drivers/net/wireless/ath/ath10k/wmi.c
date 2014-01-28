@@ -6666,10 +6666,17 @@ static struct sk_buff *ath10k_wmi_10_1_op_gen_init(struct ath10k *ar)
 		else if (ath10k_modparam_nohwcrypt) {
 			ath10k_err(ar, "module param nohwcrypt enabled, but firmware does not support this feature.  Disabling swcrypt.\n");
 		}
+		config.roam_offload_max_vdev = 0; /* disable roaming */
+		config.roam_offload_max_ap_profiles = 0; /* disable roaming */
 	} else {
 		config.num_vdevs = __cpu_to_le32(TARGET_10X_NUM_VDEVS);
 		config.num_peers = __cpu_to_le32(TARGET_10X_NUM_PEERS);
 		skid_limit = TARGET_10X_AST_SKID_LIMIT;
+		config.roam_offload_max_vdev =
+			__cpu_to_le32(TARGET_10X_ROAM_OFFLOAD_MAX_VDEV);
+
+		config.roam_offload_max_ap_profiles =
+			__cpu_to_le32(TARGET_10X_ROAM_OFFLOAD_MAX_AP_PROFILES);
 	}
 	config.ast_skid_limit = __cpu_to_le32(skid_limit);
 
@@ -6686,12 +6693,6 @@ static struct sk_buff *ath10k_wmi_10_1_op_gen_init(struct ath10k *ar)
 
 	config.bmiss_offload_max_vdev =
 		__cpu_to_le32(TARGET_10X_BMISS_OFFLOAD_MAX_VDEV);
-
-	config.roam_offload_max_vdev =
-		__cpu_to_le32(TARGET_10X_ROAM_OFFLOAD_MAX_VDEV);
-
-	config.roam_offload_max_ap_profiles =
-		__cpu_to_le32(TARGET_10X_ROAM_OFFLOAD_MAX_AP_PROFILES);
 
 	config.num_mcast_groups = __cpu_to_le32(TARGET_10X_NUM_MCAST_GROUPS);
 	config.num_mcast_table_elems =
