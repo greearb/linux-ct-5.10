@@ -848,8 +848,9 @@ enum htt_security_types {
 #define ATH10K_TXRX_NON_QOS_TID 16
 
 enum htt_security_flags {
-#define HTT_SECURITY_TYPE_MASK 0x7F
+#define HTT_SECURITY_TYPE_MASK 0x3F
 #define HTT_SECURITY_TYPE_LSB  0
+	HTT_SECURITY_IS_FAILURE = 1 << 6, /* CT firmware only */
 	HTT_SECURITY_IS_UNICAST = 1 << 7
 };
 
@@ -858,7 +859,9 @@ struct htt_security_indication {
 		/* dont use bitfields; undefined behaviour */
 		u8 flags; /* %htt_security_flags */
 		struct {
-			u8 security_type:7, /* %htt_security_types */
+			u8 security_type:6, /* %htt_security_types */
+			   is_failure:1, /* does this response indicate failure
+					    (CT Firmware) */
 			   is_unicast:1;
 		} __packed;
 	} __packed;

@@ -314,7 +314,8 @@ static int ath10k_install_key(struct ath10k_vif *arvif,
 	if (time_left == 0)
 		return -ETIMEDOUT;
 
-	return 0;
+	ret = ar->install_key_rv;
+	return ret;
 }
 
 static int ath10k_install_peer_wep_keys(struct ath10k_vif *arvif,

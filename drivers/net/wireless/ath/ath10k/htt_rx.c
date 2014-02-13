@@ -4057,9 +4057,23 @@ bool ath10k_htt_t2h_msg_handler(struct ath10k *ar, struct sk_buff *skb)
 		ath10k_htt_rx_sec_ind_handler(ar, ev);
 		ath10k_dbg(ar, ATH10K_DBG_HTT,
 			   "sec ind peer_id %d unicast %d type %d\n",
-			  __le16_to_cpu(ev->peer_id),
-			  !!(ev->flags & HTT_SECURITY_IS_UNICAST),
-			  MS(ev->flags, HTT_SECURITY_TYPE));
+			   __le16_to_cpu(ev->peer_id),
+			   !!(ev->flags & HTT_SECURITY_IS_UNICAST),
+			   MS(ev->flags, HTT_SECURITY_TYPE));
+
+		/* CT firmware adds way to determine failure of key set, without
+		 * just timing things out.  Indication of failure is determined
+		 * by the 6th bit of the security-type being set.
+		 */
+		if (ev->flags & HTT_SECURITY_IS_FAILURE) {
+			ath10k_warn(ar, "Firmware failed to set security key, peer_id: %d unicast %d type %d\n",
+				    __le16_to_cpu(ev->peer_id),
+				    !!(ev->flags & HTT_SECURITY_IS_UNICAST),
+				    MS(ev->flags, HTT_SECURITY_TYPE));
+			ar->install_key_rv = -EINVAL;
+		} else {
+			ar->install_key_rv = 0;
+		}
 		complete(&ar->install_key_done);
 		break;
 	}
