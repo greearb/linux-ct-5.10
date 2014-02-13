@@ -137,7 +137,7 @@ void ath10k_warn(struct ath10k *ar, const char *fmt, ...)
 
 	va_start(args, fmt);
 	vaf.va = &args;
-	dev_warn_ratelimited(ar->dev, "%pV", &vaf);
+	dev_warn(ar->dev, "%pV", &vaf);
 	trace_ath10k_log_warn(ar, &vaf);
 
 	va_end(args);
