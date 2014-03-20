@@ -284,4 +284,7 @@ do {								\
 	    trace_ath10k_log_dbg_enabled())			\
 		__ath10k_dbg(ar, dbg_mask, fmt, ##__VA_ARGS__); \
 } while (0)
+
+int ath10k_refresh_peer_stats(struct ath10k *ar);
+
 #endif /* _DEBUG_H_ */

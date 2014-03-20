@@ -351,7 +351,7 @@ free:
 
 int ath10k_debug_fw_stats_request(struct ath10k *ar)
 {
-	unsigned long timeout, time_left;
+	unsigned long timeout;
 	int ret;
 
 	lockdep_assert_held(&ar->conf_mutex);
@@ -364,19 +364,9 @@ int ath10k_debug_fw_stats_request(struct ath10k *ar)
 		if (time_after(jiffies, timeout))
 			return -ETIMEDOUT;
 
-		reinit_completion(&ar->debug.fw_stats_complete);
-
-		ret = ath10k_wmi_request_stats(ar, ar->fw_stats_req_mask);
-		if (ret) {
-			ath10k_warn(ar, "could not request stats (%d)\n", ret);
+		ret = ath10k_refresh_peer_stats(ar);
+		if (ret)
 			return ret;
-		}
-
-		time_left =
-		wait_for_completion_timeout(&ar->debug.fw_stats_complete,
-					    1 * HZ);
-		if (!time_left)
-			return -ETIMEDOUT;
 
 		spin_lock_bh(&ar->data_lock);
 		if (ar->debug.fw_stats_done) {
@@ -436,6 +426,27 @@ err_unlock:
 static int ath10k_fw_stats_release(struct inode *inode, struct file *file)
 {
 	vfree(file->private_data);
+
+	return 0;
+}
+
+int ath10k_refresh_peer_stats(struct ath10k *ar)
+{
+	int ret;
+	unsigned long time_left;
+
+	reinit_completion(&ar->debug.fw_stats_complete);
+	ret = ath10k_wmi_request_stats(ar, ar->fw_stats_req_mask);
+	if (ret) {
+		ath10k_warn(ar, "could not request stats (%d)\n", ret);
+		return ret;
+	}
+
+	/* ret means 'time-left' here */
+	time_left =
+		wait_for_completion_timeout(&ar->debug.fw_stats_complete, 1*HZ);
+	if (time_left == 0)
+		return -ETIMEDOUT;
 
 	return 0;
 }
