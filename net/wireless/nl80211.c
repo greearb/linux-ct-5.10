@@ -7836,8 +7836,11 @@ static int validate_scan_freqs(struct nlattr *freqs)
 		 */
 		nla_for_each_nested(attr2, freqs, tmp2)
 			if (attr1 != attr2 &&
-			    nla_get_u32(attr1) == nla_get_u32(attr2))
+			    nla_get_u32(attr1) == nla_get_u32(attr2)) {
+				pr_err("scan:  Duplicate freq requested: %d\n",
+				       nla_get_u32(attr1));
 				return 0;
+			}
 	}
 
 	return n_channels;
@@ -8083,8 +8086,10 @@ static int nl80211_trigger_scan(struct sk_buff *skb, struct genl_info *info)
 
 	if (scan_freqs) {
 		n_channels = validate_scan_freqs(scan_freqs);
-		if (!n_channels)
+		if (!n_channels) {
+			pr_err("scan:  validate_scan_freqs failed, duplicate freq?\n");
 			return -EINVAL;
+		}
 	} else {
 		n_channels = ieee80211_get_num_supported_channels(wiphy);
 	}
@@ -8093,16 +8098,22 @@ static int nl80211_trigger_scan(struct sk_buff *skb, struct genl_info *info)
 		nla_for_each_nested(attr, info->attrs[NL80211_ATTR_SCAN_SSIDS], tmp)
 			n_ssids++;
 
-	if (n_ssids > wiphy->max_scan_ssids)
+	if (n_ssids > wiphy->max_scan_ssids) {
+		pr_err("scan:  too many ssids, req: %d  supports: %d\n",
+		       n_ssids, wiphy->max_scan_ssids);
 		return -EINVAL;
+	}
 
 	if (info->attrs[NL80211_ATTR_IE])
 		ie_len = nla_len(info->attrs[NL80211_ATTR_IE]);
 	else
 		ie_len = 0;
 
-	if (ie_len > wiphy->max_scan_ie_len)
+	if (ie_len > wiphy->max_scan_ie_len) {
+		pr_err("scan: ie-len too large: %zd  max: %d\n",
+		       ie_len, wiphy->max_scan_ie_len);
 		return -EINVAL;
+	}
 
 	request = kzalloc(sizeof(*request)
 			+ sizeof(*request->ssids) * n_ssids
@@ -8613,6 +8624,8 @@ nl80211_parse_sched_scan(struct wiphy *wiphy, struct wireless_dev *wdev,
 			chan = ieee80211_get_channel(wiphy, nla_get_u32(attr));
 
 			if (!chan) {
+				pr_err("scan:  Channel %d is not supported.\n",
+				       nla_get_u32(attr));
 				err = -EINVAL;
 				goto out_free;
 			}
@@ -8646,6 +8659,7 @@ nl80211_parse_sched_scan(struct wiphy *wiphy, struct wireless_dev *wdev,
 	}
 
 	if (!i) {
+		pr_err("scan:  No scannable channels found.\n");
 		err = -EINVAL;
 		goto out_free;
 	}
@@ -8657,6 +8671,8 @@ nl80211_parse_sched_scan(struct wiphy *wiphy, struct wireless_dev *wdev,
 		nla_for_each_nested(attr, attrs[NL80211_ATTR_SCAN_SSIDS],
 				    tmp) {
 			if (nla_len(attr) > IEEE80211_MAX_SSID_LEN) {
+				pr_err("scan: ssid-len too large: %d  max: %d\n",
+				       nla_len(attr), IEEE80211_MAX_SSID_LEN);
 				err = -EINVAL;
 				goto out_free;
 			}
@@ -8694,6 +8710,8 @@ nl80211_parse_sched_scan(struct wiphy *wiphy, struct wireless_dev *wdev,
 				 * the loop above should have verified
 				 * things properly
 				 */
+				pr_err("scan:  i >= n_match_sets: %d %d\n",
+				       i, n_match_sets);
 				err = -EINVAL;
 				goto out_free;
 			}
