@@ -756,6 +756,22 @@ static int ath10k_init_configure_target(struct ath10k *ar)
 		return ret;
 	}
 
+	/* Configure HTC credits logic. */
+	param_host = (TARGET_HTC_MAX_CONTROL_BUFFERS << 16);
+	param_host |= (TARGET_HTC_MAX_PENDING_TXCREDITS_RPTS << 20);
+
+	/* Max tx buffers (tx-credits), CT firmware only.
+	 * but normal .487 firmware will just ignore it fine.
+	 */
+	param_host |= (TARGET_HTC_MAX_TX_CREDITS_CT << 24);
+
+	ret = ath10k_bmi_write32(ar, hi_mbox_io_block_sz,
+				 param_host);
+	if (ret) {
+		ath10k_err(ar, "failed setting HTC mbox-io-block-sz\n");
+		return ret;
+	}
+
 	/* set the firmware mode to STA/IBSS/AP */
 	ret = ath10k_bmi_read32(ar, hi_option_flag, &param_host);
 	if (ret) {

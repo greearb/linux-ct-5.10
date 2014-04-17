@@ -742,6 +742,16 @@ ath10k_is_rssi_enable(struct ath10k_hw_params *hw,
 /* These eat a fair chunk of memory on the firmware, so decrease it a bit. */
 #define TARGET_10X_NUM_MSDU_DESC_CT		808 /* must be multiple of 8 */
 
+/* Related to HTC buffers */
+ /* return any credit immediately */
+#define TARGET_HTC_MAX_PENDING_TXCREDITS_RPTS   1
+/* 8 ctrl buffers for sending info to host */
+#define TARGET_HTC_MAX_CONTROL_BUFFERS          8
+/* Only CT firmware will actually use this value.  Each buffer is close to 2K
+ * of firmware RAM, so not sure if increasing this is worth the RAM cost.
+ */
+#define TARGET_HTC_MAX_TX_CREDITS_CT            2
+
 #define TARGET_10X_NUM_OFFLOAD_PEERS		0
 #define TARGET_10X_NUM_OFFLOAD_REORDER_BUFS	0
 #define TARGET_10X_NUM_PEER_KEYS		2

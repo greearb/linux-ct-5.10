@@ -98,6 +98,12 @@ struct host_interest {
 	u32 hi_desired_baud_rate;			/* 0x60 */
 	u32 hi_dbglog_config;				/* 0x64 */
 	u32 hi_end_ram_reserve_sz;			/* 0x68 */
+	/* This controls the HTC pipe init setup.
+	 * 0x0F0000 ( x >> 16 & 0xf) is mask of ctrl-buffers-allocated.
+	 * 0xF00000 ( x >> 20 & 0xf) is mask of max-ep-pending-credit-rpts.
+	 * 0xFF000000 (x >> 24 & 0xff) is tx-credits in CT firmware only.
+	 * The rest appears un-used.
+	 */
 	u32 hi_mbox_io_block_sz;			/* 0x6c */
 
 	u32 hi_num_bpatch_streams;			/* 0x70 -- unused */
