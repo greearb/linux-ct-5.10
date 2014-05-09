@@ -735,18 +735,18 @@ ath10k_is_rssi_enable(struct ath10k_hw_params *hw,
 						 (TARGET_10X_NUM_VDEVS))
 
 /* Over-rides for Candela Technologies firmware */
-#define TARGET_10X_NUM_VDEVS_CT			32
-#define TARGET_10X_NUM_PEERS_CT			(32 + (TARGET_10X_NUM_VDEVS_CT))
+#define TARGET_10X_NUM_VDEVS_CT			36
+#define TARGET_10X_NUM_PEERS_CT			(2 * TARGET_10X_NUM_VDEVS_CT)
 #define TARGET_10X_AST_SKID_LIMIT_CT		(TARGET_10X_NUM_PEERS_CT * TARGET_10X_NUM_PEER_AST)
 #define TARGET_10X_NUM_PEER_KEYS_CT             (WMI_MAX_KEY_INDEX + 1) /* 4 */
 /* These eat a fair chunk of memory on the firmware, so decrease it a bit. */
 #define TARGET_10X_NUM_MSDU_DESC_CT		808 /* must be multiple of 8 */
 
 /* Related to HTC buffers */
- /* return any credit immediately */
+/* return any credit immediately */
 #define TARGET_HTC_MAX_PENDING_TXCREDITS_RPTS   1
 /* 8 ctrl buffers for sending info to host */
-#define TARGET_HTC_MAX_CONTROL_BUFFERS          8
+#define TARGET_HTC_MAX_CONTROL_BUFFERS          6
 /* Only CT firmware will actually use this value.  Each buffer is close to 2K
  * of firmware RAM, so not sure if increasing this is worth the RAM cost.
  */
