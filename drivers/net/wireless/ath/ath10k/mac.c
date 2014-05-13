@@ -1494,6 +1494,22 @@ static int ath10k_vdev_start_restart(struct ath10k_vif *arvif,
 	arg.channel.max_reg_power = chandef->chan->max_reg_power * 2;
 	arg.channel.max_antenna_gain = chandef->chan->max_antenna_gain * 2;
 
+	/* CT Firmware can support 32+ VDEVS, but can only support
+	 * beacon-ing devs with dev ids 0 - 31 due to firmware limitations.
+	 * Create VAPs first and all should be well...likely most people
+	 * won't ever hit this anyway, but some day the vdev ID allocation
+	 * could be made smarter to make it more likely to work no matter the
+	 * order the vdevs are created. --Ben
+	 */
+	if ((arvif->vdev_type == WMI_VDEV_TYPE_AP) ||
+	    (arvif->vdev_type == WMI_VDEV_TYPE_IBSS)) {
+		if (arg.vdev_id > 31) {
+			ath10k_warn(ar, "failed to start vdev %i  Beaconing VIFS must have IDs <= 31 to work-around firmware limitations.\n",
+				    arg.vdev_id);
+			return -EINVAL;
+		}
+	}
+
 	if (arvif->vdev_type == WMI_VDEV_TYPE_AP) {
 		arg.ssid = arvif->u.ap.ssid;
 		arg.ssid_len = arvif->u.ap.ssid_len;
