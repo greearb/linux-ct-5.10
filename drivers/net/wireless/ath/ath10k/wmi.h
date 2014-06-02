@@ -2450,7 +2450,9 @@ struct wmi_resource_config {
 	 *  You should probably not enable this unless you need to
 	 *  connect multiple stations to same AP.
 	 */
-	#define ATH10k_USE_SW_RX_CRYPT 0x10000
+	#define ATH10k_USE_SW_RX_CRYPT    0x10000
+	/* Ask firmware to include tx-rate in completion messages. */
+	#define ATH10k_USE_TXCOMPL_TXRATE 0x20000
 	__le32 rx_decap_mode;
 
 	/* what is the maximum number of scan requests that can be queued */

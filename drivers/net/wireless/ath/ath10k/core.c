@@ -2500,12 +2500,13 @@ static int ath10k_core_init_firmware_features(struct ath10k *ar)
 			ar->max_num_peers = TARGET_10X_NUM_PEERS_CT;
 			ar->max_num_stations = TARGET_10X_NUM_STATIONS;
 			ar->max_num_vdevs = TARGET_10X_NUM_VDEVS_CT;
+			ar->htt.max_num_pending_tx = TARGET_10X_NUM_MSDU_DESC_CT;
 		} else {
 			ar->max_num_peers = TARGET_10X_NUM_PEERS;
 			ar->max_num_stations = TARGET_10X_NUM_STATIONS;
 			ar->max_num_vdevs = TARGET_10X_NUM_VDEVS;
+			ar->htt.max_num_pending_tx = TARGET_10X_NUM_MSDU_DESC;
 		}
-		ar->htt.max_num_pending_tx = TARGET_10X_NUM_MSDU_DESC;
 		ar->fw_stats_req_mask = WMI_STAT_PEER;
 		ar->max_spatial_stream = WMI_MAX_SPATIAL_STREAM;
 		break;

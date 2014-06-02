@@ -40,6 +40,43 @@ out:
 	spin_unlock_bh(&ar->data_lock);
 }
 
+static void ath10k_set_tx_rate_status(struct ieee80211_tx_rate *rate,
+				      const struct htt_tx_done *tx_done)
+{
+	u8 nss = (tx_done->tx_rate_code >> 4) & 0x3;
+	u8 rate_idx = tx_done->tx_rate_code & 0xF;
+
+	rate->count = 1;
+	rate->idx = rate_idx; /* TODO:  Not sure this is correct. */
+
+	if (((tx_done->tx_rate_code >> 6) & 0x3) == 1) {
+		/* CCK */
+		/* TODO:  Not sure about this. */
+		/* rate->flags |= IEEE80211_TX_RC_MCS; */
+	}
+
+	if ((tx_done->tx_rate_code & 0xcc) == 0x44)
+		rate->flags |= IEEE80211_TX_RC_USE_SHORT_PREAMBLE;
+
+	if ((tx_done->tx_rate_code & 0xc0) == 0x80)
+		rate->flags |= IEEE80211_TX_RC_MCS;
+
+	if ((tx_done->tx_rate_code & 0xc0) == 0xc0) {
+		rate->flags |= IEEE80211_TX_RC_VHT_MCS;
+		/* TODO-BEN:  Not sure this is correct. */
+		rate->idx = (nss << 4) | rate_idx;
+	}
+
+	if (tx_done->tx_rate_flags & ATH10K_RC_FLAG_40MHZ)
+		rate->flags |= IEEE80211_TX_RC_40_MHZ_WIDTH;
+	if (tx_done->tx_rate_flags & ATH10K_RC_FLAG_80MHZ)
+		rate->flags |= IEEE80211_TX_RC_80_MHZ_WIDTH;
+	if (tx_done->tx_rate_flags & ATH10K_RC_FLAG_160MHZ)
+		rate->flags |= IEEE80211_TX_RC_160_MHZ_WIDTH;
+	if (tx_done->tx_rate_flags & ATH10K_RC_FLAG_SGI)
+		rate->flags |= IEEE80211_TX_RC_SHORT_GI;
+}
+
 int ath10k_txrx_tx_unref(struct ath10k_htt *htt,
 			 const struct htt_tx_done *tx_done)
 {
@@ -128,6 +165,12 @@ int ath10k_txrx_tx_unref(struct ath10k_htt *htt,
 		info->status.ack_signal = ATH10K_DEFAULT_NOISE_FLOOR +
 						tx_done->ack_rssi;
 		info->status.is_valid_ack_signal = true;
+	}
+
+	if (tx_done->tx_rate_code || tx_done->tx_rate_flags) {
+		ath10k_set_tx_rate_status(&info->status.rates[0], tx_done);
+	} else {
+		info->status.rates[0].idx = -1;
 	}
 
 	ieee80211_tx_status(htt->ar->hw, msdu);

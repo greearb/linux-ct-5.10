@@ -1014,6 +1014,26 @@ struct htt_data_tx_compl_ppdu_dur {
 	struct htt_data_tx_ppdu_dur ppdu_dur[];
 } __packed;
 
+struct msdu_rx_compl_info_ct {
+	__le16 id; /* msdu id */
+	u8 tx_rate_code; /* what rate index the firmware reports transmitting at. */
+	u8 tx_rate_flags; /* what rate flags, See ATH10K_RC_FLAG_SGI, etc */
+};
+
+struct htt_data_tx_completion_ct {
+	union {
+		u8 flags;
+		struct {
+			u8 status:3,
+			   tid:4,
+			   tid_invalid:1;
+		} __packed;
+	} __packed;
+	u8 num_msdus;
+	u8 rsvd0;
+	struct msdu_rx_compl_info_ct msdus[0]; /* variable length based on %num_msdus */
+} __packed;
+
 struct htt_tx_compl_ind_base {
 	u32 hdr;
 	u16 payload[1/*or more*/];
@@ -1816,6 +1836,7 @@ struct htt_resp {
 		struct htt_ver_resp ver_resp;
 		struct htt_mgmt_tx_completion mgmt_tx_completion;
 		struct htt_data_tx_completion data_tx_completion;
+		struct htt_data_tx_completion_ct data_tx_completion_ct;
 		struct htt_rx_indication rx_ind;
 		struct htt_rx_indication_hl rx_ind_hl;
 		struct htt_rx_fragment_indication rx_frag_ind;
@@ -1842,10 +1863,24 @@ struct htt_resp {
 
 /*** host side structures follow ***/
 
+/* tx-rate flags field definitions */
+#define ATH10K_RC_FLAG_CHAIN_MASK 0x07 /* identifies tx chain config (1,5,7) */
+#define ATH10K_RC_FLAG_ONE_CHAIN     1
+#define ATH10K_RC_FLAG_TWO_CHAIN     5
+#define ATH10K_RC_FLAG_THREE_CHAIN   7
+#define ATH10K_RC_FLAG_SGI        0x08 /* use HT SGI if set */
+#define ATH10K_RC_FLAG_STBC       0x10 /* use HT STBC if set */
+#define ATH10K_RC_FLAG_40MHZ      0x20 /* 40 mhz mode */
+#define ATH10K_RC_FLAG_80MHZ      0x40 /* 80 mhz mode */
+#define ATH10K_RC_FLAG_160MHZ     0x80 /* 160 mhz mode */
+
+
 struct htt_tx_done {
 	u16 msdu_id;
 	u16 status;
 	u8 ack_rssi;
+	u8 tx_rate_code; /* CT firmware only */
+	u8 tx_rate_flags; /* CT firmware only */
 };
 
 enum htt_tx_compl_state {

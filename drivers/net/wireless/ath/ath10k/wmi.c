@@ -6666,9 +6666,11 @@ static struct sk_buff *ath10k_wmi_10_1_op_gen_init(struct ath10k *ar)
 		else if (ath10k_modparam_nohwcrypt) {
 			ath10k_err(ar, "module param nohwcrypt enabled, but firmware does not support this feature.  Disabling swcrypt.\n");
 		}
+		config.rx_decap_mode |= __cpu_to_le32(ATH10k_USE_TXCOMPL_TXRATE);
 		config.roam_offload_max_vdev = 0; /* disable roaming */
 		config.roam_offload_max_ap_profiles = 0; /* disable roaming */
 		config.num_peer_keys = __cpu_to_le32(TARGET_10X_NUM_PEER_KEYS_CT);
+		config.num_msdu_desc = __cpu_to_le32(TARGET_10X_NUM_MSDU_DESC_CT);
 	} else {
 		config.num_vdevs = __cpu_to_le32(TARGET_10X_NUM_VDEVS);
 		config.num_peers = __cpu_to_le32(TARGET_10X_NUM_PEERS);
@@ -6679,8 +6681,13 @@ static struct sk_buff *ath10k_wmi_10_1_op_gen_init(struct ath10k *ar)
 		config.roam_offload_max_ap_profiles =
 			__cpu_to_le32(TARGET_10X_ROAM_OFFLOAD_MAX_AP_PROFILES);
 		config.num_peer_keys = __cpu_to_le32(TARGET_10X_NUM_PEER_KEYS);
+		config.num_msdu_desc = __cpu_to_le32(TARGET_10X_NUM_MSDU_DESC);
 	}
 	config.ast_skid_limit = __cpu_to_le32(skid_limit);
+
+	/* Firmware will crash if this is not even multiple of 8 */
+	BUG_ON(config.num_msdu_desc & 0x7);
+
 	config.num_tids = __cpu_to_le32(TARGET_10X_NUM_TIDS);
 	config.tx_chain_mask = __cpu_to_le32(TARGET_10X_TX_CHAIN_MASK);
 	config.rx_chain_mask = __cpu_to_le32(TARGET_10X_RX_CHAIN_MASK);
@@ -6709,7 +6716,6 @@ static struct sk_buff *ath10k_wmi_10_1_op_gen_init(struct ath10k *ar)
 
 	config.vow_config = __cpu_to_le32(TARGET_10X_VOW_CONFIG);
 
-	config.num_msdu_desc = __cpu_to_le32(TARGET_10X_NUM_MSDU_DESC);
 	config.max_frag_entries = __cpu_to_le32(TARGET_10X_MAX_FRAG_ENTRIES);
 
 	buf = ath10k_wmi_alloc_skb(ar, struct_size(cmd, mem_chunks.items,
