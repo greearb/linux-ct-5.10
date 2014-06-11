@@ -1298,8 +1298,15 @@ static enum nl80211_dfs_regions
 reg_intersect_dfs_region(const enum nl80211_dfs_regions dfs_region1,
 			 const enum nl80211_dfs_regions dfs_region2)
 {
-	if (dfs_region1 != dfs_region2)
+	if (dfs_region1 != dfs_region2) {
+		pr_info("intersect-dfs-region, region1: %d  region2: %d\n",
+			dfs_region1, dfs_region2);
+		if (dfs_region1 == NL80211_DFS_UNSET)
+			return dfs_region2;
+		if (dfs_region2 == NL80211_DFS_UNSET)
+			return dfs_region1;
 		return NL80211_DFS_UNSET;
+	}
 	return dfs_region1;
 }
 
