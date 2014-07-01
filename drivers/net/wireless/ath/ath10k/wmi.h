@@ -2453,6 +2453,10 @@ struct wmi_resource_config {
 	#define ATH10k_USE_SW_RX_CRYPT    0x10000
 	/* Ask firmware to include tx-rate in completion messages. */
 	#define ATH10k_USE_TXCOMPL_TXRATE 0x20000
+	/* Disable Wake-on-Wireless logic.  Saves some RAM, for those
+	 * that do not need WoW.
+	 */
+	#define ATH10k_DISABLE_WOW        0x40000
 	__le32 rx_decap_mode;
 
 	/* what is the maximum number of scan requests that can be queued */

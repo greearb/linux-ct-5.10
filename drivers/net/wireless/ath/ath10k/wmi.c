@@ -6689,6 +6689,8 @@ static struct sk_buff *ath10k_wmi_10_1_op_gen_init(struct ath10k *ar)
 			ath10k_err(ar, "module param nohwcrypt enabled, but firmware does not support this feature.  Disabling swcrypt.\n");
 		}
 		config.rx_decap_mode |= __cpu_to_le32(ATH10k_USE_TXCOMPL_TXRATE);
+		/* Disable WoW in firmware, could make this module option perhaps? */
+		config.rx_decap_mode |= __cpu_to_le32(ATH10k_DISABLE_WOW);
 		config.roam_offload_max_vdev = 0; /* disable roaming */
 		config.roam_offload_max_ap_profiles = 0; /* disable roaming */
 		config.num_peer_keys = __cpu_to_le32(TARGET_10X_NUM_PEER_KEYS_CT);
