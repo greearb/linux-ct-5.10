@@ -6645,11 +6645,27 @@ static struct sk_buff *ath10k_wmi_10_1_op_gen_init(struct ath10k *ar)
 	u32 val;
 	u32 skid_limit;
 
+	config.rx_decap_mode = __cpu_to_le32(ar->wmi.rx_decap_mode);
+
 	if (test_bit(ATH10K_FW_FEATURE_WMI_10X_CT,
 		     ar->running_fw->fw_file.fw_features)) {
 		config.num_vdevs = __cpu_to_le32(TARGET_10X_NUM_VDEVS_CT);
 		config.num_peers = __cpu_to_le32(TARGET_10X_NUM_PEERS_CT);
 		skid_limit = TARGET_10X_AST_SKID_LIMIT_CT;
+		if (test_bit(ATH10K_FW_FEATURE_CT_RXSWCRYPT,
+			     ar->running_fw->fw_file.fw_features) &&
+		    ath10k_modparam_nohwcrypt) {
+			/* This will disable rx decryption in hardware, enable raw
+			 * rx mode, and native-wifi tx mode.  Requires 'CT' firmware.
+			 */
+			config.rx_decap_mode = __cpu_to_le32(ATH10K_HW_TXRX_RAW |
+							     ATH10k_USE_SW_RX_CRYPT);
+			ar->use_swcrypt = true;
+			ath10k_err(ar, "using rx swcrypt\n");
+		}
+		else if (ath10k_modparam_nohwcrypt) {
+			ath10k_err(ar, "module param nohwcrypt enabled, but firmware does not support this feature.  Disabling swcrypt.\n");
+		}
 	} else {
 		config.num_vdevs = __cpu_to_le32(TARGET_10X_NUM_VDEVS);
 		config.num_peers = __cpu_to_le32(TARGET_10X_NUM_PEERS);
@@ -6665,7 +6681,6 @@ static struct sk_buff *ath10k_wmi_10_1_op_gen_init(struct ath10k *ar)
 	config.rx_timeout_pri_vi = __cpu_to_le32(TARGET_10X_RX_TIMEOUT_LO_PRI);
 	config.rx_timeout_pri_be = __cpu_to_le32(TARGET_10X_RX_TIMEOUT_LO_PRI);
 	config.rx_timeout_pri_bk = __cpu_to_le32(TARGET_10X_RX_TIMEOUT_HI_PRI);
-	config.rx_decap_mode = __cpu_to_le32(ar->wmi.rx_decap_mode);
 	config.scan_max_pending_reqs =
 		__cpu_to_le32(TARGET_10X_SCAN_MAX_PENDING_REQS);
 

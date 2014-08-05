@@ -2435,7 +2435,22 @@ struct wmi_resource_config {
 	 *   MAC can decap to RAW (no decap), native wifi or Ethernet types
 	 *   THis setting also determines the default TX behavior, however TX
 	 *   behavior can be modified on a per VAP basis during VAP init
+	 *
+	 *  NOTE:  Stealing some of this field for flags, only usable when
+	 *         running "CT" firmware.
+	 *   first byte: rx_decap_mode
+	 *   second byte:  reserved
 	 */
+	#define ATH10K_RX_DECAP_MODE_MASK 0xff
+	/*  Use software rx crypt.  This disables rx checksumming
+	 *  and may turn off some firmware/hardware optimizations for
+	 *  normal use case.  BUT, it does allow us to run multiple
+	 *  stations connected to the same AP.  This flag causes
+	 *  rx encapsulation to be 'raw', and tx mode to be native-wifi.
+	 *  You should probably not enable this unless you need to
+	 *  connect multiple stations to same AP.
+	 */
+	#define ATH10k_USE_SW_RX_CRYPT 0x10000
 	__le32 rx_decap_mode;
 
 	/* what is the maximum number of scan requests that can be queued */
