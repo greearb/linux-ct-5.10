@@ -170,9 +170,13 @@ static void ath_txq_skb_done(struct ath_softc *sc, struct ath_txq *txq,
 	if (q < 0)
 		return;
 
-	txq = sc->tx.txq_map[q];
-	if (WARN_ON(--txq->pending_frames < 0))
+	if (--txq->pending_frames < 0) {
+		struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+		if (net_ratelimit())
+			ath_err(common, "txq: %p had negative pending_frames, q: %i\n",
+				txq, q);
 		txq->pending_frames = 0;
+	}
 
 }
 
@@ -691,7 +695,7 @@ static void ath_tx_process_buffer(struct ath_softc *sc, struct ath_txq *txq,
 
 	txok = !(ts->ts_status & ATH9K_TXERR_MASK);
 	flush = !!(ts->ts_status & ATH9K_TX_FLUSH);
-	txq->axq_tx_inprogress = false;
+	txq->axq_tx_inprogress = 0;
 
 	txq->axq_depth--;
 	if (bf_is_ampdu_not_probing(bf))
@@ -1757,7 +1761,7 @@ struct ath_txq *ath_txq_setup(struct ath_softc *sc, int qtype, int subtype)
 		spin_lock_init(&txq->axq_lock);
 		txq->axq_depth = 0;
 		txq->axq_ampdu_depth = 0;
-		txq->axq_tx_inprogress = false;
+		txq->axq_tx_inprogress = 0;
 		sc->tx.txqsetup |= 1<<axq_qnum;
 
 		txq->txq_headidx = txq->txq_tailidx = 0;
@@ -1859,8 +1863,17 @@ void ath_draintxq(struct ath_softc *sc, struct ath_txq *txq)
 	}
 
 	txq->axq_link = NULL;
-	txq->axq_tx_inprogress = false;
+	txq->axq_tx_inprogress = 0;
 	ath_drain_txq_list(sc, txq, &txq->axq_q);
+
+	if (txq->clear_pending_frames_on_flush && (txq->pending_frames != 0)) {
+		ath_err(ath9k_hw_common(sc->sc_ah),
+			"Pending frames still exist on txq: %i after drain: %i  axq-depth: %i  ampdu-depth: %i\n",
+			txq->mac80211_qnum, txq->pending_frames, txq->axq_depth,
+			txq->axq_ampdu_depth);
+		txq->pending_frames = 0;
+	}
+	txq->clear_pending_frames_on_flush = false;
 
 	ath_txq_unlock_complete(sc, txq);
 	rcu_read_unlock();

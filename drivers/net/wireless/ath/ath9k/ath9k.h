@@ -163,7 +163,9 @@ struct ath_txq {
 	spinlock_t axq_lock;
 	u32 axq_depth;
 	u32 axq_ampdu_depth;
-	bool axq_tx_inprogress;
+	u8 axq_tx_inprogress;
+	bool stopped;
+	bool clear_pending_frames_on_flush;
 	struct list_head txq_fifo[ATH_TXFIFO_DEPTH];
 	u8 txq_headidx;
 	u8 txq_tailidx;

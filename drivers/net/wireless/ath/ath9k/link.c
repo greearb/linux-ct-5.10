@@ -33,9 +33,37 @@ static bool ath_tx_complete_check(struct ath_softc *sc)
 
 		ath_txq_lock(sc, txq);
 		if (txq->axq_depth) {
-			if (txq->axq_tx_inprogress) {
+			if (txq->axq_tx_inprogress > 1) {
+				ath_err(ath9k_hw_common(sc->sc_ah),
+                                        "tx hung, queue: %i axq-depth: %i, ampdu-depth: %i resetting the chip\n",
+                                        i, txq->axq_depth,
+                                        txq->axq_ampdu_depth);
 				ath_txq_unlock(sc, txq);
 				goto reset;
+			} else {
+				txq->axq_tx_inprogress++;
+			}
+		} else {
+			/* Check for software TX hang.  It seems
+			 * sometimes pending-frames is not properly
+			 * decremented, and the tx queue hangs.
+			 * Considered hung if:  axq-depth is zero,
+			 *  ampdu-depth is zero, queue-is-stopped,
+			 *  and we have pending frames.
+			 */
+			if (txq->stopped &&
+			    (txq->axq_ampdu_depth == 0) &&
+			    (txq->pending_frames > 0)) {
+				if (txq->axq_tx_inprogress > 1) {
+					ath_err(ath9k_hw_common(sc->sc_ah),
+						"soft tx hang: queue: %i pending-frames: %i, resetting chip\n",
+						i, txq->pending_frames);
+					txq->clear_pending_frames_on_flush = true;
+					ath_txq_unlock(sc, txq);
+					goto reset;
+				} else {
+					txq->axq_tx_inprogress++;
+				}
 			}
 
 			txq->axq_tx_inprogress = true;
@@ -46,8 +74,6 @@ static bool ath_tx_complete_check(struct ath_softc *sc)
 	return true;
 
 reset:
-	ath_dbg(ath9k_hw_common(sc->sc_ah), RESET,
-		"tx hung, resetting the chip\n");
 	ath9k_queue_reset(sc, RESET_TYPE_TX_HANG);
 	return false;
 
