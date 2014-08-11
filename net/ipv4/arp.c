@@ -173,6 +173,7 @@ struct neigh_table arp_tbl = {
 			[NEIGH_VAR_PROXY_QLEN] = 64,
 			[NEIGH_VAR_ANYCAST_DELAY] = 1 * HZ,
 			[NEIGH_VAR_PROXY_DELAY]	= (8 * HZ) / 10,
+			[NEIGH_VAR_RETRANS_RAND_BACKOFF] = 0,
 			[NEIGH_VAR_LOCKTIME] = 1 * HZ,
 		},
 	},

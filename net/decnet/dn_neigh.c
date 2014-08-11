@@ -99,6 +99,7 @@ struct neigh_table dn_neigh_table = {
 			[NEIGH_VAR_PROXY_QLEN] = 0,
 			[NEIGH_VAR_ANYCAST_DELAY] = 0,
 			[NEIGH_VAR_PROXY_DELAY] = 0,
+			[NEIGH_VAR_RETRANS_RAND_BACKOFF] = 0,
 			[NEIGH_VAR_LOCKTIME] = 1 * HZ,
 		},
 	},
