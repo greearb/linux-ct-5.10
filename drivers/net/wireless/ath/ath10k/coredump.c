@@ -1514,6 +1514,14 @@ static struct ath10k_dump_file_data *ath10k_coredump_build(struct ath10k *ar)
 	len += sizeof(*dump_tlv) + sizeof(crash_data->stack_buf);
 	len += sizeof(*dump_tlv) + sizeof(crash_data->exc_stack_buf);
 
+	if (ar->running_fw->fw_file.ram_bss_addr &&
+	    ar->running_fw->fw_file.ram_bss_len)
+		len += sizeof(*dump_tlv) + ar->running_fw->fw_file.ram_bss_len;
+
+	if (ar->running_fw->fw_file.rom_bss_addr &&
+	    ar->running_fw->fw_file.rom_bss_len)
+		len += sizeof(*dump_tlv) + ar->running_fw->fw_file.rom_bss_len;
+
 	sofar += hdr_len;
 
 	/* This is going to get big when we start dumping FW RAM and such,
@@ -1548,6 +1556,10 @@ static struct ath10k_dump_file_data *ath10k_coredump_build(struct ath10k *ar)
 	dump_data->num_rf_chains = cpu_to_le32(ar->num_rf_chains);
 	dump_data->stack_addr = cpu_to_le32(crash_data->stack_addr);
 	dump_data->exc_stack_addr = cpu_to_le32(crash_data->exc_stack_addr);
+	dump_data->rom_bss_addr =
+		cpu_to_le32(ar->running_fw->fw_file.rom_bss_addr);
+	dump_data->ram_bss_addr =
+		cpu_to_le32(ar->running_fw->fw_file.ram_bss_addr);
 
 	strlcpy(dump_data->fw_ver, ar->hw->wiphy->fw_version,
 		sizeof(dump_data->fw_ver));
@@ -1625,6 +1637,26 @@ static struct ath10k_dump_file_data *ath10k_coredump_build(struct ath10k *ar)
 	memcpy(dump_tlv->tlv_data, crash_data->exc_stack_buf, tmp);
 
 	sofar += sizeof(*dump_tlv) + tmp;
+
+	if (ar->running_fw->fw_file.ram_bss_addr &&
+	    ar->running_fw->fw_file.ram_bss_len) {
+		tmp = ar->running_fw->fw_file.ram_bss_len;
+		dump_tlv = (struct ath10k_tlv_dump_data *)(buf + sofar);
+		dump_tlv->type = cpu_to_le32(ATH10K_FW_CRASH_DUMP_RAM_BSS);
+		dump_tlv->tlv_len = cpu_to_le32(tmp);
+		memcpy(dump_tlv->tlv_data, crash_data->ram_bss_buf, tmp);
+		sofar += sizeof(*dump_tlv) + tmp;
+	}
+
+	if (ar->running_fw->fw_file.rom_bss_addr &&
+	    ar->running_fw->fw_file.rom_bss_len) {
+		tmp = ar->running_fw->fw_file.rom_bss_len;
+		dump_tlv = (struct ath10k_tlv_dump_data *)(buf + sofar);
+		dump_tlv->type = cpu_to_le32(ATH10K_FW_CRASH_DUMP_ROM_BSS);
+		dump_tlv->tlv_len = cpu_to_le32(tmp);
+		memcpy(dump_tlv->tlv_data, crash_data->rom_bss_buf, tmp);
+		sofar += sizeof(*dump_tlv) + tmp;
+	}
 
 	WARN_ON(sofar != len);
 

@@ -1816,6 +1816,13 @@ out_free:
 	return ret;
 }
 
+struct ath10k_bss_rom_ie {
+	__le32 ram_addr;
+	__le32 ram_len;
+	__le32 rom_addr;
+	__le32 rom_len;
+} __packed;
+
 int ath10k_core_fetch_firmware_api_n(struct ath10k *ar, const char *name,
 				     struct ath10k_fw_file *fw_file)
 {
@@ -1824,6 +1831,7 @@ int ath10k_core_fetch_firmware_api_n(struct ath10k *ar, const char *name,
 	struct ath10k_fw_ie *hdr;
 	const u8 *data;
 	__le32 *timestamp, *version;
+	struct ath10k_bss_rom_ie *bss;
 
 	/* first fetch the firmware file (firmware-*.bin) */
 	fw_file->firmware = ath10k_fetch_fw_file(ar, ar->hw_params.fw.dir,
@@ -1937,6 +1945,12 @@ int ath10k_core_fetch_firmware_api_n(struct ath10k *ar, const char *name,
 
 			break;
 		case ATH10K_FW_IE_WMI_OP_VERSION:
+			/* Upstream stole the ID CT firmware was using, so add
+			 * hack-around to deal with backwards-compat. --Ben
+			 */
+			if (ie_len >= sizeof(*bss))
+				goto fw_ie_bss_info_ct;
+
 			if (ie_len != sizeof(u32))
 				break;
 
@@ -1964,6 +1978,40 @@ int ath10k_core_fetch_firmware_api_n(struct ath10k *ar, const char *name,
 				   ie_len);
 			fw_file->codeswap_data = data;
 			fw_file->codeswap_len = ie_len;
+			break;
+		case ATH10K_FW_IE_BSS_INFO_CT:
+fw_ie_bss_info_ct:
+			if (ie_len < sizeof(*bss)) {
+				ath10k_warn(ar, "invalid ie len for bss-info (%zd)\n",
+					    ie_len);
+				break;
+			}
+			bss = (struct ath10k_bss_rom_ie *)(data);
+
+			fw_file->ram_bss_addr = le32_to_cpu(bss->ram_addr);
+			fw_file->ram_bss_len = le32_to_cpu(bss->ram_len);
+			ath10k_dbg(ar, ATH10K_DBG_BOOT,
+				   "found RAM BSS addr 0x%x length %d\n",
+				   fw_file->ram_bss_addr, fw_file->ram_bss_len);
+
+			if (fw_file->ram_bss_len > ATH10K_RAM_BSS_BUF_LEN) {
+				ath10k_warn(ar, "too long firmware RAM BSS length: %d\n",
+					    fw_file->ram_bss_len);
+				fw_file->ram_bss_len = 0;
+			}
+
+			fw_file->rom_bss_addr = le32_to_cpu(bss->rom_addr);
+			fw_file->rom_bss_len = le32_to_cpu(bss->rom_len);
+			ath10k_dbg(ar, ATH10K_DBG_BOOT,
+				   "found ROM BSS addr 0x%x length %d\n",
+				   fw_file->rom_bss_addr, fw_file->rom_bss_len);
+
+			if (fw_file->rom_bss_len > ATH10K_ROM_BSS_BUF_LEN) {
+				ath10k_warn(ar, "too long firmware ROM BSS length: %d\n",
+					    fw_file->rom_bss_len);
+				fw_file->rom_bss_len = 0;
+			}
+
 			break;
 		default:
 			ath10k_warn(ar, "Unknown FW IE: %u\n",

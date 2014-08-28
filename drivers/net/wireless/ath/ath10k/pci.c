@@ -1450,6 +1450,56 @@ u16 ath10k_pci_hif_get_free_queue_number(struct ath10k *ar, u8 pipe)
 	return ath10k_ce_num_free_src_entries(ar_pci->pipe_info[pipe].ce_hdl);
 }
 
+static void ath10k_pci_dump_bss_ram(struct ath10k *ar,
+				    struct ath10k_fw_crash_data *crash_data)
+{
+	int ret;
+
+	if (!crash_data)
+		return;
+
+	lockdep_assert_held(&ar->data_lock);
+
+	if (!ar->running_fw->fw_file.ram_bss_addr)
+		return;
+
+	if (!ar->running_fw->fw_file.ram_bss_len)
+		return;
+
+	ret = ath10k_pci_diag_read_mem(ar, ar->running_fw->fw_file.ram_bss_addr,
+				       crash_data->ram_bss_buf,
+				       ar->running_fw->fw_file.ram_bss_len);
+	if (ret)
+		ath10k_warn(ar,
+			    "failed to read firmware RAM BSS memory from %d (%d B): %d\n",
+			    ar->running_fw->fw_file.ram_bss_addr, ar->running_fw->fw_file.ram_bss_len, ret);
+}
+
+static void ath10k_pci_dump_bss_rom(struct ath10k *ar,
+				    struct ath10k_fw_crash_data *crash_data)
+{
+	int ret;
+
+	if (!crash_data)
+		return;
+
+	lockdep_assert_held(&ar->data_lock);
+
+	if (!ar->running_fw->fw_file.rom_bss_addr)
+		return;
+
+	if (!ar->running_fw->fw_file.rom_bss_len)
+		return;
+
+	ret = ath10k_pci_diag_read_mem(ar, ar->running_fw->fw_file.rom_bss_addr,
+				       crash_data->rom_bss_buf,
+				       ar->running_fw->fw_file.rom_bss_len);
+	if (ret)
+		ath10k_warn(ar,
+			    "failed to read firmware ROM BSS memory from %d (%d B): %d\n",
+			    ar->running_fw->fw_file.rom_bss_addr, ar->running_fw->fw_file.rom_bss_len, ret);
+}
+
 /* Save the main firmware stack */
 static void ath10k_pci_dump_stack(struct ath10k *ar,
 				  struct ath10k_fw_crash_data *crash_data)
@@ -1920,6 +1970,8 @@ static void ath10k_pci_fw_dump_work(struct work_struct *work)
 	ath10k_pci_dump_dbglog(ar);
 	ath10k_pci_dump_stack(ar, crash_data);
 	ath10k_pci_dump_exc_stack(ar, crash_data);
+	ath10k_pci_dump_bss_ram(ar, crash_data);
+	ath10k_pci_dump_bss_rom(ar, crash_data);
 
 	mutex_unlock(&ar->dump_mutex);
 

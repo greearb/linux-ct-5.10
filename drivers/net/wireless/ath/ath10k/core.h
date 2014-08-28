@@ -674,6 +674,10 @@ struct ath10k_dbglog_entry_storage {
 #define DBGLOG_NUM_ARGS_MASK             0xFC000000 /* Bit 26-31 */
 #define DBGLOG_NUM_ARGS_MAX              5 /* firmware tool chain limit */
 
+/* estimated values, hopefully these are enough */
+#define ATH10K_ROM_BSS_BUF_LEN 30000
+#define ATH10K_RAM_BSS_BUF_LEN 55000
+
 /* used for crash-dump storage, protected by data-lock */
 struct ath10k_fw_crash_data {
 	guid_t guid;
@@ -687,6 +691,8 @@ struct ath10k_fw_crash_data {
 	__le32 exc_stack_buf[ATH10K_FW_STACK_SIZE / sizeof(__le32)];
 	__le32 stack_addr;
 	__le32 exc_stack_addr;
+	__le32 rom_bss_buf[ATH10K_ROM_BSS_BUF_LEN / sizeof(__le32)];
+	__le32 ram_bss_buf[ATH10K_RAM_BSS_BUF_LEN / sizeof(__le32)];
 };
 
 struct ath10k_debug {
@@ -966,6 +972,14 @@ struct ath10k_fw_file {
 
 	const void *codeswap_data;
 	size_t codeswap_len;
+
+	/* These are written to only during first firmware load from user
+	 * space so no need for any locking.
+	 */
+	u32 ram_bss_addr;
+	u32 ram_bss_len;
+	u32 rom_bss_addr;
+	u32 rom_bss_len;
 
 	/* The original idea of struct ath10k_fw_file was that it only
 	 * contains struct firmware and pointers to various parts (actual

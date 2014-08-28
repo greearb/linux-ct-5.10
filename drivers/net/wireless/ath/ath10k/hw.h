@@ -189,6 +189,8 @@ enum ath10k_fw_ie_type {
 
 	/* Code swap image for firmware binary */
 	ATH10K_FW_IE_FW_CODE_SWAP_IMAGE = 7,
+
+	ATH10K_FW_IE_BSS_INFO_CT = 30,
 };
 
 enum ath10k_fw_wmi_op_version {
