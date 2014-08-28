@@ -683,6 +683,10 @@ struct ath10k_fw_crash_data {
 
 	u8 *ramdump_buf;
 	size_t ramdump_buf_len;
+	__le32 stack_buf[ATH10K_FW_STACK_SIZE / sizeof(__le32)];
+	__le32 exc_stack_buf[ATH10K_FW_STACK_SIZE / sizeof(__le32)];
+	__le32 stack_addr;
+	__le32 exc_stack_addr;
 };
 
 struct ath10k_debug {

@@ -1016,6 +1016,22 @@ static int ath10k_pci_diag_read32(struct ath10k *ar, u32 address, u32 *value)
 	return ret;
 }
 
+static int __ath10k_pci_diag_read_hi_addr(struct ath10k *ar, __le32 *dest,
+					  u32 src)
+{
+	u32 host_addr;
+	int ret;
+
+	host_addr = host_interest_item_address(src);
+
+	ret = ath10k_pci_diag_read32(ar, host_addr, dest);
+	if (ret != 0) {
+		ath10k_warn(ar, "failed to get memcpy hi address for firmware address %d: %d\n",
+			    src, ret);
+	}
+	return ret;
+}
+
 static int __ath10k_pci_diag_read_hi(struct ath10k *ar, void *dest,
 				     u32 src, u32 len)
 {
@@ -1043,6 +1059,9 @@ static int __ath10k_pci_diag_read_hi(struct ath10k *ar, void *dest,
 
 #define ath10k_pci_diag_read_hi(ar, dest, src, len)		\
 	__ath10k_pci_diag_read_hi(ar, dest, HI_ITEM(src), len)
+
+#define ath10k_pci_diag_read_hi_addr(ar, dest, src)		\
+	__ath10k_pci_diag_read_hi_addr(ar, dest, HI_ITEM(src))
 
 int ath10k_pci_diag_write_mem(struct ath10k *ar, u32 address,
 			      const void *data, int nbytes)
@@ -1429,6 +1448,37 @@ u16 ath10k_pci_hif_get_free_queue_number(struct ath10k *ar, u8 pipe)
 	ath10k_dbg(ar, ATH10K_DBG_PCI, "pci hif get free queue number\n");
 
 	return ath10k_ce_num_free_src_entries(ar_pci->pipe_info[pipe].ce_hdl);
+}
+
+/* Save the main firmware stack */
+static void ath10k_pci_dump_stack(struct ath10k *ar,
+				  struct ath10k_fw_crash_data *crash_data)
+{
+	if (!crash_data)
+		return;
+
+	lockdep_assert_held(&ar->data_lock);
+	BUILD_BUG_ON(ATH10K_FW_STACK_SIZE % 4);
+
+	ath10k_pci_diag_read_hi(ar, crash_data->stack_buf,
+				hi_stack, ATH10K_FW_STACK_SIZE);
+	ath10k_pci_diag_read_hi_addr(ar, &crash_data->stack_addr, hi_stack);
+}
+
+/* Save the exception firmware stack */
+static void ath10k_pci_dump_exc_stack(struct ath10k *ar,
+				      struct ath10k_fw_crash_data *crash_data)
+{
+	if (!crash_data)
+		return;
+
+	lockdep_assert_held(&ar->data_lock);
+
+	ath10k_pci_diag_read_hi(ar, crash_data->exc_stack_buf,
+				hi_err_stack, ATH10K_FW_STACK_SIZE);
+
+	ath10k_pci_diag_read_hi_addr(ar, &crash_data->exc_stack_addr,
+				     hi_err_stack);
 }
 
 static void ath10k_pci_dump_registers(struct ath10k *ar,
@@ -1868,7 +1918,8 @@ static void ath10k_pci_fw_dump_work(struct work_struct *work)
 	ath10k_ce_dump_registers(ar, crash_data);
 	ath10k_pci_dump_memory(ar, crash_data);
 	ath10k_pci_dump_dbglog(ar);
-	/* TODO:  Pack dbglog into crash_data */
+	ath10k_pci_dump_stack(ar, crash_data);
+	ath10k_pci_dump_exc_stack(ar, crash_data);
 
 	mutex_unlock(&ar->dump_mutex);
 

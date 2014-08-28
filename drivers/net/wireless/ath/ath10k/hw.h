@@ -162,6 +162,8 @@ enum qca9377_chip_id_rev {
 
 #define REG_DUMP_COUNT_QCA988X 60
 
+#define ATH10K_FW_STACK_SIZE 4096
+
 struct ath10k_fw_ie {
 	__le32 id;
 	__le32 len;

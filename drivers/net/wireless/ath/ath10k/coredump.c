@@ -1511,6 +1511,8 @@ static struct ath10k_dump_file_data *ath10k_coredump_build(struct ath10k *ar)
 		len += sizeof(*dump_tlv) + crash_data->ramdump_buf_len;
 
 	len += sizeof(*dump_tlv) + sizeof(ar->debug.dbglog_entry_data);
+	len += sizeof(*dump_tlv) + sizeof(crash_data->stack_buf);
+	len += sizeof(*dump_tlv) + sizeof(crash_data->exc_stack_buf);
 
 	sofar += hdr_len;
 
@@ -1544,6 +1546,8 @@ static struct ath10k_dump_file_data *ath10k_coredump_build(struct ath10k *ar)
 	dump_data->ht_cap_info = cpu_to_le32(ar->ht_cap_info);
 	dump_data->vht_cap_info = cpu_to_le32(ar->vht_cap_info);
 	dump_data->num_rf_chains = cpu_to_le32(ar->num_rf_chains);
+	dump_data->stack_addr = cpu_to_le32(crash_data->stack_addr);
+	dump_data->exc_stack_addr = cpu_to_le32(crash_data->exc_stack_addr);
 
 	strlcpy(dump_data->fw_ver, ar->hw->wiphy->fw_version,
 		sizeof(dump_data->fw_ver));
@@ -1603,6 +1607,22 @@ static struct ath10k_dump_file_data *ath10k_coredump_build(struct ath10k *ar)
 		cpu_to_le32(ar->debug.dbglog_entry_data.head_idx);
 	dbglog_storage->tail_idx =
 		cpu_to_le32(ar->debug.dbglog_entry_data.tail_idx);
+	sofar += sizeof(*dump_tlv) + tmp;
+
+	/* Gather firmware stack dump */
+	tmp = sizeof(crash_data->stack_buf);
+	dump_tlv = (struct ath10k_tlv_dump_data *)(buf + sofar);
+	dump_tlv->type = cpu_to_le32(ATH10K_FW_CRASH_DUMP_STACK);
+	dump_tlv->tlv_len = cpu_to_le32(tmp);
+	memcpy(dump_tlv->tlv_data, crash_data->stack_buf, tmp);
+	sofar += sizeof(*dump_tlv) + tmp;
+
+	/* Gather firmware exception stack dump */
+	tmp = sizeof(crash_data->exc_stack_buf);
+	dump_tlv = (struct ath10k_tlv_dump_data *)(buf + sofar);
+	dump_tlv->type = cpu_to_le32(ATH10K_FW_CRASH_DUMP_EXC_STACK);
+	dump_tlv->tlv_len = cpu_to_le32(tmp);
+	memcpy(dump_tlv->tlv_data, crash_data->exc_stack_buf, tmp);
 
 	sofar += sizeof(*dump_tlv) + tmp;
 
