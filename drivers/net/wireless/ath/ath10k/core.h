@@ -829,6 +829,9 @@ enum ath10k_fw_features {
 	/* Firmware allows setting peer fixed rate */
 	ATH10K_FW_FEATURE_PEER_FIXED_RATE = 21,
 
+	/* Firmware from Candela Technologies, enables more VIFs, etc */
+	ATH10K_FW_FEATURE_WMI_10X_CT = 31,
+
 	/* keep last */
 	ATH10K_FW_FEATURE_COUNT,
 };
