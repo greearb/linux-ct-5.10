@@ -4620,7 +4620,7 @@ void ath10k_wmi_event_debug_print(struct ath10k *ar, struct sk_buff *skb)
 	/* the last byte is always reserved for the null character */
 	buf[i] = '\0';
 
-	ath10k_dbg(ar, ATH10K_DBG_WMI_PRINT, "wmi print '%s'\n", buf);
+	ath10k_info(ar, "wmi print '%s'\n", buf);
 }
 
 void ath10k_wmi_event_pdev_qvit(struct ath10k *ar, struct sk_buff *skb)
