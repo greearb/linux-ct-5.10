@@ -2857,7 +2857,9 @@ int ath10k_wmi_event_debug_mesg(struct ath10k *ar, struct sk_buff *skb)
 	ath10k_dbg_save_fw_dbg_buffer(ar, ev->messages,
 				      (skb->len - 4)/sizeof(__le32));
 	spin_unlock_bh(&ar->data_lock);
-
+	ath10k_dbg_print_fw_dbg_buffer(ar, ev->messages,
+				       (skb->len - 4)/sizeof(__le32),
+				       KERN_INFO);
 	return 0;
 }
 

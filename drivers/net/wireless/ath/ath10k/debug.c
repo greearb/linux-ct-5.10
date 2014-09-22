@@ -2978,3 +2978,75 @@ void ath10k_dbg_dump(struct ath10k *ar,
 EXPORT_SYMBOL(ath10k_dbg_dump);
 
 #endif /* CONFIG_ATH10K_DEBUG */
+
+void ath10k_dbg_print_fw_dbg_buffer(struct ath10k *ar, __le32 *ibuf, int len,
+				    const char* lvl)
+{
+	/* Print out raw hex, external tools can decode if
+	 * they care.
+	 * TODO:  Add ar identifier to messages.
+	 */
+	int q = 0;
+
+	printk("%sATH10K_DBG_BUFFER:\n", lvl);
+	while (q < len) {
+		if (q + 8 <= len) {
+			printk("%sath10k: [%04d]: %08X %08X %08X %08X %08X %08X %08X %08X\n",
+			       lvl, q,
+			       ibuf[q], ibuf[q+1], ibuf[q+2], ibuf[q+3],
+			       ibuf[q+4], ibuf[q+5], ibuf[q+6], ibuf[q+7]);
+			q += 8;
+		}
+		else if (q + 7 <= len) {
+			printk("%sath10k: [%04d]: %08X %08X %08X %08X %08X %08X %08X\n",
+			       lvl, q,
+			       ibuf[q], ibuf[q+1], ibuf[q+2], ibuf[q+3],
+			       ibuf[q+4], ibuf[q+5], ibuf[q+6]);
+			q += 7;
+		}
+		else if (q + 6 <= len) {
+			printk("%sath10k: [%04d]: %08X %08X %08X %08X %08X %08X\n",
+			       lvl, q,
+			       ibuf[q], ibuf[q+1], ibuf[q+2], ibuf[q+3],
+			       ibuf[q+4], ibuf[q+5]);
+			q += 6;
+		}
+		else if (q + 5 <= len) {
+			printk("%sath10k: [%04d]: %08X %08X %08X %08X %08X\n",
+			       lvl, q,
+			       ibuf[q], ibuf[q+1], ibuf[q+2], ibuf[q+3],
+			       ibuf[q+4]);
+			q += 5;
+		}
+		else if (q + 4 <= len) {
+			printk("%sath10k: [%04d]: %08X %08X %08X %08X\n",
+			       lvl, q,
+			       ibuf[q], ibuf[q+1], ibuf[q+2], ibuf[q+3]);
+			q += 4;
+		}
+		else if (q + 3 <= len) {
+			printk("%sath10k: [%04d]: %08X %08X %08X\n",
+			       lvl, q,
+			       ibuf[q], ibuf[q+1], ibuf[q+2]);
+			q += 3;
+		}
+		else if (q + 2 <= len) {
+			printk("%sath10k: [%04d]: %08X %08X\n",
+			       lvl, q,
+			       ibuf[q], ibuf[q+1]);
+			q += 2;
+		}
+		else if (q + 1 <= len) {
+			printk("%sath10k: [%04d]: %08X\n",
+			       lvl, q,
+			       ibuf[q]);
+			q += 1;
+		}
+		else {
+			break;
+		}
+	}/* while */
+
+	printk("%sATH10K_END\n", lvl);
+}
+EXPORT_SYMBOL(ath10k_dbg_print_fw_dbg_buffer);
