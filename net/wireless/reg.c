@@ -2449,6 +2449,15 @@ static void wiphy_update_regulatory(struct wiphy *wiphy,
 		return;
 	}
 
+	pr_info("Setting DFS Master region in update_regulatory, was: %c%c %s, new: %c%c %s  lr: %p  regdom: %p\n",
+		lr->alpha2[0],
+		lr->alpha2[1],
+		reg_dfs_region_str(lr->dfs_region),
+		get_cfg80211_regdom()->alpha2[0],
+		get_cfg80211_regdom()->alpha2[1],
+		reg_dfs_region_str(get_cfg80211_regdom()->dfs_region),
+		lr, get_cfg80211_regdom());
+
 	lr->dfs_region = get_cfg80211_regdom()->dfs_region;
 
 	for (band = 0; band < NUM_NL80211_BANDS; band++)
