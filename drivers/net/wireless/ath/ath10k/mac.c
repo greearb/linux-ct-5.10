@@ -3395,7 +3395,7 @@ static void ath10k_reg_notifier(struct wiphy *wiphy,
 	ath_reg_notifier_apply(wiphy, request, &ar->ath_common.regulatory);
 
 	if (IS_ENABLED(CONFIG_ATH10K_DFS_CERTIFIED) && ar->dfs_detector) {
-		ath10k_dbg(ar, ATH10K_DBG_REGULATORY, "dfs region 0x%x\n",
+		ath10k_dbg(ar, ATH10K_DBG_REGULATORY, "reg-notifier: dfs region 0x%x\n",
 			   request->dfs_region);
 		result = ar->dfs_detector->set_dfs_domain(ar->dfs_detector,
 							  request->dfs_region);
