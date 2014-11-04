@@ -5441,7 +5441,7 @@ int ieee80211_mgd_auth(struct ieee80211_sub_if_data *sdata,
 					    WLAN_REASON_UNSPECIFIED);
 	}
 
-	sdata_info(sdata, "authenticate with %pM\n", req->bss->bssid);
+	sdata_info(sdata, "%pM authenticate with %pM\n", sdata->dev->dev_addr, req->bss->bssid);
 
 	err = ieee80211_prep_connection(sdata, req->bss, cont_auth, false);
 	if (err)
