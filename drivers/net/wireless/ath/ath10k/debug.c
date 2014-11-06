@@ -30,7 +30,10 @@ void ath10k_info(struct ath10k *ar, const char *fmt, ...)
 
 	va_start(args, fmt);
 	vaf.va = &args;
-	dev_info(ar->dev, "%pV", &vaf);
+	if (ath10k_debug_mask & ATH10K_DBG_INFO_AS_DBG)
+		dev_printk(KERN_DEBUG, ar->dev, "%pV", &vaf);
+	else
+		dev_info(ar->dev, "%pV", &vaf);
 	trace_ath10k_log_info(ar, &vaf);
 	va_end(args);
 }
