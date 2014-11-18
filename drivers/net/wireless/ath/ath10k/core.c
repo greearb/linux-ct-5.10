@@ -3684,6 +3684,20 @@ int ath10k_core_register(struct ath10k *ar,
 
 	queue_work(ar->workqueue, &ar->register_work);
 
+#ifdef STANDALONE_CT
+	/* Assume we are compiling for LEDE/OpenWRT if this define is set. --Ben */
+
+	/* OpenWrt requires all PHYs to be initialized to create the
+	 * configuration files during bootup. ath10k violates this
+	 * because it delays the creation of the PHY to a not well defined
+	 * point in the future.
+	 *
+	 * Forcing the work to be done immediately works around this problem
+	 * but may also delay the boot when firmware images cannot be found.
+	 */
+	flush_workqueue(ar->workqueue);
+#endif
+
 	return 0;
 }
 EXPORT_SYMBOL(ath10k_core_register);
