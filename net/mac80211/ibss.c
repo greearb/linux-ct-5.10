@@ -1774,12 +1774,16 @@ int ieee80211_ibss_join(struct ieee80211_sub_if_data *sdata,
 	ret = cfg80211_chandef_dfs_required(local->hw.wiphy,
 					    &params->chandef,
 					    sdata->wdev.iftype);
-	if (ret < 0)
+	if (ret < 0) {
+		sdata_info(sdata, "ibss-join: chandef-dfs-required failed.\n");
 		return ret;
+	}
 
 	if (ret > 0) {
-		if (!params->userspace_handles_dfs)
+		if (!params->userspace_handles_dfs) {
+			sdata_info(sdata, "ibss-join: No userspace-handles-dfs set.\n");
 			return -EINVAL;
+		}
 		radar_detect_width = BIT(params->chandef.width);
 	}
 
@@ -1790,8 +1794,10 @@ int ieee80211_ibss_join(struct ieee80211_sub_if_data *sdata,
 	ret = ieee80211_check_combinations(sdata, &params->chandef, chanmode,
 					   radar_detect_width);
 	mutex_unlock(&local->chanctx_mtx);
-	if (ret < 0)
+	if (ret < 0) {
+		sdata_info(sdata, "ibss-join:  Failed iface combination check.\n");
 		return ret;
+	}
 
 	if (params->bssid) {
 		memcpy(sdata->u.ibss.bssid, params->bssid, ETH_ALEN);
