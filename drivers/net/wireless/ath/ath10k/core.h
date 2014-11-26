@@ -358,6 +358,8 @@ struct ath10k_fw_stats {
 	u32 mac_dma_txcfg;
 	u32 pcu_rxfilter;
 	u32 phy_bb_gen_controls;
+	u32 dma_imr;
+	u32 dma_txrx_imr;
 	u32 sw_powermode;
 	u16 sw_chainmask_tx;
 	u16 sw_chainmask_rx;
