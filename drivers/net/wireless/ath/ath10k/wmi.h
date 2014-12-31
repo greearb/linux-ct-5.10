@@ -4566,6 +4566,43 @@ struct wmi_pdev_stats_peer {
 	__le32 dummy;
 } __packed;
 
+
+#define REG_DUMP_NONE         0
+#define MAC_FILTER_ADDR_L32   1
+#define MAC_FILTER_ADDR_U16   2
+#define DCU_SLOT_TIME         3
+#define PHY_BB_MODE_SELECT    4
+#define PCU_BSSID_L32         5
+#define PCU_BSSID_U16         6
+#define PCU_BSSID2_L32        7
+#define PCU_BSSID2_U16        8
+#define PCU_STA_ADDR_U16      9
+#define MAC_DMA_CFG          10
+#define MAC_DMA_TXCFG        11
+#define PCU_STA_ADDR_L32     12
+#define PCU_RXFILTER         13
+#define PHY_BB_GEN_CONTROLS  14
+#define SW_POWERMODE         17
+#define SW_CHAINMASK         18 /* tx is high 16 bits, rx is low 16 bits */
+#define SW_OPMODE            19
+#define SW_RXFILTER          20
+
+#define REG_DUMP_COUNT       20 /* max number of registers to dump at once. */
+
+struct ath10k_reg_dump_pair {
+	__le32 reg_id;
+	__le32 reg_val;
+};
+
+struct ath10k_reg_dump {
+	__le16 count;
+	__le16 unused;
+	struct ath10k_reg_dump_pair regpair[REG_DUMP_COUNT];
+};
+
+/* These values are a bitmap, but 10.1.x (at least) firmware will not properly
+ * handle multiple values OR'd together.
+ */
 enum wmi_stats_id {
 	WMI_STAT_PEER = BIT(0),
 	WMI_STAT_AP = BIT(1),
@@ -4573,6 +4610,7 @@ enum wmi_stats_id {
 	WMI_STAT_VDEV = BIT(3),
 	WMI_STAT_BCNFLT = BIT(4),
 	WMI_STAT_VDEV_RATE = BIT(5),
+	WMI_REQUEST_REGISTER_DUMP = BIT(7), /* 0x80, CT Firmware only, request register dump. */
 };
 
 enum wmi_10_4_stats_id {
