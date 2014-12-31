@@ -3064,10 +3064,13 @@ static int ath10k_pci_hif_power_up(struct ath10k *ar,
 		goto err_ce;
 	}
 
+	ar->fw_powerup_failed = false;
+
 	return 0;
 
 err_ce:
 	ath10k_pci_ce_deinit(ar);
+	ar->fw_powerup_failed = true;
 
 err_sleep:
 	return ret;
