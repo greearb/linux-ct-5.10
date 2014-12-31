@@ -2103,6 +2103,13 @@ enum wmi_channel_change_cause {
 #define WMI_CHAN_FLAG_DFS            (1 << 10)
 #define WMI_CHAN_FLAG_ALLOW_HT       (1 << 11)
 #define WMI_CHAN_FLAG_ALLOW_VHT      (1 << 12)
+#define WMI_CHAN_FLAG_HALF           (1 << 13)
+#define WMI_CHAN_FLAG_QUARTER        (1 << 14)
+#define WMI_CHAN_FLAG_NO_RESERVE_CH  (1 << 31) /* CT firmware only, do not reserve channel.
+						* Takes 200+ms to grab reservation when starting
+						* vdev, and I think it is handled elsewhere by the
+						* stack and/or supplicant anyway. --Ben
+						*/
 
 /* Indicate reason for channel switch */
 #define WMI_CHANNEL_CHANGE_CAUSE_CSA (1 << 13)
@@ -7503,8 +7510,10 @@ void ath10k_wmi_put_start_scan_common(struct wmi_start_scan_common *cmn,
 				      const struct wmi_start_scan_arg *arg);
 void ath10k_wmi_set_wmm_param(struct wmi_wmm_params *params,
 			      const struct wmi_wmm_params_arg *arg);
-void ath10k_wmi_put_wmi_channel(struct ath10k *ar, struct wmi_channel *ch,
-				const struct wmi_channel_arg *arg);
+void ath10k_wmi_put_wmi_channel(struct ath10k *ar,
+				struct wmi_channel *ch,
+				const struct wmi_channel_arg *arg,
+				u32 vdev_id);
 int ath10k_wmi_start_scan_verify(const struct wmi_start_scan_arg *arg);
 
 int ath10k_wmi_event_scan(struct ath10k *ar, struct sk_buff *skb);

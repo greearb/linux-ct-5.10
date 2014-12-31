@@ -1702,8 +1702,38 @@ static const struct wmi_peer_flags_map wmi_10_2_peer_flags_map = {
 	.bw160 = WMI_10_2_PEER_160MHZ,
 };
 
-void ath10k_wmi_put_wmi_channel(struct ath10k *ar, struct wmi_channel *ch,
-				const struct wmi_channel_arg *arg)
+static bool ath10k_ok_skip_ch_reservation(struct ath10k *ar, u32 vdev_id)
+{
+	struct ath10k_vif *arvif;
+	bool rv = false;
+
+	if (! test_bit(ATH10K_FW_FEATURE_WMI_10X_CT,
+		       ar->running_fw->fw_file.fw_features))
+		return rv;
+
+	list_for_each_entry(arvif, &ar->arvifs, list) {
+		if (!arvif->is_up)
+			continue;
+
+		if (arvif->vdev_id == vdev_id) {
+			if (arvif->vdev_type != WMI_VDEV_TYPE_STA)
+				return false;
+			continue;
+		}
+
+		/* If there is another station up, then assume
+		 * requested station must use same channel.
+		 */
+		if (arvif->vdev_type == WMI_VDEV_TYPE_STA)
+			rv = true;
+	}
+	return rv;
+}
+
+void ath10k_wmi_put_wmi_channel(struct ath10k *ar,
+				struct wmi_channel *ch,
+				const struct wmi_channel_arg *arg,
+				u32 vdev_id)
 {
 	u32 flags = 0;
 	struct ieee80211_channel *chan = NULL;
@@ -1724,6 +1754,11 @@ void ath10k_wmi_put_wmi_channel(struct ath10k *ar, struct wmi_channel *ch,
 		flags |= WMI_CHAN_FLAG_DFS;
 
 	ch->band_center_freq2 = 0;
+
+	if (ath10k_ok_skip_ch_reservation(ar, vdev_id))
+		/* Disable having firmware request on-channel reservation */
+		flags |= WMI_CHAN_FLAG_NO_RESERVE_CH;
+
 	ch->mhz = __cpu_to_le32(arg->freq);
 	ch->band_center_freq1 = __cpu_to_le32(arg->band_center_freq1);
 	if (arg->mode == MODE_11AC_VHT80_80) {
@@ -7271,7 +7306,7 @@ ath10k_wmi_op_gen_vdev_start(struct ath10k *ar,
 		memcpy(cmd->ssid.ssid, arg->ssid, arg->ssid_len);
 	}
 
-	ath10k_wmi_put_wmi_channel(ar, &cmd->chan, &arg->channel);
+	ath10k_wmi_put_wmi_channel(ar, &cmd->chan, &arg->channel, arg->vdev_id);
 
 	ath10k_dbg(ar, ATH10K_DBG_WMI,
 		   "wmi vdev %s id 0x%x flags: 0x%0X, freq %d, mode %d, ch_flags: 0x%0X, max_power: %d\n",
@@ -7640,7 +7675,7 @@ ath10k_wmi_op_gen_scan_chan_list(struct ath10k *ar,
 		ch = &arg->channels[i];
 		ci = &cmd->chan_info[i];
 
-		ath10k_wmi_put_wmi_channel(ar, ci, ch);
+		ath10k_wmi_put_wmi_channel(ar, ci, ch, -1);
 	}
 
 	return skb;
@@ -9044,7 +9079,7 @@ ath10k_wmi_10_4_gen_tdls_peer_update(struct ath10k *ar,
 
 	for (i = 0; i < cap->peer_chan_len; i++) {
 		chan = (struct wmi_channel *)&peer_cap->peer_chan_list[i];
-		ath10k_wmi_put_wmi_channel(ar, chan, &chan_arg[i]);
+		ath10k_wmi_put_wmi_channel(ar, chan, &chan_arg[i], arg->vdev_id);
 	}
 
 	ath10k_dbg(ar, ATH10K_DBG_WMI,
