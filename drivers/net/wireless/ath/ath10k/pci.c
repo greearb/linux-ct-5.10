@@ -1869,9 +1869,8 @@ static void ath10k_pci_dump_dbglog(struct ath10k *ar)
 		return;
 	}
 
-	ath10k_dbg(ar, ATH10K_DBG_PCI,
-		   "debug log header, dbuf: 0x%x  dropped: %i\n",
-		   le32_to_cpu(dbg_hdr.dbuf), le32_to_cpu(dbg_hdr.dropped));
+	ath10k_warn(ar, "debug log header, dbuf: 0x%x  dropped: %i\n",
+		    le32_to_cpu(dbg_hdr.dbuf), le32_to_cpu(dbg_hdr.dropped));
 	dbufp = le32_to_cpu(dbg_hdr.dbuf);
 
 	/* i is for logging purposes and sanity check in case firmware buffers
@@ -1891,11 +1890,10 @@ static void ath10k_pci_dump_dbglog(struct ath10k *ar)
 
 		len = le32_to_cpu(dbuf.length);
 
-		ath10k_dbg(ar, ATH10K_DBG_PCI,
-			   "[%i] next: 0x%x buf: 0x%x sz: %i len: %i count: %i free: %i\n",
-			   i, le32_to_cpu(dbuf.next), le32_to_cpu(dbuf.buffer),
-			   le32_to_cpu(dbuf.bufsize), len,
-			   le32_to_cpu(dbuf.count), le32_to_cpu(dbuf.free));
+		ath10k_warn(ar, "[%i] next: 0x%x buf: 0x%x sz: %i len: %i count: %i free: %i\n",
+			    i, le32_to_cpu(dbuf.next), le32_to_cpu(dbuf.buffer),
+			    le32_to_cpu(dbuf.bufsize), len,
+			    le32_to_cpu(dbuf.count), le32_to_cpu(dbuf.free));
 		if (dbuf.buffer == 0 || len == 0)
 			goto next;
 
