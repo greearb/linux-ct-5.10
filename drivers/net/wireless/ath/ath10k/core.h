@@ -728,6 +728,7 @@ struct ath10k_debug {
 	unsigned long htt_stats_mask;
 	unsigned long reset_htt_stats;
 	struct delayed_work htt_stats_dwork;
+	struct delayed_work nop_dwork;
 	struct ath10k_dfs_stats dfs_stats;
 	struct ath_dfs_pool_stats dfs_pool_stats;
 
@@ -745,6 +746,7 @@ struct ath10k_debug {
 	void *cal_data;
 	u32 enable_extd_tx_stats;
 	u8 fw_dbglog_mode;
+	u32 nop_id;
 
 	struct ath10k_dbglog_entry_storage dbglog_entry_data;
 };

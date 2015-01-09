@@ -1476,6 +1476,8 @@ enum wmi_10x_cmd_id {
 	WMI_10X_GPIO_CONFIG_CMDID,
 	WMI_10X_GPIO_OUTPUT_CMDID,
 
+	WMI_NOP = WMI_10X_END_CMDID - 100, /* CT only:  wmi transport keep-alive, basically */
+
 	WMI_10X_PDEV_UTF_CMDID = WMI_10X_END_CMDID - 1,
 };
 
@@ -7583,5 +7585,10 @@ int ath10k_wmi_barrier(struct ath10k *ar);
 void ath10k_wmi_tpc_config_get_rate_code(u8 *rate_code, u16 *pream_table,
 					 u32 num_tx_chain);
 void ath10k_wmi_event_tpc_final_table(struct ath10k *ar, struct sk_buff *skb);
+
+#ifdef CONFIG_ATH10K_DEBUG
+/* CT Firmware only */
+int ath10k_wmi_request_nop(struct ath10k *ar);
+#endif
 
 #endif /* _WMI_H_ */
