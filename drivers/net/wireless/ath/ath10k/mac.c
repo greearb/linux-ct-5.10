@@ -227,6 +227,9 @@ MODULE_PARM_DESC(nohwcrypt, "Disable hardware rx decrypt feature");
 int ath10k_modparam_target_num_vdevs_ct = DEF_TARGET_10X_NUM_VDEVS_CT;
 module_param_named(num_vdevs_ct, ath10k_modparam_target_num_vdevs_ct, int, 0444);
 MODULE_PARM_DESC(num_vdevs_ct, "Maximum vdevs to request from firmware");
+int ath10k_modparam_target_num_peers_ct = 128;
+module_param_named(num_peers_ct, ath10k_modparam_target_num_peers_ct, int, 0444);
+MODULE_PARM_DESC(num_peers_ct, "Maximum peers to request from firmware");
 
 /**********/
 /* Crypto */
