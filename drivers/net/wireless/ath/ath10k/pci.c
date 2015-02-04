@@ -1531,6 +1531,54 @@ static void ath10k_pci_dump_exc_stack(struct ath10k *ar,
 				     hi_err_stack);
 }
 
+/* Only CT firmware can do this.  Attempt to read crash dump over pci
+ * registers since normal CE transport is not working.
+ */
+static int ath10k_ct_fw_crash_regs_harder(struct ath10k *ar,
+					  __le32 *reg_dump_values,
+					  int len)
+{
+	u32 val;
+	int i;
+	int q;
+#define MAX_SPIN_TRIES 1000000
+
+	if (!test_bit(ATH10K_FW_FEATURE_WMI_10X_CT,
+		      ar->running_fw->fw_file.fw_features)) {
+		return -EINVAL;
+	}
+
+	for (i = 0; i<MAX_SPIN_TRIES; i++) {
+		val = ath10k_pci_read32(ar, FW_INDICATOR_ADDRESS);
+		if (val & FW_IND_SCRATCH2_WR)
+			goto pingpong;
+	}
+	return -EBUSY;
+
+pingpong:
+	ath10k_warn(ar, "Trying to read crash dump over pingpong registers.\n");
+	/* Firmware is trying to send us info it seems. */
+	for (q = 0; q<len; q++) {
+		reg_dump_values[q] = ath10k_pci_read32(ar, SOC_CORE_BASE_ADDRESS + SCRATCH_2_ADDRESS);
+		val = ath10k_pci_read32(ar, FW_INDICATOR_ADDRESS);
+		val |= FW_IND_SCRATCH2_RD; /* tell firmware we read it */
+		val &= ~FW_IND_SCRATCH2_WR; /* clear firmware's write flag */
+		ath10k_pci_write32(ar, FW_INDICATOR_ADDRESS, val);
+
+		for (i = 0; i<MAX_SPIN_TRIES; i++) {
+			val = ath10k_pci_read32(ar, FW_INDICATOR_ADDRESS);
+			if (val & FW_IND_SCRATCH2_WR)
+				break;
+		}
+		if (!(val & FW_IND_SCRATCH2_WR)) {
+			ath10k_err(ar, "failed to read reg %i via pingpong method.\n",
+				   q);
+			return 0; // partial read is better than nothing I guess
+		}
+	}
+	return 0;
+}
+
 static void ath10k_pci_dump_registers(struct ath10k *ar,
 				      struct ath10k_fw_crash_data *crash_data)
 {
@@ -1544,7 +1592,13 @@ static void ath10k_pci_dump_registers(struct ath10k *ar,
 				      REG_DUMP_COUNT_QCA988X * sizeof(__le32));
 	if (ret) {
 		ath10k_err(ar, "failed to read firmware dump area: %d\n", ret);
-		return;
+
+		/* Try to read this directly over registers...only works on new
+		 * CT firmware.
+		 */
+		ret = ath10k_ct_fw_crash_regs_harder(ar, reg_dump_values, REG_DUMP_COUNT_QCA988X);
+		if (ret)
+			return;
 	}
 
 	BUILD_BUG_ON(REG_DUMP_COUNT_QCA988X % 4);
