@@ -81,6 +81,11 @@ enum hwsim_tx_control_flags {
  *	to this receiver address for a given station.
  * @HWSIM_CMD_DEL_MAC_ADDR: remove the MAC address again, the attributes
  *	are the same as to @HWSIM_CMD_ADD_MAC_ADDR.
+ * @HWSIM_CMD_NOTIFY: notify user-space about driver changes.  This is
+ * designed to help the user-space app better emulate radio hardware.
+ * This command uses:
+ *      %HWSIM_ATTR_FREQ # Notify current operating center frequency.
+ *      %HWSIM_ATTR_ADDR_TRANSMITTER # ID which radio we are notifying about.
  * @__HWSIM_CMD_MAX: enum limit
  */
 enum {
@@ -93,6 +98,7 @@ enum {
 	HWSIM_CMD_GET_RADIO,
 	HWSIM_CMD_ADD_MAC_ADDR,
 	HWSIM_CMD_DEL_MAC_ADDR,
+	HWSIM_CMD_NOTIFY,
 	__HWSIM_CMD_MAX,
 };
 #define HWSIM_CMD_MAX (_HWSIM_CMD_MAX - 1)
