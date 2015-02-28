@@ -1863,11 +1863,12 @@ struct htt_resp {
 
 /*** host side structures follow ***/
 
-/* tx-rate flags field definitions */
-#define ATH10K_RC_FLAG_CHAIN_MASK 0x07 /* identifies tx chain config (1,5,7) */
-#define ATH10K_RC_FLAG_ONE_CHAIN     1
-#define ATH10K_RC_FLAG_TWO_CHAIN     5
-#define ATH10K_RC_FLAG_THREE_CHAIN   7
+/* tx-rate flags field definitions, see firmware whal_desc.h */
+/* First two bits are for tx-completion report. */
+#define ATH10K_RC_FLAG_TXOK       0x00 /* Pkt transmitted OK */
+#define ATH10K_RC_FLAG_XRETRY     0x01 /* Pkt failed to transmit, too many retries. */
+#define ATH10K_RC_FLAG_DROP       0x02 /* Dropped due to tid flush, local buffer exhaustion, etc. */
+
 #define ATH10K_RC_FLAG_SGI        0x08 /* use HT SGI if set */
 #define ATH10K_RC_FLAG_STBC       0x10 /* use HT STBC if set */
 #define ATH10K_RC_FLAG_40MHZ      0x20 /* 40 mhz mode */
@@ -1879,8 +1880,8 @@ struct htt_tx_done {
 	u16 msdu_id;
 	u16 status;
 	u8 ack_rssi;
-	u8 tx_rate_code; /* CT firmware only */
-	u8 tx_rate_flags; /* CT firmware only */
+	u8 tx_rate_code; /* CT firmware only, see firmware ar_desc_wifi_ip01.h (search for 0x44) */
+	u8 tx_rate_flags; /* CT firmware only, see flag defs above */
 };
 
 enum htt_tx_compl_state {
