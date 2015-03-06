@@ -7317,7 +7317,8 @@ ath10k_wmi_op_gen_vdev_start(struct ath10k *ar,
 	return skb;
 }
 
-#ifdef CONFIG_ATH10K_DEBUG
+#ifdef CONFIG_ATH10K_DEBUGFS
+/* TODO:  Should really enable this all the time, not just when DEBUGFS is enabled. --Ben */
 /* CT firmware only:
  * (re) start wmi keep-alive timer in firmware.  Once we start
  * sending these, firmware will assert if it does not receive one
