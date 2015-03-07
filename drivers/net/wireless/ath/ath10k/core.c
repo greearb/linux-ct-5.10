@@ -653,6 +653,7 @@ static const char *const ath10k_core_fw_feature_str[] = {
 	[ATH10K_FW_FEATURE_PEER_FIXED_RATE] = "peer-fixed-rate",
 	[ATH10K_FW_FEATURE_WMI_10X_CT] = "wmi-10.x-CT",
 	[ATH10K_FW_FEATURE_CT_RXSWCRYPT] = "rxswcrypt-CT",
+	[ATH10K_FW_FEATURE_HAS_TXSTATUS_NOACK] = "txstatus-noack",
 };
 
 static unsigned int ath10k_core_get_fw_feature_str(char *buf,

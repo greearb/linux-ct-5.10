@@ -890,6 +890,9 @@ enum ath10k_fw_features {
 	 * encryption (ie, commercial version of CT firmware) */
 	ATH10K_FW_FEATURE_CT_RXSWCRYPT = 32,
 
+	/* tx-status has the noack bits (CT firmware version 14 and higher ) */
+	ATH10K_FW_FEATURE_HAS_TXSTATUS_NOACK = 33,
+
 	/* keep last */
 	ATH10K_FW_FEATURE_COUNT,
 };
