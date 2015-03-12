@@ -8106,16 +8106,25 @@ static int ath10k_mac_set_fixed_rate_params(struct ath10k_vif *arvif,
 
 	lockdep_assert_held(&ar->conf_mutex);
 
-	ath10k_dbg(ar, ATH10K_DBG_MAC, "mac set fixed rate params vdev %i rate 0x%02hhx nss %hhu sgi %hhu\n",
-		   arvif->vdev_id, rate, nss, sgi);
+	ath10k_dbg(ar, ATH10K_DBG_MAC, "mac set fixed rate params vdev %i rate 0x%02hhx nss %hhu sgi %hhu set-rate-type: %d\n",
+		   arvif->vdev_id, rate, nss, sgi, ar->set_rate_type);
 
-	vdev_param = ar->wmi.vdev_param->fixed_rate;
+	if (ar->set_rate_type)
+		vdev_param = ar->set_rate_type;
+	else
+		vdev_param = ar->wmi.vdev_param->fixed_rate;
 	ret = ath10k_wmi_vdev_set_param(ar, arvif->vdev_id, vdev_param, rate);
 	if (ret) {
-		ath10k_warn(ar, "failed to set fixed rate param 0x%02x: %d\n",
-			    rate, ret);
+		ath10k_warn(ar, "vdev %i failed to set fixed rate, param 0x%x rate 0x%02x nss %hhu sgi %hhu: %d\n",
+			    arvif->vdev_id, vdev_param, rate, nss, sgi, ret);
 		return ret;
 	}
+
+	/* If we are setting one of the specialized rates (mgmt, ucast, bcast)
+	 * then we do not need to set the other values, so skip to exit.
+	 */
+	if (ar->set_rate_type != 0)
+		return 0;
 
 	vdev_param = ar->wmi.vdev_param->nss;
 	ret = ath10k_wmi_vdev_set_param(ar, arvif->vdev_id, vdev_param, nss);

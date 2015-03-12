@@ -818,6 +818,105 @@ static const struct file_operations fops_simulate_fw_crash = {
 	.llseek = default_llseek,
 };
 
+static ssize_t ath10k_read_set_rates(struct file *file,
+				     char __user *user_buf,
+				     size_t count, loff_t *ppos)
+{
+	struct ath10k *ar = file->private_data;
+	const char buf[] =
+		"To set unicast, beacon/mgt, multicast, and broadcast,\n"
+		"select a type below and then use 'iw' as normal to set\n"
+		"the desired rate.\n"
+		"beacon   # Beacons and management frames\n"
+		"bcast    # Broadcast frames\n"
+		"mcast    # Multicast frames\n"
+		"ucast    # Unicast frames (normal traffic, default)\n";
+
+	char tmpbuf[strlen(buf) + 80];
+	char* str = "ucast";
+
+	if (ar->set_rate_type == ar->wmi.vdev_param->mgmt_rate) {
+		str = "beacon";
+	}
+	else if (ar->set_rate_type == ar->wmi.vdev_param->bcast_data_rate) {
+		str = "bcast";
+	}
+	else if (ar->set_rate_type == ar->wmi.vdev_param->mcast_data_rate) {
+		str = "mcast";
+	}
+	sprintf(tmpbuf, "%sCurrent: %s\n", buf, str);
+
+	return simple_read_from_buffer(user_buf, count, ppos, tmpbuf, strlen(tmpbuf));
+}
+
+/* Set the rates for specific types of traffic.
+ */
+static ssize_t ath10k_write_set_rates(struct file *file,
+				      const char __user *user_buf,
+				      size_t count, loff_t *ppos)
+{
+	struct ath10k *ar = file->private_data;
+	char buf[32];
+	int ret;
+
+	mutex_lock(&ar->conf_mutex);
+
+	memset(buf, 0, sizeof(buf));
+
+	simple_write_to_buffer(buf, sizeof(buf) - 1, ppos, user_buf, count);
+
+	/* make sure that buf is null terminated */
+	buf[sizeof(buf) - 1] = 0;
+
+	/* drop the possible '\n' from the end */
+	if (buf[count - 1] == '\n')
+		buf[count - 1] = 0;
+
+	/* Ignore empty lines, 'echo' appends them sometimes at least. */
+	if (buf[0] == 0) {
+		ret = count;
+		goto exit;
+	}
+
+	if (ar->state != ATH10K_STATE_ON &&
+	    ar->state != ATH10K_STATE_RESTARTED) {
+		ret = -ENETDOWN;
+		goto exit;
+	}
+
+	if (strncmp(buf, "beacon", strlen("beacon")) == 0) {
+		ar->set_rate_type = ar->wmi.vdev_param->mgmt_rate;
+	}
+	else if (strncmp(buf, "bcast", strlen("bcast")) == 0) {
+		ar->set_rate_type = ar->wmi.vdev_param->bcast_data_rate;
+	}
+	else if (strncmp(buf, "mcast", strlen("mcast")) == 0) {
+		ar->set_rate_type = ar->wmi.vdev_param->mcast_data_rate;
+	}
+	else if (strncmp(buf, "ucast", strlen("ucast")) == 0) {
+		ar->set_rate_type = 0;
+	}
+	else {
+		ath10k_warn(ar, "set-rate, invalid rate type: %s  count: %d  %02hx:%02hx:%02hx:%02hx\n",
+			    buf, (int)count, (int)(buf[0]), (int)(buf[1]), (int)(buf[2]), (int)(buf[3]));
+		ret = -EINVAL;
+		goto exit;
+	}
+	ret = count;
+
+exit:
+	mutex_unlock(&ar->conf_mutex);
+	return ret;
+}
+
+static const struct file_operations fops_set_rates = {
+	.read = ath10k_read_set_rates,
+	.write = ath10k_write_set_rates,
+	.open = simple_open,
+	.owner = THIS_MODULE,
+	.llseek = default_llseek,
+};
+
 static ssize_t ath10k_read_chip_id(struct file *file, char __user *user_buf,
 				   size_t count, loff_t *ppos)
 {
@@ -2858,6 +2957,9 @@ int ath10k_debug_register(struct ath10k *ar)
 
 	debugfs_create_file("wmi_services", 0400, ar->debug.debugfs_phy, ar,
 			    &fops_wmi_services);
+
+	debugfs_create_file("set_rates", 0600, ar->debug.debugfs_phy,
+			    ar, &fops_set_rates);
 
 	debugfs_create_file("simulate_fw_crash", 0600, ar->debug.debugfs_phy, ar,
 			    &fops_simulate_fw_crash);
