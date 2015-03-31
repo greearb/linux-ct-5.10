@@ -6391,8 +6391,12 @@ static int ath10k_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
 	if (arvif->nohwcrypt)
 		return 1;
 
-	if (key->keyidx > WMI_MAX_KEY_INDEX)
+	if (key->keyidx > WMI_MAX_KEY_INDEX) {
+		if (cmd != DISABLE_KEY)
+			ath10k_warn(ar, "failed to install key, idx out of range: %d > %d, vdev: %d\n",
+				    key->keyidx, WMI_MAX_KEY_INDEX, arvif->vdev_id);
 		return -ENOSPC;
+	}
 
 	mutex_lock(&ar->conf_mutex);
 
@@ -10094,6 +10098,12 @@ int ath10k_mac_register(struct ath10k *ar)
 			ar->hw->wiphy->n_iface_combinations =
 				ARRAY_SIZE(ath10k_10x_ct_if_comb);
 			ar->hw->wiphy->interface_modes |= BIT(NL80211_IFTYPE_ADHOC);
+
+			/* CT firmware can do tx-sw-crypt if properly configured */
+			if (test_bit(ATH10K_FW_FEATURE_CT_RXSWCRYPT,
+				     ar->running_fw->fw_file.fw_features) &&
+			    ath10k_modparam_nohwcrypt)
+				__clear_bit(IEEE80211_HW_SW_CRYPTO_CONTROL, ar->hw->flags);
 		} else {
 			ar->hw->wiphy->iface_combinations = ath10k_10x_if_comb;
 			ar->hw->wiphy->n_iface_combinations =
