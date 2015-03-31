@@ -1548,11 +1548,15 @@ static int ath10k_ct_fw_crash_regs_harder(struct ath10k *ar,
 		return -EINVAL;
 	}
 
+	ath10k_warn(ar, "in crash-regs-harder\n");
+
 	for (i = 0; i<MAX_SPIN_TRIES; i++) {
 		val = ath10k_pci_read32(ar, FW_INDICATOR_ADDRESS);
 		if (val & FW_IND_SCRATCH2_WR)
 			goto pingpong;
 	}
+
+	ath10k_warn(ar, "in crash-regs-harder, firmware did not provide indicator: 0x%x\n", val);
 	return -EBUSY;
 
 pingpong:
