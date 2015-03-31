@@ -231,6 +231,11 @@ int ath10k_modparam_target_num_peers_ct = 128;
 module_param_named(num_peers_ct, ath10k_modparam_target_num_peers_ct, int, 0444);
 MODULE_PARM_DESC(num_peers_ct, "Maximum peers to request from firmware");
 
+/* These consume a fair bit of RAM on target. */
+int ath10k_modparam_target_num_msdu_desc_ct = 680;
+module_param_named(num_msdu_desc_ct, ath10k_modparam_target_num_msdu_desc_ct, int, 0444);
+MODULE_PARM_DESC(num_msdu_desc_ct, "Maximum MSDU Descriptors in firmware (must be multiple of 8)");
+
 /**********/
 /* Crypto */
 /**********/
