@@ -1193,7 +1193,7 @@ static void mac80211_hwsim_check_nl_notify(struct mac80211_hwsim_data *data)
 	void *msg_head;
 
 	/* wmediumd mode check */
-	_portid = ACCESS_ONCE(data->wmediumd);
+	_portid = READ_ONCE(data->wmediumd);
 
 	if (!_portid)
 		return;
@@ -3679,6 +3679,85 @@ static int hwsim_cloned_frame_received_nl(struct sk_buff *skb_2,
 	if (ieee80211_is_beacon(hdr->frame_control) ||
 	    ieee80211_is_probe_resp(hdr->frame_control))
 		rx_status.boottime_ns = ktime_get_boottime_ns();
+
+	if (info->attrs[HWSIM_ATTR_RX_INFO]) {
+		struct hwsim_rx_info *r;
+		int i;
+
+		r = (struct hwsim_rx_info *)nla_data(
+			info->attrs[HWSIM_ATTR_RX_INFO]);
+		/* Convert from 4.9-era flags to new way of doing things. */
+		if (r->rx_flags & BIT(8))
+			rx_status.enc_flags |= RX_ENC_FLAG_SHORTPRE;
+		if (r->rx_flags & BIT(9))
+			rx_status.encoding = RX_ENC_HT;
+		if (r->rx_flags & BIT(10))
+			rx_status.bw = RATE_INFO_BW_40;
+		if (r->rx_flags & BIT(11))
+			rx_status.enc_flags |= RX_ENC_FLAG_SHORT_GI;
+		if (r->rx_flags & BIT(13))
+			rx_status.enc_flags |= RX_ENC_FLAG_HT_GF;
+		if (r->rx_flags & BIT(22))
+			rx_status.encoding = RX_ENC_VHT;
+		{
+			/* stbc mask */
+			unsigned tmp = 0;
+			if (r->rx_flags & BIT(26))
+				tmp |= 1;
+			if (r->rx_flags & BIT(27))
+				tmp |= 2;
+			tmp <<= RX_ENC_FLAG_STBC_SHIFT;
+			rx_status.enc_flags |= tmp;
+		}
+		if (r->rx_flags & BIT(23))
+			rx_status.enc_flags |= RX_ENC_FLAG_LDPC;
+		if (r->rx_flags & BIT(28))
+			rx_status.bw = RATE_INFO_BW_10;
+		if (r->rx_flags & BIT(29))
+			rx_status.bw = RATE_INFO_BW_5;
+
+		if (r->vht_flags & BIT(0))
+			rx_status.bw = RATE_INFO_BW_80;
+		if (r->vht_flags & BIT(1))
+			rx_status.bw = RATE_INFO_BW_160;
+		if (r->vht_flags & BIT(2))
+			rx_status.enc_flags |= RX_ENC_FLAG_BF;
+
+		for (i = 0; i<8; i++) {
+			if (r->rx_flags & BIT(i))
+				rx_status.flag |= BIT(i);
+		}
+		if (r->rx_flags & BIT(12))
+			rx_status.flag |= RX_FLAG_NO_SIGNAL_VAL;
+		if (r->rx_flags & BIT(14))
+			rx_status.flag |= RX_FLAG_AMPDU_DETAILS;
+		if (r->rx_flags & BIT(15))
+			rx_status.flag |= RX_FLAG_PN_VALIDATED;
+		if (r->rx_flags & BIT(16))
+			rx_status.flag |= RX_FLAG_DUP_VALIDATED;
+		if (r->rx_flags & BIT(17))
+			rx_status.flag |= RX_FLAG_AMPDU_LAST_KNOWN;
+		if (r->rx_flags & BIT(18))
+			rx_status.flag |= RX_FLAG_AMPDU_IS_LAST;
+		if (r->rx_flags & BIT(19))
+			rx_status.flag |= RX_FLAG_AMPDU_DELIM_CRC_ERROR;
+		if (r->rx_flags & BIT(20))
+			rx_status.flag |= RX_FLAG_AMPDU_DELIM_CRC_KNOWN;
+		if (r->rx_flags & BIT(21))
+			rx_status.flag |= RX_FLAG_MACTIME_END;
+		if (r->rx_flags & BIT(24))
+			rx_status.flag |= RX_FLAG_ONLY_MONITOR;
+		if (r->rx_flags & BIT(25))
+			rx_status.flag |= RX_FLAG_SKIP_MONITOR;
+		if (r->rx_flags & BIT(30))
+			rx_status.flag |= RX_FLAG_AMSDU_MORE;
+		if (r->rx_flags & BIT(31))
+			rx_status.flag |= RX_FLAG_RADIOTAP_VENDOR_DATA;
+		/* MIC_STRIPPED, ALLOW_SAME_PN, ICV_STRIPPED not supported by hwsim api currently */
+
+		rx_status.nss = r->vht_nss;
+		rx_status.ampdu_reference = r->ampdu_reference;
+	}
 
 	memcpy(IEEE80211_SKB_RXCB(skb), &rx_status, sizeof(rx_status));
 	data2->rx_pkts++;
