@@ -1069,6 +1069,9 @@ _ieee802_11_parse_elems_crc(const u8 *start, size_t len, bool action,
 		 */
 			if (test_bit(id, seen_elems)) {
 				elems->parse_error = true;
+				snprintf(elems->parse_err_msg,
+					 sizeof(elems->parse_err_msg),
+					 "seen id: %i already", id);
 				continue;
 			}
 			break;
@@ -4333,15 +4336,23 @@ int ieee80211_check_combinations(struct ieee80211_sub_if_data *sdata,
 
 	lockdep_assert_held(&local->chanctx_mtx);
 
-	if (WARN_ON(hweight32(radar_detect) > 1))
+	if (WARN_ON(hweight32(radar_detect) > 1)) {
+		sdata_info(sdata, "comb-check: failed radar-detect: %d\n",
+			   (int)(radar_detect));
 		return -EINVAL;
+	}
 
 	if (WARN_ON(chandef && chanmode == IEEE80211_CHANCTX_SHARED &&
-		    !chandef->chan))
+		    !chandef->chan)) {
+		sdata_info(sdata, "comb-check: failed chantx-shared check\n");
 		return -EINVAL;
+	}
 
-	if (WARN_ON(iftype >= NUM_NL80211_IFTYPES))
+	if (WARN_ON(iftype >= NUM_NL80211_IFTYPES)) {
+		sdata_info(sdata, "comb-check: failed iftype check: %d\n",
+			   iftype);
 		return -EINVAL;
+	}
 
 	if (sdata->vif.type == NL80211_IFTYPE_AP ||
 	    sdata->vif.type == NL80211_IFTYPE_MESH_POINT) {
@@ -4355,8 +4366,10 @@ int ieee80211_check_combinations(struct ieee80211_sub_if_data *sdata,
 
 	/* Always allow software iftypes */
 	if (cfg80211_iftype_allowed(local->hw.wiphy, iftype, 0, 1)) {
-		if (radar_detect)
+		if (radar_detect) {
+			sdata_info(sdata, "comb-check: failed software-type + radar-detect\n");
 			return -EINVAL;
+		}
 		return 0;
 	}
 
