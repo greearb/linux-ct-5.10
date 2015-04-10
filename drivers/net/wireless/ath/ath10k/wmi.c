@@ -7468,8 +7468,9 @@ ath10k_wmi_op_gen_vdev_install_key(struct ath10k *ar,
 		memcpy(cmd->key_data, arg->key_data, arg->key_len);
 
 	ath10k_dbg(ar, ATH10K_DBG_WMI,
-		   "wmi vdev install key idx %d cipher %d len %d\n",
-		   arg->key_idx, arg->key_cipher, arg->key_len);
+		   "wmi vdev %d install key peer %pM idx %d cipher %d len %d flags 0x%x\n",
+		   arg->vdev_id, arg->macaddr, arg->key_idx, arg->key_cipher, arg->key_len,
+		   arg->key_flags);
 	return skb;
 }
 
@@ -7861,9 +7862,10 @@ ath10k_wmi_10_1_op_gen_peer_assoc(struct ath10k *ar,
 	ath10k_wmi_peer_assoc_fill_10_1(ar, skb->data, arg);
 
 	ath10k_dbg(ar, ATH10K_DBG_WMI,
-		   "wmi peer assoc vdev %d addr %pM (%s)\n",
+		   "wmi peer assoc vdev %d addr %pM (%s) flags 0x%x\n",
 		   arg->vdev_id, arg->addr,
-		   arg->peer_reassoc ? "reassociate" : "new");
+		   arg->peer_reassoc ? "reassociate" : "new",
+		   arg->peer_flags);
 	return skb;
 }
 
