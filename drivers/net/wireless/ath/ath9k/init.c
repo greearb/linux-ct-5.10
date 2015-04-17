@@ -835,6 +835,7 @@ static const struct ieee80211_iface_limit if_limits[] = {
 				 BIT(NL80211_IFTYPE_AP) },
 	{ .max = 1,	.types = BIT(NL80211_IFTYPE_P2P_CLIENT) |
 				 BIT(NL80211_IFTYPE_P2P_GO) },
+	{ .max = 1,     .types = BIT(NL80211_IFTYPE_ADHOC) },
 };
 
 #ifdef CONFIG_WIRELESS_WDS
