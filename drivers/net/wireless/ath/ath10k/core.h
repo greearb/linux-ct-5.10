@@ -749,6 +749,9 @@ struct ath10k_debug {
 	u32 nop_id;
 
 	struct ath10k_dbglog_entry_storage dbglog_entry_data;
+
+	u64 tx_bytes; /* counter, firmware does not offer this stat */
+	u64 rx_bytes; /* counter, firmware does not offer this stat */
 };
 
 enum ath10k_state {

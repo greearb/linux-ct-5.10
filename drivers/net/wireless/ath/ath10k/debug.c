@@ -1469,9 +1469,9 @@ exit:
 /* This generally cooresponds to the debugfs fw_stats file */
 static const char ath10k_gstrings_stats[][ETH_GSTRING_LEN] = {
 	"tx_pkts_nic",
-	"tx_bytes_nic",
+	"tx_bytes_nic", /* from driver, firmware does not keep this stat. */
 	"rx_pkts_nic",
-	"rx_bytes_nic",
+	"rx_bytes_nic", /* from driver, firmware does not keep this stat. */
 	"d_noise_floor",
 	"d_cycle_count",
 	"d_phy_error",
@@ -1570,9 +1570,9 @@ void ath10k_debug_get_et_stats(struct ieee80211_hw *hw,
 	spin_lock_bh(&ar->data_lock);
 
 	data[i++] = pdev_stats->hw_reaped; /* ppdu reaped */
-	data[i++] = 0; /* tx bytes */
+	data[i++] = ar->debug.tx_bytes;
 	data[i++] = pdev_stats->htt_mpdus;
-	data[i++] = 0; /* rx bytes */
+	data[i++] = ar->debug.rx_bytes;
 	data[i++] = pdev_stats->ch_noise_floor;
 	data[i++] = pdev_stats->cycle_count;
 	data[i++] = pdev_stats->phy_err_count;

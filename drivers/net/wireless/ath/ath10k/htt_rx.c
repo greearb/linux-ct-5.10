@@ -1960,6 +1960,9 @@ static void ath10k_htt_rx_h_mpdu(struct ath10k *ar,
 		   has_peer_idx_invalid, enctype);
 	*/
 	skb_queue_walk(amsdu, msdu) {
+#ifdef CONFIG_ATH10K_DEBUGFS
+		ar->debug.rx_bytes += msdu->len;
+#endif
 		if (frag && !fill_crypt_header && is_decrypted &&
 		    enctype == HTT_RX_MPDU_ENCRYPT_AES_CCM_WPA2)
 			frag_pn_check = ath10k_htt_rx_h_frag_pn_check(ar,
