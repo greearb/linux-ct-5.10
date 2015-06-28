@@ -2313,6 +2313,47 @@ static const struct file_operations fops_pktlog_filter = {
 	.open = simple_open
 };
 
+static ssize_t ath10k_write_thresh62_ext(struct file *file,
+					 const char __user *ubuf,
+					 size_t count, loff_t *ppos)
+{
+	struct ath10k *ar = file->private_data;
+	u8 enable;
+	int ret = 0;
+
+	if (kstrtou8_from_user(ubuf, count, 0, &enable))
+		return -EINVAL;
+
+	mutex_lock(&ar->conf_mutex);
+	ar->ath10k_thresh62_ext = enable;
+	ret = ath10k_wmi_pdev_set_special(ar, SET_SPECIAL_ID_THRESH62_EXT, enable);
+	mutex_unlock(&ar->conf_mutex);
+
+	return ret ?: count;
+}
+
+static ssize_t ath10k_read_thresh62_ext(struct file *file,
+					char __user *ubuf,
+					size_t count, loff_t *ppos)
+{
+	char buf[32];
+	struct ath10k *ar = file->private_data;
+	int len = 0;
+
+	mutex_lock(&ar->conf_mutex);
+	len = scnprintf(buf, sizeof(buf) - len, "%d\n",
+			ar->ath10k_thresh62_ext);
+	mutex_unlock(&ar->conf_mutex);
+
+	return simple_read_from_buffer(ubuf, count, ppos, buf, len);
+}
+
+static const struct file_operations fops_thresh62_ext = {
+	.read = ath10k_read_thresh62_ext,
+	.write = ath10k_write_thresh62_ext,
+	.open = simple_open
+};
+
 static ssize_t ath10k_write_quiet_period(struct file *file,
 					 const char __user *ubuf,
 					 size_t count, loff_t *ppos)
@@ -3030,6 +3071,9 @@ int ath10k_debug_register(struct ath10k *ar)
 
 	debugfs_create_file("tpc_stats", 0400, ar->debug.debugfs_phy, ar,
 			    &fops_tpc_stats);
+
+	debugfs_create_file("thresh62_ext", S_IRUGO | S_IWUSR,
+			    ar->debug.debugfs_phy, ar, &fops_thresh62_ext);
 
 	if (test_bit(WMI_SERVICE_COEX_GPIO, ar->wmi.svc_map))
 		debugfs_create_file("btcoex", 0644, ar->debug.debugfs_phy, ar,

@@ -1361,6 +1361,8 @@ struct ath10k {
 	bool coex_support;
 	int coex_gpio_pin;
 
+	u8 ath10k_thresh62_ext; /* be sure to flush this to firmware after resets */
+
 	/* must be last */
 	u8 drv_priv[] __aligned(sizeof(void *));
 };
