@@ -896,6 +896,79 @@ enum ath10k_fw_features {
 	 * encryption (ie, commercial version of CT firmware) */
 	ATH10K_FW_FEATURE_CT_RXSWCRYPT = 32,
 
+	/* Firmware supports extended wmi_common_peer_assoc_complete_cmd that contains
+	 * an array of rate-disable masks.  This allows the host to have better control
+	 * over what rates the firmware will use.  CT Firmware only (v15 and higher)
+	 */
+	ATH10K_FW_FEATURE_CT_RATEMASK = 33,
+
+	/* Versions of firmware before approximately 10.2.4.72 would corrupt txop fields
+	 * during burst.  Since this is fixed now, add a flag to denote this.
+	 */
+	ATH10K_FW_FEATURE_HAS_SAFE_BURST = 34,
+
+	/* Register-dump is supported. */
+	ATH10K_FW_FEATURE_REGDUMP_CT = 35,
+
+	/* TX-Rate is reported. */
+	ATH10K_FW_FEATURE_TXRATE_CT = 36,
+
+	/* Firmware can flush all peers. */
+	ATH10K_FW_FEATURE_FLUSH_ALL_CT = 37,
+
+	/* Firmware can read memory with ping-pong protocol. */
+	ATH10K_FW_FEATURE_PINGPONG_READ_CT = 38,
+
+	/* Firmware can skip channel reservation. */
+	ATH10K_FW_FEATURE_SKIP_CH_RES_CT = 39,
+
+	/* Firmware supports NOPcan skip channel reservation. */
+	ATH10K_FW_FEATURE_NOP_CT = 40,
+
+	/* Firmware supports CT HTT MGT feature. */
+	ATH10K_FW_FEATURE_HTT_MGT_CT = 41,
+
+	/* Set-special cmd-id is supported. */
+	ATH10K_FW_FEATURE_SET_SPECIAL_CT = 42,
+
+	/* SW Beacon Miss is disabled in this kernel, so you have to
+	 * let mac80211 manage the connection.
+	 */
+	ATH10K_FW_FEATURE_NO_BMISS_CT = 43,
+
+	/* 10.1 firmware that supports getting temperature.  Stock
+	 * 10.1 cannot.
+	 */
+	ATH10K_FW_FEATURE_HAS_GET_TEMP_CT = 44,
+
+	/* Can peer-id be over-ridden to provide rix + retries for raw pkts?
+	 *  CT only option.
+	 */
+	ATH10K_FW_FEATURE_HAS_TX_RC_CT = 45,
+
+	/* Do we support requesting custom stats */
+	ATH10K_FW_FEATURE_CUST_STATS_CT = 46,
+
+	/* Can the firmware handle a retry limit greater than 2? */
+	ATH10K_FW_FEATURE_RETRY_GT2_CT = 47,
+
+	/* Can the firmware handle CT station feature, sort of like proxy-sta */
+	ATH10K_FW_FEATURE_CT_STA = 48,
+
+	/* TX-Rate v2 is reported. */
+	ATH10K_FW_FEATURE_TXRATE2_CT = 49,
+
+	/* Firmware will send a beacon-tx-callback message so driver knows when
+	 * beacon buffer can be released.
+	 */
+	ATH10K_FW_FEATURE_BEACON_TX_CB_CT = 50,
+
+	ATH10K_FW_FEATURE_RESERVED_CT = 51, /* reserved by out-of-tree feature */
+
+	ATH10K_FW_FEATURE_CONSUME_BLOCK_ACK_CT = 52, /* firmware can accept decrypted rx block-ack over WMI */
+
+	ATH10K_FW_FEATURE_HAS_BCN_RC_CT = 53, /* firmware can accept ppdu (tx-rate) info in beacon-tx-by-ref wmi cmd */
+
 	/* keep last */
 	ATH10K_FW_FEATURE_COUNT,
 };
@@ -1115,6 +1188,7 @@ struct ath10k {
 
 	bool nlo_enabled;
 	bool p2p;
+	bool ct_all_pkts_htt; /* CT firmware only: native-wifi for all pkts */
 
 	struct {
 		enum ath10k_bus bus;

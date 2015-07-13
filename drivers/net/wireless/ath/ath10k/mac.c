@@ -3584,6 +3584,12 @@ ath10k_mac_tx_h_get_txmode(struct ath10k *ar,
 	if (!vif || vif->type == NL80211_IFTYPE_MONITOR)
 		return ATH10K_HW_TXRX_RAW;
 
+	/* CT Firmware with HTT-TX support sends all frames, including
+	 * management frames, over HTT in NATIVE-WIFI format.
+	 */
+	if (ar->ct_all_pkts_htt)
+		goto do_native_mgt_ct;
+
 	if (ieee80211_is_mgmt(fc))
 		return ATH10K_HW_TXRX_MGMT;
 
@@ -3617,6 +3623,7 @@ ath10k_mac_tx_h_get_txmode(struct ath10k *ar,
 	 *
 	 * FIXME: Check if raw mode works with TDLS.
 	 */
+do_native_mgt_ct:
 	if (ieee80211_is_data_present(fc) && sta && sta->tdls)
 		return ATH10K_HW_TXRX_ETHERNET;
 

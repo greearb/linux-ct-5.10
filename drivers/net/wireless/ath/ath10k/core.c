@@ -654,6 +654,26 @@ static const char *const ath10k_core_fw_feature_str[] = {
 	[ATH10K_FW_FEATURE_WMI_10X_CT] = "wmi-10.x-CT",
 	[ATH10K_FW_FEATURE_CT_RXSWCRYPT] = "rxswcrypt-CT",
 	[ATH10K_FW_FEATURE_HAS_TXSTATUS_NOACK] = "txstatus-noack",
+	[ATH10K_FW_FEATURE_CT_RATEMASK] = "ratemask-CT",
+	[ATH10K_FW_FEATURE_HAS_SAFE_BURST] = "safe-burst",
+	[ATH10K_FW_FEATURE_REGDUMP_CT] = "regdump-CT",
+	[ATH10K_FW_FEATURE_TXRATE_CT] = "txrate-CT",
+	[ATH10K_FW_FEATURE_FLUSH_ALL_CT] = "flush-all-CT",
+	[ATH10K_FW_FEATURE_PINGPONG_READ_CT] = "pingpong-CT",
+	[ATH10K_FW_FEATURE_SKIP_CH_RES_CT] = "ch-regs-CT",
+	[ATH10K_FW_FEATURE_NOP_CT] = "nop-CT",
+	[ATH10K_FW_FEATURE_HTT_MGT_CT] = "htt-mgt-CT",
+	[ATH10K_FW_FEATURE_SET_SPECIAL_CT] = "set-special-CT",
+	[ATH10K_FW_FEATURE_NO_BMISS_CT] = "no-bmiss-CT",
+	[ATH10K_FW_FEATURE_HAS_GET_TEMP_CT] = "get-temp-CT",
+	[ATH10K_FW_FEATURE_HAS_TX_RC_CT] = "tx-rc-CT",
+	[ATH10K_FW_FEATURE_CUST_STATS_CT] = "cust-stats-CT",
+	[ATH10K_FW_FEATURE_RETRY_GT2_CT] = "retry-gt2-CT",
+	[ATH10K_FW_FEATURE_CT_STA] = "CT-STA",
+	[ATH10K_FW_FEATURE_TXRATE2_CT] = "txrate2-CT",
+	[ATH10K_FW_FEATURE_BEACON_TX_CB_CT] = "beacon-cb-CT",
+	[ATH10K_FW_FEATURE_CONSUME_BLOCK_ACK_CT] = "wmi-block-ack-CT",
+	[ATH10K_FW_FEATURE_HAS_BCN_RC_CT] = "wmi-bcn-rc-CT",
 };
 
 static unsigned int ath10k_core_get_fw_feature_str(char *buf,
@@ -2997,6 +3017,19 @@ int ath10k_core_start(struct ath10k *ar, enum ath10k_firmware_mode mode,
 	if (status && status != -EOPNOTSUPP) {
 		ath10k_warn(ar, "set target log mode failed: %d\n", status);
 		goto err_hif_stop;
+	}
+
+	if (test_bit(ATH10K_FW_FEATURE_HTT_MGT_CT,
+		     ar->running_fw->fw_file.fw_features)) {
+		ar->ct_all_pkts_htt = true;
+	}
+	else if (ar->running_fw->fw_file.wmi_op_version != ATH10K_FW_WMI_OP_VERSION_10_1) {
+		/* Older 10.1 firmware will not have the flag, and we check the HTT version
+		 * in htt_rx.c for it.  But, 10.4 has conflicting HTT version, so disable
+		 * this feature in newer firmware unless it explicitly has the HTT_MGT_CT feature
+		 * flag.
+		 */
+		ar->ct_all_pkts_htt = false;
 	}
 
 	/* Apply user-supplied configuration changes. */

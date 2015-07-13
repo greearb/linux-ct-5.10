@@ -4008,6 +4008,16 @@ bool ath10k_htt_t2h_msg_handler(struct ath10k *ar, struct sk_buff *skb)
 	case HTT_T2H_MSG_TYPE_VERSION_CONF: {
 		htt->target_version_major = resp->ver_resp.major;
 		htt->target_version_minor = resp->ver_resp.minor;
+
+		/* CT firmware with HTT-MGT?  No official firmware has this
+		 * htt version combination as far as I am aware. --Ben
+		 */
+		if ((htt->target_version_major == 2 &&
+		     htt->target_version_minor == 2))
+			ar->ct_all_pkts_htt = true;
+		else
+			ar->ct_all_pkts_htt = false;
+
 		complete(&htt->target_version_received);
 		break;
 	}
