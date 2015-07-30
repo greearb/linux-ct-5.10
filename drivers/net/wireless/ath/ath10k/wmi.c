@@ -2893,6 +2893,9 @@ int ath10k_wmi_event_debug_mesg(struct ath10k *ar, struct sk_buff *skb)
 				      (skb->len - 4)/sizeof(__le32));
 	spin_unlock_bh(&ar->data_lock);
 
+	if (ev->dropped_count)
+		ath10k_warn(ar, "WARNING: Dropped dbglog buffers: %d\n", __le32_to_cpu(ev->dropped_count));
+
 	if (ath10k_debug_mask & ATH10K_DBG_FW)
 		ath10k_dbg_print_fw_dbg_buffer(ar, ev->messages,
 					       (skb->len - 4)/sizeof(__le32),
