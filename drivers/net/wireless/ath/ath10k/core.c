@@ -2052,6 +2052,20 @@ fw_ie_bss_info_ct:
 		goto err;
 	}
 
+	/* Only CT firmware has BSS stuff, so we can use this to fix up
+	 * flags for backwards and forwards compat with older/newer CT firmware.
+	 * (upstream stole some bits it was using)
+	 */
+	if (fw_file->rom_bss_addr) {
+		if (test_bit(5, fw_file->fw_features))
+			__set_bit(ATH10K_FW_FEATURE_WMI_10X_CT,
+				  fw_file->fw_features);
+
+		if (test_bit(6, fw_file->fw_features))
+			__set_bit(ATH10K_FW_FEATURE_CT_RXSWCRYPT,
+				  fw_file->fw_features);
+	}
+
 	return 0;
 
 err:
