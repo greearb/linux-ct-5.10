@@ -118,6 +118,11 @@ void ath10k_print_driver_info(struct ath10k *ar)
 }
 EXPORT_SYMBOL(ath10k_print_driver_info);
 
+void ath10k_set_debug_mask(unsigned int v) {
+	ath10k_debug_mask = v;
+}
+EXPORT_SYMBOL(ath10k_set_debug_mask);
+
 void ath10k_err(struct ath10k *ar, const char *fmt, ...)
 {
 	struct va_format vaf = {

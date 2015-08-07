@@ -96,6 +96,7 @@ void ath10k_debug_print_hwfw_info(struct ath10k *ar);
 void ath10k_debug_print_board_info(struct ath10k *ar);
 void ath10k_debug_print_boot_info(struct ath10k *ar);
 void ath10k_print_driver_info(struct ath10k *ar);
+void ath10k_set_debug_mask(unsigned int v);
 
 #ifdef CONFIG_ATH10K_DEBUGFS
 int ath10k_debug_start(struct ath10k *ar);
