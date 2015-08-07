@@ -1560,7 +1560,7 @@ static int ath10k_ct_fw_crash_regs_harder(struct ath10k *ar,
 	return -EBUSY;
 
 pingpong:
-	ath10k_warn(ar, "Trying to read crash dump over pingpong registers.\n");
+	ath10k_warn(ar, "Trying to read crash dump over pingpong registers, len %d\n", len);
 	/* Firmware is trying to send us info it seems. */
 	for (q = 0; q<len; q++) {
 		reg_dump_values[q] = ath10k_pci_read32(ar, SOC_CORE_BASE_ADDRESS + SCRATCH_2_ADDRESS);
@@ -1595,6 +1595,10 @@ static void ath10k_pci_dump_registers(struct ath10k *ar,
 				      hi_failure_state,
 				      REG_DUMP_COUNT_QCA988X * sizeof(__le32));
 	if (ret) {
+		__le32 *buffer;
+		int len = 1500; /* length in bytes for firmware dbglog buffer */
+		struct ath10k_fw_dbglog_buf dbuf;
+
 		ath10k_err(ar, "failed to read firmware dump area: %d\n", ret);
 
 		/* Try to read this directly over registers...only works on new
@@ -1603,6 +1607,46 @@ static void ath10k_pci_dump_registers(struct ath10k *ar,
 		ret = ath10k_ct_fw_crash_regs_harder(ar, reg_dump_values, REG_DUMP_COUNT_QCA988X);
 		if (ret)
 			return;
+
+		/* Try to read the debug-log buffers as well. */
+		buffer = kzalloc(len, GFP_ATOMIC);
+
+		if (!buffer)
+			goto free_and_cont;
+
+		if (ath10k_ct_fw_crash_regs_harder(ar, (__le32 *)(&dbuf), sizeof(dbuf)/4))
+			goto free_and_cont;
+
+		/* wow, it worked! */
+		len = le32_to_cpu(dbuf.length);
+		if (len > 1500) {
+			ath10k_err(ar, "dbuf length is greater than 1500: %d\n", len);
+			len = 1500;
+		}
+		if (ath10k_ct_fw_crash_regs_harder(ar, buffer, len/4))
+			goto free_and_cont;
+
+		ath10k_dbg_save_fw_dbg_buffer(ar, buffer, len/4);
+		ath10k_dbg_print_fw_dbg_buffer(ar, buffer, len/4, KERN_ERR);
+
+		/* See if the second one is available */
+		if (ath10k_ct_fw_crash_regs_harder(ar, (__le32 *)(&dbuf), sizeof(dbuf)/4))
+			goto free_and_cont;
+
+		len = le32_to_cpu(dbuf.length);
+		if (len > 1500) {
+			ath10k_err(ar, "dbuf[2] length is greater than 1500: %d\n", len);
+			len = 1500;
+		}
+
+		if (ath10k_ct_fw_crash_regs_harder(ar, buffer, len/4))
+			goto free_and_cont;
+
+		ath10k_dbg_save_fw_dbg_buffer(ar, buffer, len/4);
+		ath10k_dbg_print_fw_dbg_buffer(ar, buffer, len/4, KERN_ERR);
+
+	free_and_cont:
+		kfree(buffer);
 	}
 
 	BUILD_BUG_ON(REG_DUMP_COUNT_QCA988X % 4);
