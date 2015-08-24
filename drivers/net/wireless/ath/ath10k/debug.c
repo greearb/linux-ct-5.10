@@ -1473,9 +1473,11 @@ exit:
 
 /* This generally cooresponds to the debugfs fw_stats file */
 static const char ath10k_gstrings_stats[][ETH_GSTRING_LEN] = {
-	"tx_pkts_nic",
-	"tx_bytes_nic", /* from driver, firmware does not keep this stat. */
-	"rx_pkts_nic",
+	"tx_hw_reaped", /* from firmware, tx-pkts count */
+	"tx_pkts_nic", /* from driver, tx-ok pkts */
+	"tx_bytes_nic", /* from driver, tx-ok bytes */
+	"tx_bytes_to_fw", /* sent to firmware, counts all failures */
+	"rx_pkts_nic", /* From firmware...maybe should be from driver for symmetry? */
 	"rx_bytes_nic", /* from driver, firmware does not keep this stat. */
 	"d_noise_floor",
 	"d_cycle_count", /* this is duty cycle counter, basically channel-time. 88MHz clock */
@@ -1503,6 +1505,10 @@ static const char ath10k_gstrings_stats[][ETH_GSTRING_LEN] = {
 	"d_tx_excessive_retries",
 	"d_tx_hw_rate",
 	"d_tx_dropped_sw_retries",
+	"d_tx_noack", /* reported by driver */
+	"d_tx_noack_bytes", /* reported by driver */
+	"d_tx_discard", /* reported by driver */
+	"d_tx_discard_bytes", /* reported by driver */
 	"d_tx_illegal_rate",
 	"d_tx_continuous_xretries",
 	"d_tx_timeout",
@@ -1583,6 +1589,8 @@ void ath10k_debug_get_et_stats(struct ieee80211_hw *hw,
 		d_flags |= 0x1;
 
 	data[i++] = pdev_stats->hw_reaped; /* ppdu reaped */
+	data[i++] = ar->debug.tx_ok;
+	data[i++] = ar->debug.tx_ok_bytes;
 	data[i++] = ar->debug.tx_bytes;
 	data[i++] = pdev_stats->htt_mpdus;
 	data[i++] = ar->debug.rx_bytes;
@@ -1612,6 +1620,10 @@ void ath10k_debug_get_et_stats(struct ieee80211_hw *hw,
 	data[i++] = pdev_stats->tx_ko;
 	data[i++] = pdev_stats->data_rc;
 	data[i++] = pdev_stats->sw_retry_failure;
+	data[i++] = ar->debug.tx_noack;
+	data[i++] = ar->debug.tx_noack_bytes;
+	data[i++] = ar->debug.tx_discard;
+	data[i++] = ar->debug.tx_discard_bytes;
 	data[i++] = pdev_stats->illgl_rate_phy_err;
 	data[i++] = pdev_stats->pdev_cont_xretry;
 	data[i++] = pdev_stats->pdev_tx_timeout;
