@@ -347,6 +347,12 @@ void ath10k_debug_fw_stats_process(struct ath10k *ar, struct sk_buff *skb)
 			case SW_RXFILTER:
 				sptr->sw_rxfilter = __le32_to_cpu(regdump->regpair[i].reg_val);
 				break;
+			case SW_LONG_RETRIES:
+				sptr->long_retries = __le32_to_cpu(regdump->regpair[i].reg_val);
+				break;
+			case SW_SHORT_RETRIES:
+				sptr->short_retries = __le32_to_cpu(regdump->regpair[i].reg_val);
+				break;
 			}/* switch */
 		}
 		complete(&ar->debug.fw_stats_complete);
@@ -1531,6 +1537,8 @@ static const char ath10k_gstrings_stats[][ETH_GSTRING_LEN] = {
 	"d_fw_warm_reset_count",
 	"d_fw_cold_reset_count",
 	"d_fw_powerup_failed", /* boolean */
+	"d_short_tx_retries", /* RTS tx retries */
+	"d_long_tx_retries", /* DATA tx retries */
 };
 
 #define ATH10K_SSTATS_LEN ARRAY_SIZE(ath10k_gstrings_stats)
@@ -1566,6 +1574,7 @@ void ath10k_debug_get_et_stats(struct ieee80211_hw *hw,
 	mutex_lock(&ar->conf_mutex);
 
 	if (ar->state == ATH10K_STATE_ON) {
+		ath10k_refresh_target_regs(ar); /* Request some CT FW stats. */
 		ret = ath10k_debug_fw_stats_request(ar);
 		if (ret) {
 			/* just print a warning and try to use older results */
@@ -1646,6 +1655,8 @@ void ath10k_debug_get_et_stats(struct ieee80211_hw *hw,
 	data[i++] = ar->stats.fw_warm_reset_counter;
 	data[i++] = ar->stats.fw_cold_reset_counter;
 	data[i++] = ar->fw_powerup_failed;
+	data[i++] = ar->debug.fw_stats.short_retries;
+	data[i++] = ar->debug.fw_stats.long_retries;
 
 	spin_unlock_bh(&ar->data_lock);
 

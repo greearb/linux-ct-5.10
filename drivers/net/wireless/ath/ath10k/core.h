@@ -365,6 +365,8 @@ struct ath10k_fw_stats {
 	u16 sw_chainmask_rx;
 	u32 sw_opmode;
 	u32 sw_rxfilter;
+	u32 short_retries; // RTS packet retries
+	u32 long_retries; // Data packet retries
 };
 
 #define ATH10K_TPC_TABLE_TYPE_FLAG	1

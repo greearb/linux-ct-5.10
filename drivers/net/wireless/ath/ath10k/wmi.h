@@ -4602,8 +4602,11 @@ struct wmi_pdev_stats_peer {
 #define SW_CHAINMASK         18 /* tx is high 16 bits, rx is low 16 bits */
 #define SW_OPMODE            19
 #define SW_RXFILTER          20
+#define SW_LONG_RETRIES      21 /* DATA packet retries */
+#define SW_SHORT_RETRIES     22 /* RTS packet retries */
 
-#define REG_DUMP_COUNT       20 /* max number of registers to dump at once. */
+
+#define REG_DUMP_COUNT       22 /* max number of registers to dump at once. */
 
 struct ath10k_reg_dump_pair {
 	__le32 reg_id;
