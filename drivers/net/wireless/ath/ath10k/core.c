@@ -2724,6 +2724,7 @@ int ath10k_core_start(struct ath10k *ar, enum ath10k_firmware_mode mode,
 {
 	int status;
 	u32 val;
+	u32 i, band;
 
 	lockdep_assert_held(&ar->conf_mutex);
 
@@ -3033,11 +3034,25 @@ int ath10k_core_start(struct ath10k *ar, enum ath10k_firmware_mode mode,
 	}
 
 	/* Apply user-supplied configuration changes. */
-	if (ar->ath10k_thresh62_ext) {
-		/* Don't worry about failures..not much we can do, and not worth failing init even
-		 * if this fails.
-		 */
-		ath10k_wmi_pdev_set_special(ar, SET_SPECIAL_ID_THRESH62_EXT, ar->ath10k_thresh62_ext);
+	/* Don't worry about failures..not much we can do, and not worth failing init even
+	 * if this fails.
+	 */
+	for (band = 0; band < 2; band++) {
+		u32 val;
+		for (i = 0; i<MIN_CCA_PWR_COUNT; i++) {
+			val = (band << 24) | (i << 16) | ar->eeprom_overrides.bands[band].minCcaPwrCT[i];
+			ath10k_wmi_pdev_set_special(ar, SET_SPECIAL_ID_NOISE_FLR_THRESH, val);
+		}
+
+		i = 4; /* enable-minccapwr-thresh type */
+		val = (band << 24) | (i << 16) | ar->eeprom_overrides.bands[band].enable_minccapwr_thresh;
+		ath10k_wmi_pdev_set_special(ar, SET_SPECIAL_ID_NOISE_FLR_THRESH, val);
+	}
+
+	/* TODO:  Should probably be per-band?? */
+	if (ar->eeprom_overrides.thresh62_ext) {
+		ath10k_wmi_pdev_set_special(ar, SET_SPECIAL_ID_THRESH62_EXT,
+					    ar->eeprom_overrides.thresh62_ext);
 	}
 
 	return 0;

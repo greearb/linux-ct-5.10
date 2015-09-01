@@ -2346,15 +2346,15 @@ static ssize_t ath10k_write_thresh62_ext(struct file *file,
 					 size_t count, loff_t *ppos)
 {
 	struct ath10k *ar = file->private_data;
-	u8 enable;
+	u8 val;
 	int ret = 0;
 
-	if (kstrtou8_from_user(ubuf, count, 0, &enable))
+	if (kstrtou8_from_user(ubuf, count, 0, &val))
 		return -EINVAL;
 
 	mutex_lock(&ar->conf_mutex);
-	ar->ath10k_thresh62_ext = enable;
-	ret = ath10k_wmi_pdev_set_special(ar, SET_SPECIAL_ID_THRESH62_EXT, enable);
+	ar->eeprom_overrides.thresh62_ext = val;
+	ret = ath10k_wmi_pdev_set_special(ar, SET_SPECIAL_ID_THRESH62_EXT, val);
 	mutex_unlock(&ar->conf_mutex);
 
 	return ret ?: count;
@@ -2370,7 +2370,7 @@ static ssize_t ath10k_read_thresh62_ext(struct file *file,
 
 	mutex_lock(&ar->conf_mutex);
 	len = scnprintf(buf, sizeof(buf) - len, "%d\n",
-			ar->ath10k_thresh62_ext);
+			ar->eeprom_overrides.thresh62_ext);
 	mutex_unlock(&ar->conf_mutex);
 
 	return simple_read_from_buffer(ubuf, count, ppos, buf, len);
@@ -2381,6 +2381,83 @@ static const struct file_operations fops_thresh62_ext = {
 	.write = ath10k_write_thresh62_ext,
 	.open = simple_open
 };
+
+static ssize_t ath10k_write_ct_special(struct file *file,
+				       const char __user *ubuf,
+				       size_t count, loff_t *ppos)
+{
+	struct ath10k *ar = file->private_data;
+	u64 tmp;
+	u32 id;
+	u32 val;
+	int ret = 0;
+
+	if (kstrtou64_from_user(ubuf, count, 0, &tmp))
+		return -EINVAL;
+
+	id = tmp >> 32;
+	val = tmp & 0xFFFFFFFF;
+
+	mutex_lock(&ar->conf_mutex);
+	if (id == SET_SPECIAL_ID_THRESH62_EXT) {
+		ar->eeprom_overrides.thresh62_ext = val;
+	}
+	else if (id == SET_SPECIAL_ID_NOISE_FLR_THRESH) {
+		u8 band = val >> 24;
+		u8 type = (val >> 16) & 0xFF;
+		if ((band > 2) || (type > CT_CCA_TYPE_MAX)) {
+			ret = -EINVAL;
+			goto unlock;
+		}
+		if (type <= CT_CCA_TYPE_MIN2)
+			ar->eeprom_overrides.bands[band].minCcaPwrCT[type] = val & 0xFFFF;
+		else if (type == CT_CCA_TYPE_NOISE_FLOOR)
+			ar->eeprom_overrides.bands[band].noiseFloorThresh = val & 0xFFFF;
+		else if (type == CT_CCA_TYPE_EN_MINCCAPWR)
+			ar->eeprom_overrides.bands[band].enable_minccapwr_thresh = val & 0xFFFF;
+	}
+	/* else, pass it through to firmware...but will not be stored locally, so
+	 * won't survive through firmware reboots, etc.
+	 */
+
+	/* Send it to the firmware. */
+	ret = ath10k_wmi_pdev_set_special(ar, id, val);
+unlock:
+	mutex_unlock(&ar->conf_mutex);
+
+	return ret ?: count;
+}
+
+static ssize_t ath10k_read_ct_special(struct file *file,
+				      char __user *user_buf,
+				      size_t count, loff_t *ppos)
+{
+	const char buf[] =
+		"BE WARNED:  You should understand the values before setting anything here.\n"
+		"You could put your NIC out of spec or maybe even break the hardware if you\n"
+		"put in bad values.\n\n"
+		"Value is u64, encoded thus:\n"
+		"id = t64 >> 32\n"
+		"val = t64 & 0xFFFFFFFF\n"
+		"id: 3 THRESH62_EXT (both bands use same value currently)\n"
+		"  value = val & 0xFF;\n"
+		"id: 4 CCA-Values, encoded as below:\n"
+		"  band = val >> 24;  //(0 5Ghz, 1 2.4Ghz)\n"
+		"  type = (val >> 16) & 0xFF; // 0-2 minCcaPwr[type], 3 noiseFloorThresh\n"
+		"         4 enable_minccapwr_thresh\n"
+		"  value = val & 0xFFFF;\n"
+		"    Unless otherwise specified, 0 means don't set.\n"
+		"    enable-minccapwr-thresh:  1 disabled, 2 enabled.\n\n";
+
+	return simple_read_from_buffer(user_buf, count, ppos, buf, strlen(buf));
+}
+
+static const struct file_operations fops_ct_special = {
+	.read = ath10k_read_ct_special,
+	.write = ath10k_write_ct_special,
+	.open = simple_open
+};
+
 
 static ssize_t ath10k_write_quiet_period(struct file *file,
 					 const char __user *ubuf,
@@ -3102,6 +3179,9 @@ int ath10k_debug_register(struct ath10k *ar)
 
 	debugfs_create_file("thresh62_ext", S_IRUGO | S_IWUSR,
 			    ar->debug.debugfs_phy, ar, &fops_thresh62_ext);
+
+	debugfs_create_file("ct_special", S_IRUGO | S_IWUSR,
+			    ar->debug.debugfs_phy, ar, &fops_ct_special);
 
 	if (test_bit(WMI_SERVICE_COEX_GPIO, ar->wmi.svc_map))
 		debugfs_create_file("btcoex", 0644, ar->debug.debugfs_phy, ar,

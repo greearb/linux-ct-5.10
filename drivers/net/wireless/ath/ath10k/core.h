@@ -1449,7 +1449,20 @@ struct ath10k {
 	bool coex_support;
 	int coex_gpio_pin;
 
-	u8 ath10k_thresh62_ext; /* be sure to flush this to firmware after resets */
+	/* Index 0 is for 5Ghz, index 1 is for 2.4Ghz, CT firmware only. */
+	/* be sure to flush this to firmware after resets */
+	struct {
+		struct {
+#define MIN_CCA_PWR_COUNT 3
+			u16 minCcaPwrCT[MIN_CCA_PWR_COUNT]; /* 0 means don't-set */
+			u8 noiseFloorThresh; /* 0 means don't-set */
+			/* Have to set this to 2 before minCcaPwr settings will be active.
+			 * Values:  0  don't-set, 1 disable, 2 enable
+			 */
+			u8 enable_minccapwr_thresh;
+		} bands[2];
+		u8 thresh62_ext;
+	} eeprom_overrides;
 
 	/* must be last */
 	u8 drv_priv[] __aligned(sizeof(void *));
