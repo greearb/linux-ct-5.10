@@ -2313,6 +2313,89 @@ ath10k_peer_assoc_h_vht_masked(const u16 vht_mcs_mask[NL80211_VHT_NSS_MAX])
 	return true;
 }
 
+static void ath10k_set_rate_enabled(int rix, u8 *rt_array, int val) {
+	int idx = rix / 8;
+	int bit = rix - (idx * 8);
+	if (val) {
+		rt_array[idx] |= (1<<bit);
+	}
+	else {
+		rt_array[idx] &= ~(1<<bit);
+	}
+}
+
+static void ath10k_peer_assoc_h_rate_overrides(struct ath10k *ar,
+					       struct ieee80211_vif *vif,
+					       struct ieee80211_sta *sta,
+					       struct wmi_peer_assoc_complete_arg *arg)
+{
+	struct ath10k_vif *arvif = (void *)vif->drv_priv;
+	const struct ieee80211_supported_band *sband;
+	const struct ieee80211_rate *rates;
+	struct cfg80211_chan_def def;
+	enum nl80211_band band;
+	u32 ratemask;
+	int i, j;
+
+	if (! test_bit(ATH10K_FW_FEATURE_CT_RATEMASK,
+		       ar->running_fw->fw_file.fw_features))
+		return;
+
+	lockdep_assert_held(&ar->conf_mutex);
+
+	if (WARN_ON(ath10k_mac_vif_chan(vif, &def)))
+		return;
+
+	band = def.chan->band;
+	sband = ar->hw->wiphy->bands[band];
+	ratemask = arvif->bitrate_mask.control[band].legacy;
+	rates = sband->bitrates;
+
+	ath10k_warn(ar, "band: %d  ratemask: 0x%x\n", band, ratemask);
+
+	arg->has_rate_overrides = true;
+
+	/* By default, do not actually over-ride anything */
+	memset(arg->rate_overrides, 0xff, sizeof(arg->rate_overrides));
+
+	/* Now, do legacy rates:  0-3 are CCK (/b), 4-11 are OFDM (/a/g)... */
+	for (i = 0; i<12; i++) {
+		ath10k_set_rate_enabled(i, arg->rate_overrides, 0);
+	}
+
+	for (i = 0; i < 32; i++, ratemask >>= 1, rates++) {
+		if (!(ratemask & 1))
+			continue;
+
+		for (j = 0; j < ath10k_g_rates_size; j++) {
+			if (ath10k_rates[j].bitrate == rates->bitrate) {
+				int hw_rix;
+				if (ath10k_mac_bitrate_is_cck(rates->bitrate)) {
+					hw_rix = rates->hw_value;
+				}
+				else {
+					/* ofdm rates start at rix 4 */
+					hw_rix = rates->hw_value + 4;
+				}
+				ath10k_warn(ar, "set-enabled, bitrate: %d  j: %d  hw-value: %d hw-rix: %d\n",
+					    rates->bitrate, j, rates->hw_value, hw_rix);
+				ath10k_set_rate_enabled(hw_rix, arg->rate_overrides, 1);
+			}
+		}
+	}
+
+	/* End of legacy-rates logic. */
+	/* TODO:  HT, VHT */
+
+	for (i = 0; i < sizeof(arg->rate_overrides); i++) {
+		if (arg->rate_overrides[i] != 0xFF) {
+			ath10k_warn(ar, "vif: %d rate-overrides[%d]: 0x%x\n",
+				    arvif->vdev_id, i, arg->rate_overrides[i]);
+		}
+	}
+}
+
+
 static void ath10k_peer_assoc_h_ht(struct ath10k *ar,
 				   struct ieee80211_vif *vif,
 				   struct ieee80211_sta *sta,
@@ -2823,6 +2906,8 @@ static int ath10k_peer_assoc_prepare(struct ath10k *ar,
 	ath10k_peer_assoc_h_vht(ar, vif, sta, arg);
 	ath10k_peer_assoc_h_qos(ar, vif, sta, arg);
 
+	ath10k_peer_assoc_h_rate_overrides(ar, vif, sta, arg);
+
 	return 0;
 }
 
@@ -2961,6 +3046,18 @@ static void ath10k_bss_assoc(struct ieee80211_hw *hw,
 	}
 
 	rcu_read_unlock();
+
+	if (test_bit(ATH10K_FW_FEATURE_CT_RATEMASK,
+		     ar->running_fw->fw_file.fw_features)) {
+		/* Firmware may cache rate-ctrl logic in host RAM.  Before we can set it,
+		 * it must be DMA'd to firmware RAM.  CT Firmware offers this API to cause
+		 * firmware to request it.  It is a race either way, but this should make
+		 * it work more often.  Last argument is ignored by firmware.
+		 */
+		ath10k_wmi_peer_set_param(ar, arvif->vdev_id, ap_sta->addr,
+					  WMI_PEER_FETCH_RC, 0);
+		msleep(1);
+	}
 
 	ret = ath10k_wmi_peer_assoc(ar, &peer_arg);
 	if (ret) {
@@ -3130,6 +3227,18 @@ static int ath10k_station_assoc(struct ath10k *ar,
 		ath10k_warn(ar, "failed to prepare WMI peer assoc for %pM vdev %i: %i\n",
 			    sta->addr, arvif->vdev_id, ret);
 		return ret;
+	}
+
+	if (test_bit(ATH10K_FW_FEATURE_CT_RATEMASK,
+		     ar->running_fw->fw_file.fw_features)) {
+		/* Firmware may cache rate-ctrl logic in host RAM.  Before we can set it,
+		 * it must be DMA'd to firmware RAM.  CT Firmware offers this API to cause
+		 * firmware to request it.  It is a race either way, but this should make
+		 * it work more often.  Last argument is ignored by firmware.
+		 */
+		ath10k_wmi_peer_set_param(ar, arvif->vdev_id, sta->addr,
+					  WMI_PEER_FETCH_RC, 0);
+		msleep(1);
 	}
 
 	ret = ath10k_wmi_peer_assoc(ar, &peer_arg);

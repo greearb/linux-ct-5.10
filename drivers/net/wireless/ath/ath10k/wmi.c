@@ -7724,8 +7724,21 @@ ath10k_wmi_peer_assoc_fill(struct ath10k *ar, void *buf,
 			   const struct wmi_peer_assoc_complete_arg *arg)
 {
 	struct wmi_common_peer_assoc_complete_cmd *cmd = buf;
+	u32 vid = arg->vdev_id;
+	u32 ext_flags = 0;
 
-	cmd->vdev_id            = __cpu_to_le32(arg->vdev_id);
+	if (test_bit(ATH10K_FW_FEATURE_CT_RATEMASK,
+		     ar->running_fw->fw_file.fw_features)) {
+		/* Add some CT firmware specific stuff */
+		vid |= (1<<31); /* ext field exists */
+		if (arg->has_rate_overrides) {
+			ext_flags |= PEER_ASSOC_EXT_USE_OVERRIDES;
+			memcpy(cmd->rate_overrides, arg->rate_overrides, sizeof(cmd->rate_overrides));
+		}
+		cmd->ext_flags= __cpu_to_le32(ext_flags);
+	}
+
+	cmd->vdev_id            = __cpu_to_le32(vid);
 	cmd->peer_new_assoc     = __cpu_to_le32(arg->peer_reassoc ? 0 : 1);
 	cmd->peer_associd       = __cpu_to_le32(arg->peer_aid);
 	cmd->peer_flags         = __cpu_to_le32(arg->peer_flags);
