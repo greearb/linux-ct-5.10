@@ -2787,10 +2787,24 @@ static void ath10k_peer_assoc_h_qos(struct ath10k *ar,
 		   arvif->ar->wmi.peer_flags->qos));
 }
 
-static bool ath10k_mac_sta_has_ofdm_only(struct ieee80211_sta *sta)
+static bool ath10k_mac_sta_has_ofdm_only(struct ieee80211_vif *vif,
+					 struct ieee80211_sta *sta)
 {
-	return sta->supp_rates[NL80211_BAND_2GHZ] >>
-	       ATH10K_MAC_FIRST_OFDM_RATE_IDX;
+	struct ath10k_vif *arvif = (void *)vif->drv_priv;
+	u32 msk = arvif->bitrate_mask.control[NL80211_BAND_2GHZ].legacy &
+		sta->supp_rates[NL80211_BAND_2GHZ];
+	/* We have 12 bits of legacy rates, first 4 are /b (CCK) rates. */
+	return (msk & 0xfff) == 0xff0;
+}
+
+static bool ath10k_mac_sta_has_ofdm_and_cck(struct ieee80211_vif *vif,
+					    struct ieee80211_sta *sta)
+{
+	struct ath10k_vif *arvif = (void *)vif->drv_priv;
+	u32 msk = arvif->bitrate_mask.control[NL80211_BAND_2GHZ].legacy &
+		sta->supp_rates[NL80211_BAND_2GHZ];
+	/* We have 12 bits of legacy rates, first 4 are /b (CCK) rates. */
+	return (msk & 0xfff) == 0xfff;
 }
 
 static enum wmi_phy_mode ath10k_mac_get_phymode_vht(struct ath10k *ar,
@@ -2853,8 +2867,10 @@ static void ath10k_peer_assoc_h_phymode(struct ath10k *ar,
 				phymode = MODE_11NG_HT40;
 			else
 				phymode = MODE_11NG_HT20;
-		} else if (ath10k_mac_sta_has_ofdm_only(sta)) {
+		} else if (ath10k_mac_sta_has_ofdm_and_cck(vif, sta)) {
 			phymode = MODE_11G;
+		} else if (ath10k_mac_sta_has_ofdm_only(vif, sta)) {
+			phymode = MODE_11GONLY;
 		} else {
 			phymode = MODE_11B;
 		}
@@ -2882,8 +2898,9 @@ static void ath10k_peer_assoc_h_phymode(struct ath10k *ar,
 		break;
 	}
 
-	ath10k_dbg(ar, ATH10K_DBG_MAC, "mac peer %pM phymode %s\n",
-		   sta->addr, ath10k_wmi_phymode_str(phymode));
+	ath10k_dbg(ar, ATH10K_DBG_MAC, "mac peer %pM phymode %s  legacy-supp-rates: 0x%x  arvif-legacy-rates: 0x%x\n",
+		   sta->addr, ath10k_wmi_phymode_str(phymode), sta->supp_rates[band],
+		   arvif->bitrate_mask.control[band].legacy);
 
 	arg->peer_phymode = phymode;
 	WARN_ON(phymode == MODE_UNKNOWN);
