@@ -3047,18 +3047,6 @@ static void ath10k_bss_assoc(struct ieee80211_hw *hw,
 
 	rcu_read_unlock();
 
-	if (test_bit(ATH10K_FW_FEATURE_CT_RATEMASK,
-		     ar->running_fw->fw_file.fw_features)) {
-		/* Firmware may cache rate-ctrl logic in host RAM.  Before we can set it,
-		 * it must be DMA'd to firmware RAM.  CT Firmware offers this API to cause
-		 * firmware to request it.  It is a race either way, but this should make
-		 * it work more often.  Last argument is ignored by firmware.
-		 */
-		ath10k_wmi_peer_set_param(ar, arvif->vdev_id, ap_sta->addr,
-					  WMI_PEER_FETCH_RC, 0);
-		msleep(1);
-	}
-
 	ret = ath10k_wmi_peer_assoc(ar, &peer_arg);
 	if (ret) {
 		ath10k_warn(ar, "failed to run peer assoc for %pM vdev %i: %d\n",
@@ -3227,18 +3215,6 @@ static int ath10k_station_assoc(struct ath10k *ar,
 		ath10k_warn(ar, "failed to prepare WMI peer assoc for %pM vdev %i: %i\n",
 			    sta->addr, arvif->vdev_id, ret);
 		return ret;
-	}
-
-	if (test_bit(ATH10K_FW_FEATURE_CT_RATEMASK,
-		     ar->running_fw->fw_file.fw_features)) {
-		/* Firmware may cache rate-ctrl logic in host RAM.  Before we can set it,
-		 * it must be DMA'd to firmware RAM.  CT Firmware offers this API to cause
-		 * firmware to request it.  It is a race either way, but this should make
-		 * it work more often.  Last argument is ignored by firmware.
-		 */
-		ath10k_wmi_peer_set_param(ar, arvif->vdev_id, sta->addr,
-					  WMI_PEER_FETCH_RC, 0);
-		msleep(1);
 	}
 
 	ret = ath10k_wmi_peer_assoc(ar, &peer_arg);

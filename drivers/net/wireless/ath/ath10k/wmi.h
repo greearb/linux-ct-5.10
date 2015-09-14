@@ -6955,6 +6955,7 @@ struct wmi_vdev_start_ev_arg {
 
 struct wmi_peer_kick_ev_arg {
 	const u8 *mac_addr;
+	u16 unused_hi; /* top 16 bits of 47-32, used to pass info back to host by CT firmware */
 };
 
 struct wmi_swba_ev_arg {

@@ -3548,6 +3548,9 @@ ath10k_wmi_op_pull_peer_kick_ev(struct ath10k *ar, struct sk_buff *skb,
 	skb_pull(skb, sizeof(*ev));
 	arg->mac_addr = ev->peer_macaddr.addr;
 
+	/* CT Firmware may sneak in some info in the un-used space. */
+	arg->unused_hi = __le32_to_cpu(ev->peer_macaddr.word1) >> 16;
+
 	return 0;
 }
 
@@ -3574,6 +3577,19 @@ void ath10k_wmi_event_peer_sta_kickout(struct ath10k *ar, struct sk_buff *skb)
 		ath10k_warn(ar, "Spurious quick kickout for STA %pM\n",
 			    arg.mac_addr);
 		goto exit;
+	}
+
+	if (arg.unused_hi & (1<<15)) {
+		/* CT Firmware is trying to tell us that assoc attempt failed,
+		 * most likely because ratectrl object could not be found in local
+		 * cache (it was probably still written out to the host RAM cache).
+		 */
+		ath10k_warn(ar, "kickout:  assoc failed, no txRateCtl found in local cache for STA %pM\n",
+			    arg.mac_addr);
+		/* It would be nice if we could just re-flush to the firmware, but I don't
+		 * see a clean way do handle that..so just warn and report a kickout event.
+		 * At least sometimes that may cause peer to be reconfigured...
+		 */
 	}
 
 	ieee80211_report_low_ack(sta, 10);
