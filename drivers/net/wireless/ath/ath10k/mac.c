@@ -2787,6 +2787,80 @@ static void ath10k_peer_assoc_h_qos(struct ath10k *ar,
 		   arvif->ar->wmi.peer_flags->qos));
 }
 
+static bool ath10k_mac_vif_has_any_cck(struct ath10k *ar,
+				       struct ieee80211_vif *vif,
+				       u8 bandmask)
+{
+	struct ath10k_vif *arvif = ath10k_vif_to_arvif(vif);
+	u32 msk = 0;
+	int i;
+	for (i = 0; i < NUM_NL80211_BANDS; i++) {
+		if (bandmask & (1 << i)) {
+			msk |= arvif->bitrate_mask.control[i].legacy;
+		}
+	}
+	/* Only 2Ghz band has CCK support */
+	/* We have 12 bits of legacy rates, first 4 are /b (CCK) rates. */
+	ath10k_dbg(ar, ATH10K_DBG_MAC, "has-any-cck, arvif-legacy-24: 0x%x  mask: 0x%x\n",
+		   arvif->bitrate_mask.control[NL80211_BAND_2GHZ].legacy,
+		   msk);
+	return (msk & 0xf);
+}
+
+static bool ath10k_mac_vif_has_any_ofdm(struct ath10k *ar,
+					struct ieee80211_vif *vif,
+					int bandmask)
+{
+	struct ath10k_vif *arvif = ath10k_vif_to_arvif(vif);
+	u32 msk = 0;
+	int i;
+	for (i = 0; i < NUM_NL80211_BANDS; i++) {
+		if (bandmask & (1 << i)) {
+			msk |= arvif->bitrate_mask.control[i].legacy;
+		}
+	}
+	/* We have 12 bits of legacy rates, first 4 are /b (CCK) rates. */
+	ath10k_dbg(ar, ATH10K_DBG_MAC, "has-any-ofdm, arvif-legacy-24: 0x%x  legacy-5: 0x%x  mask: 0x%x\n",
+		   arvif->bitrate_mask.control[NL80211_BAND_2GHZ].legacy,
+		   arvif->bitrate_mask.control[NL80211_BAND_5GHZ].legacy,
+		   msk);
+	return (msk & 0xff0);
+}
+
+static bool ath10k_mac_vif_has_any_ht(struct ath10k *ar, struct ieee80211_vif *vif)
+{
+	struct ath10k_vif *arvif = ath10k_vif_to_arvif(vif);
+	int i;
+	for (i = 0; i<IEEE80211_HT_MCS_MASK_LEN; i++) {
+		if (arvif->bitrate_mask.control[NL80211_BAND_2GHZ].ht_mcs[i] ||
+		    arvif->bitrate_mask.control[NL80211_BAND_5GHZ].ht_mcs[i]) {
+			ath10k_dbg(ar, ATH10K_DBG_MAC, "has-any-ht, i: %d  2.4: 0x%x  5: 0x%x\n",
+				   i, arvif->bitrate_mask.control[NL80211_BAND_2GHZ].ht_mcs[i],
+				   arvif->bitrate_mask.control[NL80211_BAND_5GHZ].ht_mcs[i]);
+			return true;
+		}
+	}
+	ath10k_dbg(ar, ATH10K_DBG_MAC, "No HT rates enabled.\n");
+	return false;
+}
+
+static bool ath10k_mac_vif_has_any_vht(struct ath10k *ar, struct ieee80211_vif *vif)
+{
+	struct ath10k_vif *arvif = ath10k_vif_to_arvif(vif);
+	int i;
+	for (i = 0; i<ARRAY_SIZE(arvif->bitrate_mask.control[NL80211_BAND_2GHZ].vht_mcs); i++) {
+		if (arvif->bitrate_mask.control[NL80211_BAND_2GHZ].vht_mcs[i] ||
+		    arvif->bitrate_mask.control[NL80211_BAND_5GHZ].vht_mcs[i]) {
+			ath10k_dbg(ar, ATH10K_DBG_MAC, "has-any-vht, i: %d  2.4: 0x%x  5: 0x%x\n",
+				   i, arvif->bitrate_mask.control[NL80211_BAND_2GHZ].vht_mcs[i],
+				   arvif->bitrate_mask.control[NL80211_BAND_5GHZ].vht_mcs[i]);
+			return true;
+		}
+	}
+	ath10k_dbg(ar, ATH10K_DBG_MAC, "No VHT rates enabled.\n");
+	return false;
+}
+
 static bool ath10k_mac_sta_has_ofdm_only(struct ieee80211_vif *vif,
 					 struct ieee80211_sta *sta)
 {
@@ -4730,6 +4804,8 @@ static int ath10k_start_scan(struct ath10k *ar,
 
 	lockdep_assert_held(&ar->conf_mutex);
 
+	ath10k_dbg(ar, ATH10K_DBG_MAC, "start-scan, flags: 0x%x\n",
+		   arg->scan_ctrl_flags);
 	ret = ath10k_wmi_start_scan(ar, arg);
 	if (ret)
 		return ret;
@@ -6479,6 +6555,7 @@ static int ath10k_hw_scan(struct ieee80211_hw *hw,
 	int ret = 0;
 	int i;
 	u32 scan_timeout;
+	bool skip_legacy_rates = false;
 
 	mutex_lock(&ar->conf_mutex);
 
@@ -6512,6 +6589,31 @@ static int ath10k_hw_scan(struct ieee80211_hw *hw,
 	ath10k_wmi_start_scan_init(ar, &arg);
 	arg.vdev_id = arvif->vdev_id;
 	arg.scan_id = ATH10K_SCAN_ID;
+
+	if (test_bit(ATH10K_FW_FEATURE_WMI_10X_CT,
+		     ar->running_fw->fw_file.fw_features)) {
+		if (!ath10k_mac_vif_has_any_ht(ar, vif))
+			arg.scan_ctrl_flags |= WMI_SCAN_DISABLE_HT;
+
+		if (!ath10k_mac_vif_has_any_vht(ar, vif))
+			arg.scan_ctrl_flags |= WMI_SCAN_DISABLE_VHT;
+
+		if (test_bit(ATH10K_FW_FEATURE_CT_RATEMASK,
+			     ar->running_fw->fw_file.fw_features)) {
+			/* Firmware with this feature fixes a bug in firmware
+			 * that would not allow one to disable CCK and OFDM rates.
+			 * Host stack sets up the IEs, so tell firmware to leave it
+			 * alone.
+			 */
+			skip_legacy_rates = true;
+		}
+	}
+
+	if (!skip_legacy_rates) {
+		if (!req->no_cck)
+			arg.scan_ctrl_flags |= WMI_SCAN_ADD_CCK_RATES;
+		arg.scan_ctrl_flags |= WMI_SCAN_ADD_OFDM_RATES;
+	}
 
 	if (req->ie_len) {
 		arg.ie_len = req->ie_len;
@@ -8056,6 +8158,21 @@ static int ath10k_remain_on_channel(struct ieee80211_hw *hw,
 	arg.scan_ctrl_flags |= WMI_SCAN_FLAG_PASSIVE;
 	arg.scan_ctrl_flags |= WMI_SCAN_FILTER_PROBE_REQ;
 	arg.burst_duration_ms = duration;
+
+	if (ath10k_mac_vif_has_any_cck(ar, vif, (1 << chan->band)))
+		arg.scan_ctrl_flags |= WMI_SCAN_ADD_CCK_RATES;
+
+	if (ath10k_mac_vif_has_any_ofdm(ar, vif, (1 << chan->band)))
+		arg.scan_ctrl_flags |= WMI_SCAN_ADD_OFDM_RATES;
+
+	if (test_bit(ATH10K_FW_FEATURE_WMI_10X_CT,
+		     ar->running_fw->fw_file.fw_features)) {
+		if (!ath10k_mac_vif_has_any_ht(ar, vif))
+			arg.scan_ctrl_flags |= WMI_SCAN_DISABLE_HT;
+
+		if (!ath10k_mac_vif_has_any_vht(ar, vif))
+			arg.scan_ctrl_flags |= WMI_SCAN_DISABLE_VHT;
+	}
 
 	ret = ath10k_start_scan(ar, &arg);
 	if (ret) {

@@ -84,6 +84,9 @@
 
 #define ATH10K_MAX_RETRY_COUNT 30
 
+// TODO-BEN:  Remove this and fix all instances of vif_to_arvif.
+#define ath10k_vif_to_arvif(a) (void*)(a->drv_priv)
+
 struct ath10k;
 
 static inline const char *ath10k_bus_str(enum ath10k_bus bus)
