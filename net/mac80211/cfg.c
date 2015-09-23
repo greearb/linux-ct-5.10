@@ -2949,8 +2949,11 @@ static int ieee80211_set_bitrate_mask(struct wiphy *wiphy,
 
 	if (ieee80211_hw_check(&local->hw, HAS_RATE_CONTROL)) {
 		ret = drv_set_bitrate_mask(local, sdata, mask);
-		if (ret)
+		if (ret) {
+			pr_err("%s: drv-set-bitrate-mask had error return: %d\n",
+			       sdata->dev->name, ret);
 			return ret;
+		}
 	}
 
 	for (i = 0; i < NUM_NL80211_BANDS; i++) {
