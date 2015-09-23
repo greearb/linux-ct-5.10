@@ -2335,7 +2335,7 @@ static void ath10k_peer_assoc_h_rate_overrides(struct ath10k *ar,
 	struct cfg80211_chan_def def;
 	enum nl80211_band band;
 	u32 ratemask;
-	int i, j;
+	int i;
 
 	if (! test_bit(ATH10K_FW_FEATURE_CT_RATEMASK,
 		       ar->running_fw->fw_file.fw_features))
@@ -2364,24 +2364,21 @@ static void ath10k_peer_assoc_h_rate_overrides(struct ath10k *ar,
 	}
 
 	for (i = 0; i < 32; i++, ratemask >>= 1, rates++) {
+		int hw_rix;
+
 		if (!(ratemask & 1))
 			continue;
 
-		for (j = 0; j < ath10k_g_rates_size; j++) {
-			if (ath10k_rates[j].bitrate == rates->bitrate) {
-				int hw_rix;
-				if (ath10k_mac_bitrate_is_cck(rates->bitrate)) {
-					hw_rix = rates->hw_value;
-				}
-				else {
-					/* ofdm rates start at rix 4 */
-					hw_rix = rates->hw_value + 4;
-				}
-				ath10k_warn(ar, "set-enabled, bitrate: %d  j: %d  hw-value: %d hw-rix: %d\n",
-					    rates->bitrate, j, rates->hw_value, hw_rix);
-				ath10k_set_rate_enabled(hw_rix, arg->rate_overrides, 1);
-			}
+		if (ath10k_mac_bitrate_is_cck(rates->bitrate)) {
+			hw_rix = rates->hw_value;
 		}
+		else {
+			/* ofdm rates start at rix 4 */
+			hw_rix = rates->hw_value + 4;
+		}
+		ath10k_warn(ar, "set-enabled, bitrate: %d  i: %d  hw-value: %d hw-rix: %d\n",
+			    rates->bitrate, i, rates->hw_value, hw_rix);
+		ath10k_set_rate_enabled(hw_rix, arg->rate_overrides, 1);
 	}
 
 	/* End of legacy-rates logic. */
