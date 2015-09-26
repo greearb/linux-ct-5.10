@@ -3033,26 +3033,34 @@ int ath10k_core_start(struct ath10k *ar, enum ath10k_firmware_mode mode,
 		ar->ct_all_pkts_htt = false;
 	}
 
-	/* Apply user-supplied configuration changes. */
-	/* Don't worry about failures..not much we can do, and not worth failing init even
-	 * if this fails.
-	 */
-	for (band = 0; band < 2; band++) {
-		u32 val;
-		for (i = 0; i<MIN_CCA_PWR_COUNT; i++) {
-			val = (band << 24) | (i << 16) | ar->eeprom_overrides.bands[band].minCcaPwrCT[i];
+	if (test_bit(ATH10K_FW_FEATURE_WMI_10X_CT,
+		     ar->running_fw->fw_file.fw_features)) {
+		/* Apply user-supplied configuration changes. */
+		/* Don't worry about failures..not much we can do, and not worth failing init even
+		 * if this fails.
+		 */
+		for (band = 0; band < 2; band++) {
+			u32 val;
+			for (i = 0; i<MIN_CCA_PWR_COUNT; i++) {
+				val = (band << 24) | (i << 16) | ar->eeprom_overrides.bands[band].minCcaPwrCT[i];
+				ath10k_wmi_pdev_set_special(ar, SET_SPECIAL_ID_NOISE_FLR_THRESH, val);
+			}
+
+			i = 4; /* enable-minccapwr-thresh type */
+			val = (band << 24) | (i << 16) | ar->eeprom_overrides.bands[band].enable_minccapwr_thresh;
 			ath10k_wmi_pdev_set_special(ar, SET_SPECIAL_ID_NOISE_FLR_THRESH, val);
 		}
 
-		i = 4; /* enable-minccapwr-thresh type */
-		val = (band << 24) | (i << 16) | ar->eeprom_overrides.bands[band].enable_minccapwr_thresh;
-		ath10k_wmi_pdev_set_special(ar, SET_SPECIAL_ID_NOISE_FLR_THRESH, val);
-	}
+		/* TODO:  Should probably be per-band?? */
+		if (ar->eeprom_overrides.thresh62_ext) {
+			ath10k_wmi_pdev_set_special(ar, SET_SPECIAL_ID_THRESH62_EXT,
+						    ar->eeprom_overrides.thresh62_ext);
+		}
 
-	/* TODO:  Should probably be per-band?? */
-	if (ar->eeprom_overrides.thresh62_ext) {
-		ath10k_wmi_pdev_set_special(ar, SET_SPECIAL_ID_THRESH62_EXT,
-					    ar->eeprom_overrides.thresh62_ext);
+		if (ar->eeprom_overrides.allow_ibss_amsdu) {
+			ath10k_wmi_pdev_set_special(ar, SET_SPECIAL_ID_IBSS_AMSDU_OK,
+						    ar->eeprom_overrides.allow_ibss_amsdu);
+		}
 	}
 
 	return 0;

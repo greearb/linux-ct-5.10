@@ -2416,6 +2416,9 @@ static ssize_t ath10k_write_ct_special(struct file *file,
 		else if (type == CT_CCA_TYPE_EN_MINCCAPWR)
 			ar->eeprom_overrides.bands[band].enable_minccapwr_thresh = val & 0xFFFF;
 	}
+	else if (id == SET_SPECIAL_ID_IBSS_AMSDU_OK) {
+		ar->eeprom_overrides.allow_ibss_amsdu = !!val;
+	}
 	/* else, pass it through to firmware...but will not be stored locally, so
 	 * won't survive through firmware reboots, etc.
 	 */
@@ -2447,7 +2450,8 @@ static ssize_t ath10k_read_ct_special(struct file *file,
 		"         4 enable_minccapwr_thresh\n"
 		"  value = val & 0xFFFF;\n"
 		"    Unless otherwise specified, 0 means don't set.\n"
-		"    enable-minccapwr-thresh:  1 disabled, 2 enabled.\n\n";
+		"    enable-minccapwr-thresh:  1 disabled, 2 enabled.\n"
+		"id: 5 Allow-AMSDU-IBSS, 1 enabled, 0 disabled, global setting.\n\n";
 
 	return simple_read_from_buffer(user_buf, count, ppos, buf, strlen(buf));
 }
