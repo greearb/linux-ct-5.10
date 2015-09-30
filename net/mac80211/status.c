@@ -1056,7 +1056,10 @@ void ieee80211_tx_status(struct ieee80211_hw *hw, struct sk_buff *skb)
 
 	rcu_read_lock();
 
-	sta = sta_info_get_by_addrs(local, hdr->addr1, hdr->addr2);
+	sta = sta_info_get_by_vif(local, hdr->addr2, hdr->addr1);
+	if (!sta)
+		sta = sta_info_get_by_addrs(local, hdr->addr1, hdr->addr2);
+
 	if (sta)
 		status.sta = &sta->sta;
 

@@ -4679,6 +4679,21 @@ static void __ieee80211_rx_handle_packet(struct ieee80211_hw *hw,
 
 		prev_sta = NULL;
 
+		/* Check for Station VIFS by hashing on the destination MAC
+		 * (ie, local sdata MAC).  This changes 'promisc' behaviour,
+		 * but not sure that is a bad thing.
+		 */
+		if ((!is_multicast_ether_addr(hdr->addr1)) &&
+		    (local->monitors == 0) && (local->cooked_mntrs == 0)) {
+			sta = sta_info_get_by_vif(local, hdr->addr1,
+						  hdr->addr2);
+			if (sta) {
+				rx.sta = sta;
+				rx.sdata = sta->sdata;
+				goto rx_and_done;
+			}
+		}
+
 		for_each_sta_info(local, hdr->addr2, sta, tmp) {
 			if (!prev_sta) {
 				prev_sta = sta;
@@ -4696,6 +4711,7 @@ static void __ieee80211_rx_handle_packet(struct ieee80211_hw *hw,
 			rx.sta = prev_sta;
 			rx.sdata = prev_sta->sdata;
 
+rx_and_done:
 			if (ieee80211_prepare_and_rx_handle(&rx, skb, true))
 				return;
 			goto out;

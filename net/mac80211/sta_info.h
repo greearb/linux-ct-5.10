@@ -18,6 +18,7 @@
 #include <linux/etherdevice.h>
 #include <linux/rhashtable.h>
 #include <linux/u64_stats_sync.h>
+#include <linux/hash.h>
 #include "key.h"
 
 /**
@@ -483,6 +484,7 @@ struct ieee80211_fragment_cache {
  * @hash_node: hash node for rhashtable
  * @addr: station's MAC address - duplicated from public part to
  *	let the hash table work with just a single cacheline
+ * @hnext: hash table linked list pointer, used by local->sta_hash
  * @local: pointer to the global information
  * @sdata: virtual interface this station belongs to
  * @ptk: peer keys negotiated with this station, if any
@@ -565,6 +567,7 @@ struct sta_info {
 	struct rcu_head rcu_head;
 	struct rhlist_head hash_node;
 	u8 addr[ETH_ALEN];
+	struct sta_info __rcu *vnext;
 	struct ieee80211_local *local;
 	struct ieee80211_sub_if_data *sdata;
 	struct ieee80211_key __rcu *gtk[NUM_DEFAULT_KEYS +
@@ -736,6 +739,12 @@ static inline void sta_info_pre_move_state(struct sta_info *sta,
 	WARN_ON_ONCE(ret);
 }
 
+#define STA_HASH_SIZE 256
+static inline u32 STA_HASH(const unsigned char* addr) {
+	u32 v = (addr[0] << 8) | addr[1];
+	v ^= (addr[2] << 24) | (addr[3] << 16) | (addr[4] << 8) | addr[5];
+	return hash_32(v, 8);
+}
 
 void ieee80211_assign_tid_tx(struct sta_info *sta, int tid,
 			     struct tid_ampdu_tx *tid_tx);
@@ -770,6 +779,12 @@ struct sta_info *sta_info_get(struct ieee80211_sub_if_data *sdata,
 
 struct sta_info *sta_info_get_bss(struct ieee80211_sub_if_data *sdata,
 				  const u8 *addr);
+/*
+ * Uses the local->sdata hash and sdata->sta_hash for fast lookup
+ * base on VIF (sdata) address and remote station address.
+ */
+struct sta_info *sta_info_get_by_vif(struct ieee80211_local *local,
+				     const u8 *vif_addr, const u8 *sta_addr);
 
 /* user must hold sta_mtx or be in RCU critical section */
 struct sta_info *sta_info_get_by_addrs(struct ieee80211_local *local,

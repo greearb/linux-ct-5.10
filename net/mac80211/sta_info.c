@@ -77,8 +77,39 @@ static const struct rhashtable_params sta_rht_params = {
 static int sta_info_hash_del(struct ieee80211_local *local,
 			     struct sta_info *sta)
 {
-	return rhltable_remove(&local->sta_hash, &sta->hash_node,
-			       sta_rht_params);
+	struct sta_info *s;
+	int rv = -ENOENT;
+	int idx = STA_HASH(sta->sta.addr);
+	struct ieee80211_sub_if_data *sdata = sta->sdata;
+
+	rv = rhltable_remove(&local->sta_hash, &sta->hash_node,
+			     sta_rht_params);
+	if (rv != 0) {
+		/* If station is not in the main hash, then it definitely
+		 * should not be in the vhash, so we can just return.
+		 */
+		return rv;
+	}
+
+	/* Clean up vhash */
+	s = rcu_dereference_protected(sdata->sta_vhash[idx],
+				      lockdep_is_held(&local->sta_mtx));
+	if (!s)
+		return rv;
+
+	if (s == sta) {
+		rcu_assign_pointer(sdata->sta_vhash[idx], s->vnext);
+		return rv;
+	}
+
+	while (rcu_access_pointer(s->vnext) &&
+	       rcu_access_pointer(s->vnext) != sta)
+		s = rcu_dereference_protected(s->vnext,
+					      lockdep_is_held(&local->sta_mtx));
+	if (rcu_access_pointer(s->vnext))
+		rcu_assign_pointer(s->vnext, sta->vnext);
+
+	return rv;
 }
 
 static void __cleanup_single_sta(struct sta_info *sta)
@@ -167,21 +198,25 @@ struct sta_info *sta_info_get(struct ieee80211_sub_if_data *sdata,
 			      const u8 *addr)
 {
 	struct ieee80211_local *local = sdata->local;
-	struct rhlist_head *tmp;
 	struct sta_info *sta;
 
+	(void)(local);
+
 	rcu_read_lock();
-	for_each_sta_info(local, addr, sta, tmp) {
-		if (sta->sdata == sdata) {
-			rcu_read_unlock();
-			/* this is safe as the caller must already hold
-			 * another rcu read section or the mutex
-			 */
-			return sta;
-		}
+
+	/* Check sdata hash */
+	sta = rcu_dereference_check(sdata->sta_vhash[STA_HASH(addr)],
+				    lockdep_is_held(&local->sta_mtx));
+
+	while (sta) {
+		if (ether_addr_equal(sta->sta.addr, addr))
+			break;
+
+		sta = rcu_dereference_check(sta->vnext,
+					    lockdep_is_held(&local->sta_mtx));
 	}
 	rcu_read_unlock();
-	return NULL;
+	return sta;
 }
 
 /*
@@ -196,6 +231,16 @@ struct sta_info *sta_info_get_bss(struct ieee80211_sub_if_data *sdata,
 	struct sta_info *sta;
 
 	rcu_read_lock();
+
+	sta = sta_info_get(sdata, addr);
+	if (sta) {
+		rcu_read_unlock();
+		return sta;
+	}
+
+	/* Maybe it's on some other sdata matching the bss, try
+	 * a bit harder.
+	 */
 	for_each_sta_info(local, addr, sta, tmp) {
 		if (sta->sdata == sdata ||
 		    (sta->sdata->bss && sta->sdata->bss == sdata->bss)) {
@@ -221,6 +266,21 @@ struct sta_info *sta_info_get_by_addrs(struct ieee80211_local *local,
 			return sta;
 	}
 
+	return NULL;
+}
+
+struct sta_info *sta_info_get_by_vif(struct ieee80211_local *local,
+				     const u8 *vif_addr, const u8 *sta_addr)
+{
+	struct ieee80211_sub_if_data *sdata;
+	struct ieee80211_sub_if_data *nxt;
+	struct sta_info *sta;
+
+	for_each_sdata(local, vif_addr, sdata, nxt) {
+		sta = sta_info_get(sdata, sta_addr);
+		if (sta)
+			return sta;
+	}
 	return NULL;
 }
 
@@ -295,8 +355,16 @@ void sta_info_free(struct ieee80211_local *local, struct sta_info *sta)
 static int sta_info_hash_add(struct ieee80211_local *local,
 			     struct sta_info *sta)
 {
-	return rhltable_insert(&local->sta_hash, &sta->hash_node,
-			       sta_rht_params);
+	int idx = STA_HASH(sta->sta.addr);
+
+	int rv = rhltable_insert(&local->sta_hash, &sta->hash_node,
+				 sta_rht_params);
+	if (rv != 0)
+		return rv;
+
+	sta->vnext = sta->sdata->sta_vhash[idx];
+	rcu_assign_pointer(sta->sdata->sta_vhash[idx], sta);
+	return 0;
 }
 
 static void sta_deliver_ps_frames(struct work_struct *wk)
@@ -1266,14 +1334,18 @@ struct ieee80211_sta *ieee80211_find_sta_by_ifaddr(struct ieee80211_hw *hw,
 	struct rhlist_head *tmp;
 	struct sta_info *sta;
 
+	if (localaddr) {
+		sta = sta_info_get_by_vif(hw_to_local(hw), localaddr, addr);
+		if (sta && sta->uploaded)
+			return &sta->sta;
+		return NULL;
+	}
+
 	/*
 	 * Just return a random station if localaddr is NULL
 	 * ... first in list.
 	 */
 	for_each_sta_info(local, addr, sta, tmp) {
-		if (localaddr &&
-		    !ether_addr_equal(sta->sdata->vif.addr, localaddr))
-			continue;
 		if (!sta->uploaded)
 			return NULL;
 		return &sta->sta;
