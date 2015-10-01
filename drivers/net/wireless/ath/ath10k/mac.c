@@ -2363,7 +2363,7 @@ static void ath10k_peer_assoc_h_rate_overrides(struct ath10k *ar,
 		ath10k_set_rate_enabled(i, arg->rate_overrides, 0);
 	}
 
-	for (i = 0; i < 32; i++, ratemask >>= 1, rates++) {
+	for (i = 0; i < sband->n_bitrates; i++, ratemask >>= 1, rates++) {
 		int hw_rix;
 
 		if (!(ratemask & 1))
