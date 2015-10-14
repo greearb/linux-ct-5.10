@@ -386,7 +386,7 @@ struct ieee80211_mgd_auth_data {
 
 struct ieee80211_mgd_assoc_data {
 	struct cfg80211_bss *bss;
-	const u8 *supp_rates;
+	u8 supp_rates[IEEE80211_MAX_SUPP_RATES];
 
 	unsigned long timeout;
 	int tries;
