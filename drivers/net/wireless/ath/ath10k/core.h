@@ -1477,6 +1477,7 @@ struct ath10k {
 		} bands[2];
 		u8 thresh62_ext;
 		bool allow_ibss_amsdu;
+		u16 max_txpower;
 	} eeprom_overrides;
 
 	/* must be last */

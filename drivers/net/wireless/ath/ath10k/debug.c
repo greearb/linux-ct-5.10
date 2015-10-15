@@ -2419,6 +2419,23 @@ static ssize_t ath10k_write_ct_special(struct file *file,
 	else if (id == SET_SPECIAL_ID_IBSS_AMSDU_OK) {
 		ar->eeprom_overrides.allow_ibss_amsdu = !!val;
 	}
+	else if (id == SET_SPECIAL_ID_MAX_TXPOWER) {
+		/* This can only be set once, and is designed to be
+		 * a way to try to ensure that no other tools can
+		 * accidently or otherwise set the power in the firmware
+		 * higher.
+		 */
+		if (ar->eeprom_overrides.max_txpower == 0xFFFF) {
+			ar->eeprom_overrides.max_txpower = val;
+			ath10k_warn(ar, "Latching max-txpower to: %d (%d dBm)\n", val, val/2);
+		}
+		else {
+			ath10k_err(ar, "Cannot re-set max-txpower, old: %d  new: %d (%d dBm)\n",
+				   ar->eeprom_overrides.max_txpower, val, val/2);
+			ret = -EPERM;
+			goto unlock;
+		}
+	}
 	/* else, pass it through to firmware...but will not be stored locally, so
 	 * won't survive through firmware reboots, etc.
 	 */
@@ -2451,7 +2468,9 @@ static ssize_t ath10k_read_ct_special(struct file *file,
 		"  value = val & 0xFFFF;\n"
 		"    Unless otherwise specified, 0 means don't set.\n"
 		"    enable-minccapwr-thresh:  1 disabled, 2 enabled.\n"
-		"id: 5 Allow-AMSDU-IBSS, 1 enabled, 0 disabled, global setting.\n\n";
+		"id: 5 Allow-AMSDU-IBSS, 1 enabled, 0 disabled, global setting.\n"
+		"id: 6 Max TX-Power, 0-65535:  Latch max-tx-power, in 0.5 dbM Units.\n"
+		"\n";
 
 	return simple_read_from_buffer(user_buf, count, ppos, buf, strlen(buf));
 }
