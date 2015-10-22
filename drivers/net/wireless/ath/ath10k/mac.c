@@ -2336,6 +2336,8 @@ static void ath10k_peer_assoc_h_rate_overrides(struct ath10k *ar,
 	enum nl80211_band band;
 	u32 ratemask;
 	int i;
+	int j;
+	int hw_rix;
 
 	if (! test_bit(ATH10K_FW_FEATURE_CT_RATEMASK,
 		       ar->running_fw->fw_file.fw_features))
@@ -2355,17 +2357,11 @@ static void ath10k_peer_assoc_h_rate_overrides(struct ath10k *ar,
 
 	arg->has_rate_overrides = true;
 
-	/* By default, do not actually over-ride anything */
-	memset(arg->rate_overrides, 0xff, sizeof(arg->rate_overrides));
+	/* Clear the rateset */
+	memset(arg->rate_overrides, 0x0, sizeof(arg->rate_overrides));
 
-	/* Now, do legacy rates:  0-3 are CCK (/b), 4-11 are OFDM (/a/g)... */
-	for (i = 0; i<12; i++) {
-		ath10k_set_rate_enabled(i, arg->rate_overrides, 0);
-	}
-
+	/* Legacy rates */
 	for (i = 0; i < sband->n_bitrates; i++, ratemask >>= 1, rates++) {
-		int hw_rix;
-
 		if (!(ratemask & 1))
 			continue;
 
@@ -2376,20 +2372,64 @@ static void ath10k_peer_assoc_h_rate_overrides(struct ath10k *ar,
 			/* ofdm rates start at rix 4 */
 			hw_rix = rates->hw_value + 4;
 		}
-		ath10k_warn(ar, "set-enabled, bitrate: %d  i: %d  hw-value: %d hw-rix: %d\n",
-			    rates->bitrate, i, rates->hw_value, hw_rix);
+		ath10k_dbg(ar, ATH10K_DBG_MAC,
+			   "set-enabled, bitrate: %d  i: %d  hw-value: %d hw-rix: %d\n",
+			   rates->bitrate, i, rates->hw_value, hw_rix);
 		ath10k_set_rate_enabled(hw_rix, arg->rate_overrides, 1);
 	}
 
-	/* End of legacy-rates logic. */
-	/* TODO:  HT, VHT */
+	/* HT rate logic (ath10k AR98XX, at least, uses 3x3 rateset).  First set
+	 * of 3 is HT20, second set is HT40.  No way to specify HT20 vs HT40
+	 * using normal rate-set info as far as I can tell, so set both to the
+	 * same value.
+	 */
+	for (i = 0; i < 3; i++) {
+		unsigned int mcs = arvif->bitrate_mask.control[band].ht_mcs[i];
+		for (j = 0; j<8; j++) {
+			if (mcs & (1<<j)) {
+				hw_rix = 12 + i * 8 + j;
+				ath10k_dbg(ar, ATH10K_DBG_MAC,
+					   "set-enabled, ht: hw-rix: %d, %d  i: %d j: %d\n",
+					   hw_rix, hw_rix + 3 * 8, i, j);
+				ath10k_set_rate_enabled(hw_rix, arg->rate_overrides, 1);
+				/* Set HT40 rateset too */
+				ath10k_set_rate_enabled(hw_rix + 3 * 8, arg->rate_overrides, 1);
+			}
+		}
+	}
 
+	/* VHT rate logic (ath10k AR98XX, at least, uses 3x3 rateset).
+	 * One set of rates for each of 20, 40, 80Mhz bandwidth.
+	 * Each set has 10 rates for each of 1, 2, and 3 streams.
+	 * No way to specify HT20 vs HT40 vs HT80
+	 * using normal rate-set info as far as I can tell, so set all three to the
+	 * same value.
+	 */
+	for (i = 0; i < 3; i++) {
+		unsigned int mcs = arvif->bitrate_mask.control[band].vht_mcs[i];
+		for (j = 0; j<16; j++) {
+			if (mcs & (1<<j)) {
+				hw_rix = 12 + 6 * 8 + i * 10 + j;
+				ath10k_dbg(ar, ATH10K_DBG_MAC,
+					   "set-enabled, vht: hw-rix: %d, %d, %d  i: %d j: %d\n",
+					   hw_rix, hw_rix + 3 * 10, hw_rix + 6 * 10, i, j);
+				ath10k_set_rate_enabled(hw_rix, arg->rate_overrides, 1);
+				/* Set HT40 rateset too */
+				ath10k_set_rate_enabled(hw_rix + 3 * 10, arg->rate_overrides, 1);
+				/* Set HT80 rateset too */
+				ath10k_set_rate_enabled(hw_rix + 6 * 10, arg->rate_overrides, 1);
+			}
+		}
+	}
+
+#if 0
 	for (i = 0; i < sizeof(arg->rate_overrides); i++) {
 		if (arg->rate_overrides[i] != 0xFF) {
 			ath10k_warn(ar, "vif: %d rate-overrides[%d]: 0x%x\n",
 				    arvif->vdev_id, i, arg->rate_overrides[i]);
 		}
 	}
+#endif
 }
 
 
@@ -2568,7 +2608,7 @@ static int ath10k_peer_assoc_qos_ap(struct ath10k *ar,
 }
 
 static u16
-ath10k_peer_assoc_h_vht_limit(u16 tx_mcs_set,
+ath10k_peer_assoc_h_vht_limit(struct ath10k *ar, u16 tx_mcs_set,
 			      const u16 vht_mcs_limit[NL80211_VHT_NSS_MAX])
 {
 	int idx_limit;
@@ -2594,6 +2634,11 @@ ath10k_peer_assoc_h_vht_limit(u16 tx_mcs_set,
 		case 5:
 		case 6:
 		default:
+			if (test_bit(ATH10K_FW_FEATURE_CT_RATEMASK,
+				     ar->running_fw->fw_file.fw_features)) {
+				mcs = IEEE80211_VHT_MCS_SUPPORT_0_7;
+				break;
+			}
 			/* see ath10k_mac_can_set_bitrate_mask() */
 			WARN_ON(1);
 			fallthrough;
@@ -2714,7 +2759,7 @@ static void ath10k_peer_assoc_h_vht(struct ath10k *ar,
 	arg->peer_vht_rates.tx_max_rate =
 		__le16_to_cpu(vht_cap->vht_mcs.tx_highest);
 	arg->peer_vht_rates.tx_mcs_set = ath10k_peer_assoc_h_vht_limit(
-		__le16_to_cpu(vht_cap->vht_mcs.tx_mcs_map), vht_mcs_mask);
+		ar, __le16_to_cpu(vht_cap->vht_mcs.tx_mcs_map), vht_mcs_mask);
 
 	/* Configure bandwidth-NSS mapping to FW
 	 * for the chip's tx chains setting on 160Mhz bw
@@ -8598,6 +8643,13 @@ ath10k_mac_can_set_bitrate_mask(struct ath10k *ar,
 {
 	int i;
 	u16 vht_mcs;
+
+	/* CT firmware has improvements that allows this to function
+	 * properly.
+	 */
+	if (test_bit(ATH10K_FW_FEATURE_CT_RATEMASK,
+		     ar->running_fw->fw_file.fw_features))
+		return true;
 
 	/* Due to firmware limitation in WMI_PEER_ASSOC_CMDID it is impossible
 	 * to express all VHT MCS rate masks. Effectively only the following
