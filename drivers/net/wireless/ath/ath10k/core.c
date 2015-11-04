@@ -3065,6 +3065,9 @@ int ath10k_core_start(struct ath10k *ar, enum ath10k_firmware_mode mode,
 		if (ar->eeprom_overrides.max_txpower != 0xFFFF)
 			ath10k_wmi_pdev_set_special(ar, SET_SPECIAL_ID_MAX_TXPOWER,
 						    ar->eeprom_overrides.max_txpower);
+		if (ar->eeprom_overrides.rc_rate_max_per_thr)
+			ath10k_wmi_pdev_set_special(ar, SET_SPECIAL_ID_RC_MAX_PER_THR,
+						    ar->eeprom_overrides.rc_rate_max_per_thr);
 	}
 
 	return 0;

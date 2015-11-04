@@ -1476,6 +1476,7 @@ struct ath10k {
 			u8 enable_minccapwr_thresh;
 		} bands[2];
 		u8 thresh62_ext;
+		u8 rc_rate_max_per_thr; /* Firmware rate-ctrl alg. tuning. */
 		bool allow_ibss_amsdu;
 		u16 max_txpower;
 	} eeprom_overrides;
