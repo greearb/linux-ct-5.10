@@ -2554,7 +2554,8 @@ static void ath10k_peer_assoc_h_ht(struct ath10k *ar,
 	 * CT Firmware with the RATEMASK feature flag does NOT assert and handles
 	 * this just fine, so no work-arounds for it. --Ben
 	 */
-	if (n == 0 && !test_bit(ATH10K_FW_FEATURE_CT_RATEMASK, ar->fw_features)) {
+	if (n == 0 && !test_bit(ATH10K_FW_FEATURE_CT_RATEMASK,
+				ar->running_fw->fw_file.fw_features)) {
 		arg->peer_ht_rates.num_rates = 8;
 		for (i = 0; i < arg->peer_ht_rates.num_rates; i++)
 			arg->peer_ht_rates.rates[i] = i;
