@@ -4531,8 +4531,10 @@ static bool vht_set_mcs_mask(struct ieee80211_supported_band *sband,
 	u16 tx_mcs_mask[NL80211_VHT_NSS_MAX] = {};
 	u8 i;
 
-	if (!sband->vht_cap.vht_supported)
+	if (!sband->vht_cap.vht_supported) {
+		pr_err("vht-mcs:  VHT not supported.\n");
 		return false;
+	}
 
 	memset(mcs, 0, sizeof(u16) * NL80211_VHT_NSS_MAX);
 
@@ -4542,8 +4544,11 @@ static bool vht_set_mcs_mask(struct ieee80211_supported_band *sband,
 	for (i = 0; i < NL80211_VHT_NSS_MAX; i++) {
 		if ((tx_mcs_mask[i] & txrate->mcs[i]) == txrate->mcs[i])
 			mcs[i] = txrate->mcs[i];
-		else
+		else {
+			pr_err("vht-mcs:  Rate idx %d not supported, tx-mcs-mask: 0x%x  txrate->mcs: 0x%x\n",
+			       i, tx_mcs_mask[i], txrate->mcs[i]);
 			return false;
+		}
 	}
 
 	return true;
