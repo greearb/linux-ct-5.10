@@ -46,20 +46,23 @@ static void ath10k_set_tx_rate_status(struct ieee80211_tx_rate *rate,
 	u8 nss = (tx_done->tx_rate_code >> 4) & 0x3;
 	u8 rate_idx = tx_done->tx_rate_code & 0xF;
 
+	//pr_err("tx-rate-status, nss: %d rate_idx: %d  rate-code: 0x%x rate-flags: 0x%x\n",
+	//       nss, rate_idx, tx_done->tx_rate_code, tx_done->tx_rate_flags);
+
 	rate->count = 1;
 	rate->idx = rate_idx; /* TODO:  Not sure this is correct. */
 
 	if (((tx_done->tx_rate_code >> 6) & 0x3) == 1) {
-		/* CCK */
-		/* TODO:  Not sure about this. */
-		/* rate->flags |= IEEE80211_TX_RC_MCS; */
+		/* CCK/OFDM */
 	}
 
 	if ((tx_done->tx_rate_code & 0xcc) == 0x44)
 		rate->flags |= IEEE80211_TX_RC_USE_SHORT_PREAMBLE;
 
-	if ((tx_done->tx_rate_code & 0xc0) == 0x80)
+	if ((tx_done->tx_rate_code & 0xc0) == 0x80) {
 		rate->flags |= IEEE80211_TX_RC_MCS;
+		rate->idx += (nss * 8);
+	}
 
 	if ((tx_done->tx_rate_code & 0xc0) == 0xc0) {
 		rate->flags |= IEEE80211_TX_RC_VHT_MCS;
