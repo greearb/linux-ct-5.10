@@ -2432,6 +2432,16 @@ static void ath10k_peer_assoc_h_rate_overrides(struct ath10k *ar,
 #endif
 }
 
+static u8 get_nss_from_chainmask(u16 chain_mask)
+{
+	if ((chain_mask & 0xf) == 0xf)
+		return 4;
+	else if ((chain_mask & 0x7) == 0x7)
+		return 3;
+	else if ((chain_mask & 0x3) == 0x3)
+		return 2;
+	return 1;
+}
 
 static void ath10k_peer_assoc_h_ht(struct ath10k *ar,
 				   struct ieee80211_vif *vif,
@@ -2456,6 +2466,11 @@ static void ath10k_peer_assoc_h_ht(struct ath10k *ar,
 	if (!ht_cap->ht_supported)
 		return;
 
+	/* TODO:  We need to have a distinction between tx bitrate
+	 * masks and advertised bitrate masks.  This code is trying
+	 * to use tx bitrate as advertised bitrate, and that causes
+	 * some problems and/or requires hack-arounds. --Ben
+	 */
 	band = def.chan->band;
 	ht_mcs_mask = arvif->bitrate_mask.control[band].ht_mcs;
 	vht_mcs_mask = arvif->bitrate_mask.control[band].vht_mcs;
@@ -2515,6 +2530,18 @@ static void ath10k_peer_assoc_h_ht(struct ath10k *ar,
 			arg->peer_ht_rates.rates[n++] = i;
 		}
 
+	/* User may have used 'iw' or similar to configure VHT rates
+	 * and no HT rates.  In that case, our NSS would be incorrect
+	 * without this code below.
+	 */
+	for (i = max_nss; i < NL80211_VHT_NSS_MAX; i++) {
+		ath10k_dbg(ar, ATH10K_DBG_MAC, "max-nss: %d i: %d mask: 0x%x\n",
+			   max_nss, i, vht_mcs_mask[i]);
+		if (vht_mcs_mask[i])
+			max_nss = i + 1;
+	}
+	max_nss = min(max_nss, get_nss_from_chainmask(ar->cfg_tx_chainmask));
+
 	/*
 	 * This is a workaround for HT-enabled STAs which break the spec
 	 * and have no HT capabilities RX mask (no HT RX MCS map).
@@ -2523,8 +2550,11 @@ static void ath10k_peer_assoc_h_ht(struct ath10k *ar,
 	 * MCS 0 through 7 are mandatory in 20MHz with 800 ns GI at all STAs.
 	 *
 	 * Firmware asserts if such situation occurs.
+	 *
+	 * CT Firmware with the RATEMASK feature flag does NOT assert and handles
+	 * this just fine, so no work-arounds for it. --Ben
 	 */
-	if (n == 0) {
+	if (n == 0 && !test_bit(ATH10K_FW_FEATURE_CT_RATEMASK, ar->fw_features)) {
 		arg->peer_ht_rates.num_rates = 8;
 		for (i = 0; i < arg->peer_ht_rates.num_rates; i++)
 			arg->peer_ht_rates.rates[i] = i;
@@ -2760,6 +2790,11 @@ static void ath10k_peer_assoc_h_vht(struct ath10k *ar,
 		__le16_to_cpu(vht_cap->vht_mcs.tx_highest);
 	arg->peer_vht_rates.tx_mcs_set = ath10k_peer_assoc_h_vht_limit(
 		ar, __le16_to_cpu(vht_cap->vht_mcs.tx_mcs_map), vht_mcs_mask);
+
+	ath10k_dbg(ar, ATH10K_DBG_MAC, "mac vht peer %pM max_mpdu %d flags 0x%x rx-max-rate: 0x%x rx-mcs: 0x%x tx-max-rate: 0x%x tx-mcs: 0x%x\n",
+		   sta->addr, arg->peer_max_mpdu, arg->peer_flags,
+		   arg->peer_vht_rates.rx_max_rate, arg->peer_vht_rates.rx_mcs_set,
+		   arg->peer_vht_rates.tx_max_rate, arg->peer_vht_rates.tx_mcs_set);
 
 	/* Configure bandwidth-NSS mapping to FW
 	 * for the chip's tx chains setting on 160Mhz bw
@@ -3014,9 +3049,9 @@ static void ath10k_peer_assoc_h_phymode(struct ath10k *ar,
 		break;
 	}
 
-	ath10k_dbg(ar, ATH10K_DBG_MAC, "mac peer %pM phymode %s  legacy-supp-rates: 0x%x  arvif-legacy-rates: 0x%x\n",
+	ath10k_dbg(ar, ATH10K_DBG_MAC, "mac peer %pM phymode %s  legacy-supp-rates: 0x%x  arvif-legacy-rates: 0x%x vht-supp: %d\n",
 		   sta->addr, ath10k_wmi_phymode_str(phymode), sta->supp_rates[band],
-		   arvif->bitrate_mask.control[band].legacy);
+		   arvif->bitrate_mask.control[band].legacy, sta->vht_cap.vht_supported);
 
 	arg->peer_phymode = phymode;
 	WARN_ON(phymode == MODE_UNKNOWN);
@@ -5696,17 +5731,6 @@ static int ath10k_config(struct ieee80211_hw *hw, u32 changed)
 
 	mutex_unlock(&ar->conf_mutex);
 	return ret;
-}
-
-static u32 get_nss_from_chainmask(u16 chain_mask)
-{
-	if ((chain_mask & 0xf) == 0xf)
-		return 4;
-	else if ((chain_mask & 0x7) == 0x7)
-		return 3;
-	else if ((chain_mask & 0x3) == 0x3)
-		return 2;
-	return 1;
 }
 
 static int ath10k_mac_set_txbf_conf(struct ath10k_vif *arvif)
