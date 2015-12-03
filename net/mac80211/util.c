@@ -97,6 +97,9 @@ u8 *ieee80211_get_bssid(struct ieee80211_hdr *hdr, size_t len,
 }
 EXPORT_SYMBOL(ieee80211_get_bssid);
 
+unsigned long IEEE80211_MAX_QUEUE_MAP[3] = { -1L, -1L, -1L };
+EXPORT_SYMBOL(IEEE80211_MAX_QUEUE_MAP);
+
 void ieee80211_tx_set_protected(struct ieee80211_tx_data *tx)
 {
 	struct sk_buff *skb;
@@ -438,8 +441,11 @@ static void __ieee80211_wake_queue(struct ieee80211_hw *hw, int queue,
 
 	trace_wake_queue(local, queue, reason);
 
-	if (WARN_ON(queue >= hw->queues))
+	if (WARN_ON(queue >= hw->queues)) {
+		pr_err("wake-queue, queue: %d > hw->queues: %d\n",
+		       queue, hw->queues);
 		return;
+	}
 
 	if (!test_bit(reason, &local->queue_stop_reasons[queue]))
 		return;
@@ -624,7 +630,7 @@ void ieee80211_add_pending_skbs(struct ieee80211_local *local,
 }
 
 void ieee80211_stop_queues_by_reason(struct ieee80211_hw *hw,
-				     unsigned long queues,
+				     unsigned long *queues,
 				     enum queue_stop_reason reason,
 				     bool refcounted)
 {
@@ -634,7 +640,7 @@ void ieee80211_stop_queues_by_reason(struct ieee80211_hw *hw,
 
 	spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
 
-	for_each_set_bit(i, &queues, hw->queues)
+	for_each_set_bit(i, queues, hw->queues)
 		__ieee80211_stop_queue(hw, i, reason, refcounted);
 
 	spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
@@ -666,7 +672,7 @@ int ieee80211_queue_stopped(struct ieee80211_hw *hw, int queue)
 EXPORT_SYMBOL(ieee80211_queue_stopped);
 
 void ieee80211_wake_queues_by_reason(struct ieee80211_hw *hw,
-				     unsigned long queues,
+				     unsigned long *queues,
 				     enum queue_stop_reason reason,
 				     bool refcounted)
 {
@@ -676,7 +682,7 @@ void ieee80211_wake_queues_by_reason(struct ieee80211_hw *hw,
 
 	spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
 
-	for_each_set_bit(i, &queues, hw->queues)
+	for_each_set_bit(i, queues, hw->queues)
 		__ieee80211_wake_queue(hw, i, reason, refcounted, &flags);
 
 	spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
@@ -690,42 +696,63 @@ void ieee80211_wake_queues(struct ieee80211_hw *hw)
 }
 EXPORT_SYMBOL(ieee80211_wake_queues);
 
-static unsigned int
+void
 ieee80211_get_vif_queues(struct ieee80211_local *local,
-			 struct ieee80211_sub_if_data *sdata)
+			 struct ieee80211_sub_if_data *sdata,
+			 unsigned long *queues)
 {
-	unsigned int queues;
+	int idx;
 
+	memset(queues, 0, sizeof(IEEE80211_MAX_QUEUE_MAP));
 	if (sdata && ieee80211_hw_check(&local->hw, QUEUE_CONTROL)) {
 		int ac;
 
-		queues = 0;
-
-		for (ac = 0; ac < IEEE80211_NUM_ACS; ac++)
-			queues |= BIT(sdata->vif.hw_queue[ac]);
-		if (sdata->vif.cab_queue != IEEE80211_INVAL_HW_QUEUE)
-			queues |= BIT(sdata->vif.cab_queue);
+		for (ac = 0; ac < IEEE80211_NUM_ACS; ac++) {
+			idx = sdata->vif.hw_queue[ac] / BITS_PER_LONG;
+			queues[idx] |= (1L << (sdata->vif.hw_queue[ac] - idx * BITS_PER_LONG));
+		}
+		if (sdata->vif.cab_queue != IEEE80211_INVAL_HW_QUEUE) {
+			idx = sdata->vif.cab_queue / BITS_PER_LONG;
+			queues[idx] |= (1L << (sdata->vif.cab_queue - idx * BITS_PER_LONG));
+		}
 	} else {
 		/* all queues */
-		queues = BIT(local->hw.queues) - 1;
-	}
+		int i;
 
-	return queues;
+		for (i = 0; i<local->hw.queues; i++) {
+			idx = i / BITS_PER_LONG;
+			queues[idx] |= (1L << (i - idx * BITS_PER_LONG));
+		}
+	}
 }
 
 void __ieee80211_flush_queues(struct ieee80211_local *local,
 			      struct ieee80211_sub_if_data *sdata,
-			      unsigned int queues, bool drop)
+			      unsigned long *_queues, bool drop)
 {
+	unsigned long queues[IEEE80211_MAX_QUEUE_MAP_CNT] = { 0, 0, 0 };
+	bool empty = true;
+	int i;
+
 	if (!local->ops->flush)
 		return;
+
+	if (_queues)
+		memcpy(queues, _queues, sizeof(queues));
+
+	for (i = 0; i<IEEE80211_MAX_QUEUE_MAP_CNT; i++) {
+		if (queues[i]) {
+			empty = false;
+			break;
+		}
+	}
 
 	/*
 	 * If no queue was set, or if the HW doesn't support
 	 * IEEE80211_HW_QUEUE_CONTROL - flush all queues
 	 */
-	if (!queues || !ieee80211_hw_check(&local->hw, QUEUE_CONTROL))
-		queues = ieee80211_get_vif_queues(local, sdata);
+	if (empty || !ieee80211_hw_check(&local->hw, QUEUE_CONTROL))
+		ieee80211_get_vif_queues(local, sdata, queues);
 
 	ieee80211_stop_queues_by_reason(&local->hw, queues,
 					IEEE80211_QUEUE_STOP_REASON_FLUSH,
@@ -748,8 +775,11 @@ void ieee80211_stop_vif_queues(struct ieee80211_local *local,
 			       struct ieee80211_sub_if_data *sdata,
 			       enum queue_stop_reason reason)
 {
+	unsigned long queues[IEEE80211_MAX_QUEUE_MAP_CNT];
+
+	ieee80211_get_vif_queues(local, sdata, queues);
 	ieee80211_stop_queues_by_reason(&local->hw,
-					ieee80211_get_vif_queues(local, sdata),
+					queues,
 					reason, true);
 }
 
@@ -757,8 +787,11 @@ void ieee80211_wake_vif_queues(struct ieee80211_local *local,
 			       struct ieee80211_sub_if_data *sdata,
 			       enum queue_stop_reason reason)
 {
+	unsigned long queues[IEEE80211_MAX_QUEUE_MAP_CNT];
+
+	ieee80211_get_vif_queues(local, sdata, queues);
 	ieee80211_wake_queues_by_reason(&local->hw,
-					ieee80211_get_vif_queues(local, sdata),
+					queues,
 					reason, true);
 }
 

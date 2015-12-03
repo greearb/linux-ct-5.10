@@ -624,7 +624,7 @@ static inline void drv_rfkill_poll(struct ieee80211_local *local)
 
 static inline void drv_flush(struct ieee80211_local *local,
 			     struct ieee80211_sub_if_data *sdata,
-			     u32 queues, bool drop)
+			     unsigned long *queues, bool drop)
 {
 	struct ieee80211_vif *vif = sdata ? &sdata->vif : NULL;
 
@@ -633,9 +633,16 @@ static inline void drv_flush(struct ieee80211_local *local,
 	if (sdata && !check_sdata_in_driver(sdata))
 		return;
 
-	trace_drv_flush(local, queues, drop);
+	trace_drv_flush(local, queues[0], drop);
+	/* NOTE:  Only ath10k might want more queues than fits in 32-bits,
+	 * and currently it pays no attention to the queues argument.  So,
+	 * just passing first value here is safe.  If other drivers ever
+	 * do need to see the array, then can create a flushA member
+	 * and use it if it exists, falling back to old flush() for
+	 * other drivers.
+	 */
 	if (local->ops->flush)
-		local->ops->flush(&local->hw, vif, queues, drop);
+		local->ops->flush(&local->hw, vif, queues[0], drop);
 	trace_drv_return_void(local);
 }
 

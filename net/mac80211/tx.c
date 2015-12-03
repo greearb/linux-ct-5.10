@@ -5359,7 +5359,10 @@ int ieee80211_reserve_tid(struct ieee80211_sta *pubsta, u8 tid)
 	struct ieee80211_sub_if_data *sdata = sta->sdata;
 	struct ieee80211_local *local = sdata->local;
 	int ret;
-	u32 queues;
+	unsigned long queues[IEEE80211_MAX_QUEUE_MAP_CNT] = { 0, 0, 0 };
+	int idx, bit;
+
+	ieee80211_get_vif_queues(local, sdata, queues);
 
 	lockdep_assert_held(&local->sta_mtx);
 
@@ -5400,7 +5403,9 @@ int ieee80211_reserve_tid(struct ieee80211_sta *pubsta, u8 tid)
 					       AGG_STOP_LOCAL_REQUEST);
 	}
 
-	queues = BIT(sdata->vif.hw_queue[ieee802_1d_to_ac[tid]]);
+	idx = sdata->vif.hw_queue[ieee802_1d_to_ac[tid]] / BITS_PER_LONG;
+	bit = sdata->vif.hw_queue[ieee802_1d_to_ac[tid]] - (idx * BITS_PER_LONG);
+	queues[idx] = 1L << bit;
 	__ieee80211_flush_queues(local, sdata, queues, false);
 
 	sta->reserved_tid = tid;

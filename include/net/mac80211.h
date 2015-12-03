@@ -131,12 +131,14 @@ struct device;
  * enum ieee80211_max_queues - maximum number of queues
  *
  * @IEEE80211_MAX_QUEUES: Maximum number of regular device queues.
- * @IEEE80211_MAX_QUEUE_MAP: bitmap with maximum queues set
  */
 enum ieee80211_max_queues {
-	IEEE80211_MAX_QUEUES =		16,
-	IEEE80211_MAX_QUEUE_MAP =	BIT(IEEE80211_MAX_QUEUES) - 1,
+	IEEE80211_MAX_QUEUES =		65,
 };
+
+/* bitmap with maximum queues set */
+#define IEEE80211_MAX_QUEUE_MAP_CNT 3
+extern unsigned long IEEE80211_MAX_QUEUE_MAP[IEEE80211_MAX_QUEUE_MAP_CNT];
 
 #define IEEE80211_INVAL_HW_QUEUE	0xff
 
