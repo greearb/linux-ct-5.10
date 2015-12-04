@@ -238,6 +238,22 @@ int ath10k_modparam_target_num_msdu_desc_ct = 680;
 module_param_named(num_msdu_desc_ct, ath10k_modparam_target_num_msdu_desc_ct, int, 0444);
 MODULE_PARM_DESC(num_msdu_desc_ct, "Maximum MSDU Descriptors in firmware (must be multiple of 8)");
 
+/* The firmware tries to cache rate-ctrl objects in the host (driver) memory.  But,
+ * with lots of active stations, this appears to cause constant cache swapping and
+ * in the end, rate-ctrl fails to work well at all.
+ * CT Firmware has lots of RAM savings, especially when using fewer than 64 vdevs,
+ * so allow users to configure more than the default (currently 32) of in-ram
+ * rate-ctrl objects.  As long as firmware RAM is available, allocating as many
+ * rate-ctrl objects as possible (up to number of peers) is probably a good idea.
+ * This setting should be harmless in all CT firmware, but it will only have an
+ * effect in beta-16 firmware and later.  Setting value to 0 means use firmware
+ * defaults.
+ */
+int ath10k_modparam_target_num_rate_ctrl_objs_ct = 0;
+module_param_named(num_rate_ctrl_objs_ct, ath10k_modparam_target_num_rate_ctrl_objs_ct, int, 0444);
+MODULE_PARM_DESC(num_rate_ctrl_objs_ct, "Number of rate-ctrl objects to cache in firmware RAM");
+
+
 /**********/
 /* Crypto */
 /**********/

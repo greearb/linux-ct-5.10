@@ -6720,6 +6720,7 @@ static struct sk_buff *ath10k_wmi_10_1_op_gen_init(struct ath10k *ar)
 	config.rx_decap_mode = __cpu_to_le32(ar->wmi.rx_decap_mode);
 	config.num_vdevs = __cpu_to_le32(ar->max_num_vdevs);
 	config.num_peers = __cpu_to_le32(ar->max_num_peers);
+	config.tx_chain_mask = __cpu_to_le32(TARGET_10X_TX_CHAIN_MASK);
 
 	if (test_bit(ATH10K_FW_FEATURE_WMI_10X_CT,
 		     ar->running_fw->fw_file.fw_features)) {
@@ -6733,7 +6734,7 @@ static struct sk_buff *ath10k_wmi_10_1_op_gen_init(struct ath10k *ar)
 			config.rx_decap_mode = __cpu_to_le32(ATH10K_HW_TXRX_RAW |
 							     ATH10k_USE_SW_RX_CRYPT);
 			ar->use_swcrypt = true;
-			ath10k_err(ar, "using rx swcrypt\n");
+			ath10k_info(ar, "using rx swcrypt\n");
 		}
 		else if (ath10k_modparam_nohwcrypt) {
 			ath10k_err(ar, "module param nohwcrypt enabled, but firmware does not support this feature.  Disabling swcrypt.\n");
@@ -6749,6 +6750,12 @@ static struct sk_buff *ath10k_wmi_10_1_op_gen_init(struct ath10k *ar)
 		 * nearly enough for us anyway..
 		 */
 		config.bmiss_offload_max_vdev = 0;
+
+		if (ath10k_modparam_target_num_rate_ctrl_objs_ct) {
+			ath10k_info(ar, "using %d firmware rate-ctrl objects\n",
+				    ath10k_modparam_target_num_rate_ctrl_objs_ct);
+			config.tx_chain_mask |= __cpu_to_le32(ath10k_modparam_target_num_rate_ctrl_objs_ct << 24);
+		}
 	} else {
 		skid_limit = TARGET_10X_AST_SKID_LIMIT;
 		config.roam_offload_max_vdev =
@@ -6768,7 +6775,6 @@ static struct sk_buff *ath10k_wmi_10_1_op_gen_init(struct ath10k *ar)
 	BUG_ON(config.num_msdu_desc & 0x7);
 
 	config.num_tids = __cpu_to_le32(TARGET_10X_NUM_TIDS);
-	config.tx_chain_mask = __cpu_to_le32(TARGET_10X_TX_CHAIN_MASK);
 	config.rx_chain_mask = __cpu_to_le32(TARGET_10X_RX_CHAIN_MASK);
 	config.rx_timeout_pri_vo = __cpu_to_le32(TARGET_10X_RX_TIMEOUT_LO_PRI);
 	config.rx_timeout_pri_vi = __cpu_to_le32(TARGET_10X_RX_TIMEOUT_LO_PRI);

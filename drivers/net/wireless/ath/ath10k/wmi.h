@@ -2409,7 +2409,12 @@ struct wmi_resource_config {
 	 *   tx with a reduced number of chains if no clients are associated.
 	 *   This configuration parameter specifies the nominal chain-mask that
 	 *   should be used when not operating with a reduced set of tx chains.
+	 *
+	 *  NOTE:  Stored as uint8 internally in firmware, so I am going to
+	 *  steal some high bits to allow configuring the number of RAM
+	 *  rate-ctrl objects for CT firmware. --Ben
 	 */
+	/* mask >> 24:  rate-ctrl-objs-in-RAM */
 	__le32 tx_chain_mask;
 
 	/*

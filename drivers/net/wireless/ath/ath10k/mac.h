@@ -19,6 +19,7 @@ extern int ath10k_modparam_nohwcrypt;
 extern int ath10k_modparam_target_num_vdevs_ct;
 extern int ath10k_modparam_target_num_peers_ct;
 extern int ath10k_modparam_target_num_msdu_desc_ct;
+extern int ath10k_modparam_target_num_rate_ctrl_objs_ct;
 
 struct ath10k_generic_iter {
 	struct ath10k *ar;
