@@ -1869,7 +1869,7 @@ static int mac80211_hwsim_config(struct ieee80211_hw *hw, u32 changed)
 
 	if (conf->chandef.chan)
 		wiphy_dbg(hw->wiphy,
-			  "%s (freq=%d(%d - %d)/%s idle=%d ps=%d smps=%s)\n",
+			  "%s (chandef-chan freq=%d(%d - %d)/%s idle=%d ps=%d smps=%s)\n",
 			  __func__,
 			  conf->chandef.chan->center_freq,
 			  conf->chandef.center_freq1,
@@ -1880,7 +1880,7 @@ static int mac80211_hwsim_config(struct ieee80211_hw *hw, u32 changed)
 			  smps_modes[conf->smps_mode]);
 	else
 		wiphy_dbg(hw->wiphy,
-			  "%s (freq=0 idle=%d ps=%d smps=%s)\n",
+			  "%s (no-chandef-chan freq=0 idle=%d ps=%d smps=%s)\n",
 			  __func__,
 			  !!(conf->flags & IEEE80211_CONF_IDLE),
 			  !!(conf->flags & IEEE80211_CONF_PS),
@@ -3667,9 +3667,12 @@ static int hwsim_cloned_frame_received_nl(struct sk_buff *skb_2,
 	/* check if radio is configured properly */
 
 	if (data2->idle || !data2->started) {
-		if (net_ratelimit())
-			printk(KERN_DEBUG " hwsim rx-nl: radio %pM idle: %d or not started: %d\n",
-			       dst, data2->idle, !data2->started);
+		static unsigned int cnt = 0;
+		/* This is fairly common, and usually not a bug.  So, print errors
+		   rarely. */
+		if (((cnt++ & 0x3FF) == 0x3FF) && net_ratelimit())
+			printk(KERN_DEBUG " hwsim rx-nl: radio %pM idle: %d or not started: %d cnt: %d\n",
+			       dst, data2->idle, !data2->started, cnt);
 		goto out;
 	}
 
