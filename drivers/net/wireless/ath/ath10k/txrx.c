@@ -40,34 +40,64 @@ out:
 	spin_unlock_bh(&ar->data_lock);
 }
 
-static void ath10k_set_tx_rate_status(struct ieee80211_tx_rate *rate,
+static u8 cck_rateidx[] = {
+	3, 2 , 1, 0
+};
+#define cck_rateidx_size (ARRAY_SIZE(cck_rateidx))
+
+static u8 ofdm_rateidx[] = {
+	10, 8 , 6, 4, 11, 9, 7, 5
+};
+#define ofdm_rateidx_size (ARRAY_SIZE(ofdm_rateidx))
+
+static void ath10k_set_tx_rate_status(struct ath10k *ar,
+				      struct ieee80211_tx_rate *rate,
 				      const struct htt_tx_done *tx_done)
 {
+	struct ieee80211_channel *ch = ar->scan_channel;
 	u8 nss = (tx_done->tx_rate_code >> 4) & 0x3;
-	u8 rate_idx = tx_done->tx_rate_code & 0xF;
+	u8 hw_rate = tx_done->tx_rate_code & 0xF;
 
-	//pr_err("tx-rate-status, nss: %d rate_idx: %d  rate-code: 0x%x rate-flags: 0x%x\n",
-	//       nss, rate_idx, tx_done->tx_rate_code, tx_done->tx_rate_flags);
+	if (!ch)
+		ch = ar->rx_channel;
 
 	rate->count = 1;
-	rate->idx = rate_idx; /* TODO:  Not sure this is correct. */
+	rate->idx = -1; /* Will set it properly below if rate-code is sane. */
 
-	if (((tx_done->tx_rate_code >> 6) & 0x3) == 1) {
-		/* CCK/OFDM */
-	}
+	switch ((tx_done->tx_rate_code >> 6) & 0x3) {
+	case WMI_RATE_PREAMBLE_CCK:
+		if (likely(hw_rate < cck_rateidx_size))
+			rate->idx = cck_rateidx[hw_rate];
+		else
+			rate->idx = cck_rateidx[0];
+		break;
+
+        case WMI_RATE_PREAMBLE_OFDM:
+		if (likely(hw_rate < ofdm_rateidx_size))
+			rate->idx = ofdm_rateidx[hw_rate];
+		else
+			rate->idx = ofdm_rateidx[4];
+
+		/* If we are on 5Ghz, then idx must be decreased by
+		 * 4 since the CCK rates are not available on 5Ghz.
+		 */
+		if (ch && (ch->band == NL80211_BAND_5GHZ))
+			rate->idx -= 4;
+		break;
+	}/* switch OFDM/CCK */
 
 	if ((tx_done->tx_rate_code & 0xcc) == 0x44)
 		rate->flags |= IEEE80211_TX_RC_USE_SHORT_PREAMBLE;
 
 	if ((tx_done->tx_rate_code & 0xc0) == 0x80) {
 		rate->flags |= IEEE80211_TX_RC_MCS;
-		rate->idx += (nss * 8);
+		rate->idx = hw_rate + (nss * 8);
 	}
 
 	if ((tx_done->tx_rate_code & 0xc0) == 0xc0) {
 		rate->flags |= IEEE80211_TX_RC_VHT_MCS;
 		/* TODO-BEN:  Not sure this is correct. */
-		rate->idx = (nss << 4) | rate_idx;
+		rate->idx = (nss << 4) | hw_rate;
 	}
 
 	if (tx_done->tx_rate_flags & ATH10K_RC_FLAG_40MHZ)
@@ -175,7 +205,7 @@ int ath10k_txrx_tx_unref(struct ath10k_htt *htt,
 	}
 
 	if (tx_done->tx_rate_code || tx_done->tx_rate_flags) {
-		ath10k_set_tx_rate_status(&info->status.rates[0], tx_done);
+		ath10k_set_tx_rate_status(ar, &info->status.rates[0], tx_done);
 
 		/* Only in version 14 and higher of CT firmware */
 		if (test_bit(ATH10K_FW_FEATURE_HAS_TXSTATUS_NOACK,
