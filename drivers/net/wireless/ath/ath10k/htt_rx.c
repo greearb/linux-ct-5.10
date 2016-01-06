@@ -2887,7 +2887,7 @@ static void ath10k_htt_rx_tx_compl_ind(struct ath10k *ar,
 	ath10k_dbg(ar, ATH10K_DBG_HTT, "htt tx completion num_msdus %d\n",
 		   resp->data_tx_completion.num_msdus);
 
-	if (test_bit(ATH10K_FW_FEATURE_WMI_10X_CT,
+	if (test_bit(ATH10K_FW_FEATURE_TXRATE_CT,
 		     ar->running_fw->fw_file.fw_features)) {
 		/* CT firmware reports tx-rate-kbps as well as the msdu id */
 		for (i = 0; i < resp->data_tx_completion_ct.num_msdus; i++) {

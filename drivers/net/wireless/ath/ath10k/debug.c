@@ -554,7 +554,7 @@ int ath10k_refresh_peer_stats(struct ath10k *ar)
 
 int ath10k_refresh_target_regs(struct ath10k *ar)
 {
-	if (test_bit(ATH10K_FW_FEATURE_WMI_10X_CT,
+	if (test_bit(ATH10K_FW_FEATURE_REGDUMP_CT,
 		     ar->running_fw->fw_file.fw_features))
 		return ath10k_refresh_peer_stats_t(ar, WMI_REQUEST_REGISTER_DUMP);
 	return 0; /* fail silently if firmware does not support this option. */
