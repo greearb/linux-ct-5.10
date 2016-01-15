@@ -6722,6 +6722,16 @@ static struct sk_buff *ath10k_wmi_10_1_op_gen_init(struct ath10k *ar)
 	config.num_peers = __cpu_to_le32(ar->max_num_peers);
 	config.tx_chain_mask = __cpu_to_le32(TARGET_10X_TX_CHAIN_MASK);
 
+	skid_limit = TARGET_10X_AST_SKID_LIMIT;
+	config.roam_offload_max_vdev =
+		__cpu_to_le32(TARGET_10X_ROAM_OFFLOAD_MAX_VDEV);
+
+	config.roam_offload_max_ap_profiles =
+		__cpu_to_le32(TARGET_10X_ROAM_OFFLOAD_MAX_AP_PROFILES);
+	config.num_peer_keys = __cpu_to_le32(TARGET_10X_NUM_PEER_KEYS);
+	config.bmiss_offload_max_vdev =
+		__cpu_to_le32(TARGET_10X_BMISS_OFFLOAD_MAX_VDEV);
+
 	if (test_bit(ATH10K_FW_FEATURE_WMI_10X_CT,
 		     ar->running_fw->fw_file.fw_features)) {
 		skid_limit = TARGET_10X_AST_SKID_LIMIT_CT;
@@ -6744,35 +6754,25 @@ static struct sk_buff *ath10k_wmi_10_1_op_gen_init(struct ath10k *ar)
 		config.rx_decap_mode |= __cpu_to_le32(ATH10k_DISABLE_WOW);
 		config.roam_offload_max_vdev = 0; /* disable roaming */
 		config.roam_offload_max_ap_profiles = 0; /* disable roaming */
-		config.num_peer_keys = __cpu_to_le32(TARGET_10X_NUM_PEER_KEYS_CT);
 
 		/* Disable beacon-miss logic, old code had it at 2 vdevs, which is not
 		 * nearly enough for us anyway..
 		 */
 		config.bmiss_offload_max_vdev = 0;
 
+		config.num_peer_keys = __cpu_to_le32(TARGET_10X_NUM_PEER_KEYS_CT);
+
 		if (ath10k_modparam_target_num_rate_ctrl_objs_ct) {
 			ath10k_info(ar, "using %d firmware rate-ctrl objects\n",
 				    ath10k_modparam_target_num_rate_ctrl_objs_ct);
 			config.tx_chain_mask |= __cpu_to_le32(ath10k_modparam_target_num_rate_ctrl_objs_ct << 24);
 		}
-	} else {
-		skid_limit = TARGET_10X_AST_SKID_LIMIT;
-		config.roam_offload_max_vdev =
-			__cpu_to_le32(TARGET_10X_ROAM_OFFLOAD_MAX_VDEV);
-
-		config.roam_offload_max_ap_profiles =
-			__cpu_to_le32(TARGET_10X_ROAM_OFFLOAD_MAX_AP_PROFILES);
-		config.num_peer_keys = __cpu_to_le32(TARGET_10X_NUM_PEER_KEYS);
-		config.bmiss_offload_max_vdev =
-			__cpu_to_le32(TARGET_10X_BMISS_OFFLOAD_MAX_VDEV);
-
 	}
 	config.num_msdu_desc = __cpu_to_le32(ar->htt.max_num_pending_tx);
 	config.ast_skid_limit = __cpu_to_le32(skid_limit);
 
 	/* Firmware will crash if this is not even multiple of 8 */
-	BUG_ON(config.num_msdu_desc & 0x7);
+	BUG_ON(ar->htt.max_num_pending_tx & 0x7);
 
 	config.num_tids = __cpu_to_le32(TARGET_10X_NUM_TIDS);
 	config.rx_chain_mask = __cpu_to_le32(TARGET_10X_RX_CHAIN_MASK);
@@ -6820,8 +6820,20 @@ static struct sk_buff *ath10k_wmi_10_2_op_gen_init(struct ath10k *ar)
 	struct sk_buff *buf;
 	struct wmi_resource_config_10x config = {};
 	u32 val, features;
+	u32 skid_limit;
 
-	config.num_vdevs = __cpu_to_le32(TARGET_10X_NUM_VDEVS);
+	config.rx_decap_mode = __cpu_to_le32(ar->wmi.rx_decap_mode);
+
+	config.num_vdevs = __cpu_to_le32(ar->max_num_vdevs);
+	config.num_peers = __cpu_to_le32(ar->max_num_peers);
+	config.tx_chain_mask = __cpu_to_le32(TARGET_10X_TX_CHAIN_MASK);
+
+	skid_limit = TARGET_10X_AST_SKID_LIMIT;
+	config.roam_offload_max_vdev =
+		__cpu_to_le32(TARGET_10X_ROAM_OFFLOAD_MAX_VDEV);
+
+	config.roam_offload_max_ap_profiles =
+		__cpu_to_le32(TARGET_10X_ROAM_OFFLOAD_MAX_AP_PROFILES);
 	config.num_peer_keys = __cpu_to_le32(TARGET_10X_NUM_PEER_KEYS);
 
 	if (ath10k_peer_stats_enabled(ar)) {
@@ -6832,26 +6844,66 @@ static struct sk_buff *ath10k_wmi_10_2_op_gen_init(struct ath10k *ar)
 		config.num_tids = __cpu_to_le32(TARGET_10X_NUM_TIDS);
 	}
 
-	config.ast_skid_limit = __cpu_to_le32(TARGET_10X_AST_SKID_LIMIT);
 	config.tx_chain_mask = __cpu_to_le32(TARGET_10X_TX_CHAIN_MASK);
+	config.bmiss_offload_max_vdev =
+		__cpu_to_le32(TARGET_10X_BMISS_OFFLOAD_MAX_VDEV);
+
+	if (test_bit(ATH10K_FW_FEATURE_WMI_10X_CT,
+		     ar->running_fw->fw_file.fw_features)) {
+#if 0
+		/* Enabling this kills performance, for whatever reason. */
+		skid_limit = TARGET_10X_AST_SKID_LIMIT_CT;
+#endif
+		if (test_bit(ATH10K_FW_FEATURE_CT_RXSWCRYPT,
+			     ar->running_fw->fw_file.fw_features) &&
+		    ath10k_modparam_nohwcrypt) {
+			/* This will disable rx decryption in hardware, enable raw
+			 * rx mode, and native-wifi tx mode.  Requires 'CT' firmware.
+			 */
+			config.rx_decap_mode = __cpu_to_le32(ATH10K_HW_TXRX_RAW |
+							     ATH10k_USE_SW_RX_CRYPT);
+			ar->use_swcrypt = true;
+			ath10k_info(ar, "using rx swcrypt\n");
+		}
+		else if (ath10k_modparam_nohwcrypt) {
+			ath10k_err(ar, "module param nohwcrypt enabled, but firmware does not support this feature.  Disabling swcrypt.\n");
+		}
+
+		if (test_bit(ATH10K_FW_FEATURE_TXRATE_CT,
+			     ar->running_fw->fw_file.fw_features))
+			config.rx_decap_mode |= __cpu_to_le32(ATH10k_USE_TXCOMPL_TXRATE);
+
+		/* Disable WoW in firmware, could make this module option perhaps? */
+		config.rx_decap_mode |= __cpu_to_le32(ATH10k_DISABLE_WOW);
+
+		/* Disable beacon-miss logic, old code had it at 2 vdevs, which is not
+		 * nearly enough for us anyway..
+		 */
+		config.bmiss_offload_max_vdev = 0;
+		config.roam_offload_max_vdev = 0; /* disable roaming */
+		config.roam_offload_max_ap_profiles = 0; /* disable roaming */
+		config.num_peer_keys = __cpu_to_le32(TARGET_10X_NUM_PEER_KEYS_CT);
+
+		if (ath10k_modparam_target_num_rate_ctrl_objs_ct) {
+			ath10k_info(ar, "using %d firmware rate-ctrl objects\n",
+				    ath10k_modparam_target_num_rate_ctrl_objs_ct);
+			config.tx_chain_mask |= __cpu_to_le32(ath10k_modparam_target_num_rate_ctrl_objs_ct << 24);
+		}
+	}
+	config.num_msdu_desc = __cpu_to_le32(ar->htt.max_num_pending_tx);
+	config.ast_skid_limit = __cpu_to_le32(skid_limit);
+
+	/* Firmware will crash if this is not even multiple of 8 */
+	BUG_ON(ar->htt.max_num_pending_tx & 0x7);
+
 	config.rx_chain_mask = __cpu_to_le32(TARGET_10X_RX_CHAIN_MASK);
 	config.rx_timeout_pri_vo = __cpu_to_le32(TARGET_10X_RX_TIMEOUT_LO_PRI);
 	config.rx_timeout_pri_vi = __cpu_to_le32(TARGET_10X_RX_TIMEOUT_LO_PRI);
 	config.rx_timeout_pri_be = __cpu_to_le32(TARGET_10X_RX_TIMEOUT_LO_PRI);
 	config.rx_timeout_pri_bk = __cpu_to_le32(TARGET_10X_RX_TIMEOUT_HI_PRI);
-	config.rx_decap_mode = __cpu_to_le32(ar->wmi.rx_decap_mode);
 
 	config.scan_max_pending_reqs =
 		__cpu_to_le32(TARGET_10X_SCAN_MAX_PENDING_REQS);
-
-	config.bmiss_offload_max_vdev =
-		__cpu_to_le32(TARGET_10X_BMISS_OFFLOAD_MAX_VDEV);
-
-	config.roam_offload_max_vdev =
-		__cpu_to_le32(TARGET_10X_ROAM_OFFLOAD_MAX_VDEV);
-
-	config.roam_offload_max_ap_profiles =
-		__cpu_to_le32(TARGET_10X_ROAM_OFFLOAD_MAX_AP_PROFILES);
 
 	config.num_mcast_groups = __cpu_to_le32(TARGET_10X_NUM_MCAST_GROUPS);
 	config.num_mcast_table_elems =
@@ -6868,7 +6920,6 @@ static struct sk_buff *ath10k_wmi_10_2_op_gen_init(struct ath10k *ar)
 
 	config.vow_config = __cpu_to_le32(TARGET_10X_VOW_CONFIG);
 
-	config.num_msdu_desc = __cpu_to_le32(TARGET_10X_NUM_MSDU_DESC);
 	config.max_frag_entries = __cpu_to_le32(TARGET_10X_MAX_FRAG_ENTRIES);
 
 	buf = ath10k_wmi_alloc_skb(ar, struct_size(cmd, mem_chunks.items,

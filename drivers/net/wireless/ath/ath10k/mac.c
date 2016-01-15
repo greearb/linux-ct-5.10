@@ -234,7 +234,7 @@ module_param_named(num_peers_ct, ath10k_modparam_target_num_peers_ct, int, 0444)
 MODULE_PARM_DESC(num_peers_ct, "Maximum peers to request from firmware");
 
 /* These consume a fair bit of RAM on target. */
-int ath10k_modparam_target_num_msdu_desc_ct = 680;
+int ath10k_modparam_target_num_msdu_desc_ct = TARGET_10X_NUM_MSDU_DESC;
 module_param_named(num_msdu_desc_ct, ath10k_modparam_target_num_msdu_desc_ct, int, 0444);
 MODULE_PARM_DESC(num_msdu_desc_ct, "Maximum MSDU Descriptors in firmware (must be multiple of 8)");
 
@@ -10677,9 +10677,28 @@ int ath10k_mac_register(struct ath10k *ar)
 		break;
 	case ATH10K_FW_WMI_OP_VERSION_10_2:
 	case ATH10K_FW_WMI_OP_VERSION_10_2_4:
-		ar->hw->wiphy->iface_combinations = ath10k_10x_if_comb;
-		ar->hw->wiphy->n_iface_combinations =
-			ARRAY_SIZE(ath10k_10x_if_comb);
+		if (test_bit(ATH10K_FW_FEATURE_WMI_10X_CT,
+			     ar->running_fw->fw_file.fw_features)) {
+			ATH_ASSIGN_CONST_U16(ath10k_10x_ct_if_comb[0].limits[0].max, ar->max_num_vdevs);
+			ath10k_10x_ct_if_comb[0].max_interfaces =
+				ar->max_num_vdevs;
+
+			ar->hw->wiphy->iface_combinations =
+				ath10k_10x_ct_if_comb;
+			ar->hw->wiphy->n_iface_combinations =
+				ARRAY_SIZE(ath10k_10x_ct_if_comb);
+			ar->hw->wiphy->interface_modes |= BIT(NL80211_IFTYPE_ADHOC);
+
+			/* CT firmware can do tx-sw-crypt if properly configured */
+			if (test_bit(ATH10K_FW_FEATURE_CT_RXSWCRYPT,
+				     ar->running_fw->fw_file.fw_features) &&
+			    ath10k_modparam_nohwcrypt)
+				__clear_bit(IEEE80211_HW_SW_CRYPTO_CONTROL, ar->hw->flags);
+		} else {
+			ar->hw->wiphy->iface_combinations = ath10k_10x_if_comb;
+			ar->hw->wiphy->n_iface_combinations =
+				ARRAY_SIZE(ath10k_10x_if_comb);
+		}
 		break;
 	case ATH10K_FW_WMI_OP_VERSION_10_4:
 		ar->hw->wiphy->iface_combinations = ath10k_10_4_if_comb;
