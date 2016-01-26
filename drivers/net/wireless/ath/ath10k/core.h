@@ -1211,7 +1211,6 @@ struct ath10k {
 
 	/* protected by conf_mutex */
 	u8 ps_state_enable;
-	u32 set_rate_type; /* override for set-rate behaviour */
 
 	bool nlo_enabled;
 	bool p2p;

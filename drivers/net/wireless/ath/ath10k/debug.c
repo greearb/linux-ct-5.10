@@ -15,6 +15,7 @@
 #include "debug.h"
 #include "hif.h"
 #include "wmi-ops.h"
+#include "mac.h"
 
 /* ms */
 #define ATH10K_DEBUG_HTT_STATS_INTERVAL 1000
@@ -843,31 +844,16 @@ static ssize_t ath10k_read_set_rates(struct file *file,
 				     char __user *user_buf,
 				     size_t count, loff_t *ppos)
 {
-	struct ath10k *ar = file->private_data;
 	const char buf[] =
-		"To set unicast, beacon/mgt, multicast, and broadcast,\n"
-		"select a type below and then use 'iw' as normal to set\n"
-		"the desired rate.\n"
-		"beacon   # Beacons and management frames\n"
-		"bcast    # Broadcast frames\n"
-		"mcast    # Multicast frames\n"
-		"ucast    # Unicast frames (normal traffic, default)\n";
+		"This is to set fixed bcast, mcast, and beacon rates.  Normal rate-ctrl\n"
+		"is handled through normal API using 'iw', etc.\n"
+		"To set a value, you specify the dev-name, type, band and rate-code:\n"
+		"types: bcast, mcast, beacon\n"
+		"bands: 2, 5, 60\n"
+		"rate-codes: 0x43 1M, 0x42 2M, 0x41 5.5M, 0x40 11M, 0x3 6M, 0x7 9M, 0x2 12M, 0x6 18M, 0x1 24M, 0x5 36M, 0x0 48M, 0x4 54M, 0xFF default\n"
+		" For example, to set beacon to 18Mbps on wlan0:  echo \"wlan0 beacon 2 0x6\" > /debug/..../set_rates\n";
 
-	char tmpbuf[strlen(buf) + 80];
-	char* str = "ucast";
-
-	if (ar->set_rate_type == ar->wmi.vdev_param->mgmt_rate) {
-		str = "beacon";
-	}
-	else if (ar->set_rate_type == ar->wmi.vdev_param->bcast_data_rate) {
-		str = "bcast";
-	}
-	else if (ar->set_rate_type == ar->wmi.vdev_param->mcast_data_rate) {
-		str = "mcast";
-	}
-	sprintf(tmpbuf, "%sCurrent: %s\n", buf, str);
-
-	return simple_read_from_buffer(user_buf, count, ppos, tmpbuf, strlen(tmpbuf));
+	return simple_read_from_buffer(user_buf, count, ppos, buf, strlen(buf));
 }
 
 /* Set the rates for specific types of traffic.
@@ -877,10 +863,18 @@ static ssize_t ath10k_write_set_rates(struct file *file,
 				      size_t count, loff_t *ppos)
 {
 	struct ath10k *ar = file->private_data;
-	char buf[32];
+	char buf[80];
 	int ret;
-
-	mutex_lock(&ar->conf_mutex);
+	struct ath10k_vif *arvif;
+	struct ieee80211_vif *vif;
+	unsigned int vdev_id = 0xFFFF;
+	char* bufptr = buf;
+	long rc;
+	int cfg_band;
+	struct cfg80211_chan_def def;
+	char dev_name_match[IFNAMSIZ + 2];
+	struct wireless_dev *wdev;
+	int set_rate_type;
 
 	memset(buf, 0, sizeof(buf));
 
@@ -893,36 +887,122 @@ static ssize_t ath10k_write_set_rates(struct file *file,
 	if (buf[count - 1] == '\n')
 		buf[count - 1] = 0;
 
+	mutex_lock(&ar->conf_mutex);
+
 	/* Ignore empty lines, 'echo' appends them sometimes at least. */
 	if (buf[0] == 0) {
 		ret = count;
 		goto exit;
 	}
 
-	if (ar->state != ATH10K_STATE_ON &&
-	    ar->state != ATH10K_STATE_RESTARTED) {
-		ret = -ENETDOWN;
-		goto exit;
+	/* String starts with vdev name, ie 'wlan0'  Find the proper vif that
+	 * matches the name.
+	 */
+	list_for_each_entry(arvif, &ar->arvifs, list) {
+		vif = arvif->vif;
+		wdev = ieee80211_vif_to_wdev(vif);
+
+		if (!wdev)
+			continue;
+		snprintf(dev_name_match, sizeof(dev_name_match) - 1, "%s ", wdev->netdev->name);
+		if (strncmp(dev_name_match, buf, strlen(dev_name_match)) == 0) {
+			vdev_id = arvif->vdev_id;
+			bufptr = buf + strlen(dev_name_match);
+			break;
+		}
 	}
 
-	if (strncmp(buf, "beacon", strlen("beacon")) == 0) {
-		ar->set_rate_type = ar->wmi.vdev_param->mgmt_rate;
-	}
-	else if (strncmp(buf, "bcast", strlen("bcast")) == 0) {
-		ar->set_rate_type = ar->wmi.vdev_param->bcast_data_rate;
-	}
-	else if (strncmp(buf, "mcast", strlen("mcast")) == 0) {
-		ar->set_rate_type = ar->wmi.vdev_param->mcast_data_rate;
-	}
-	else if (strncmp(buf, "ucast", strlen("ucast")) == 0) {
-		ar->set_rate_type = 0;
-	}
-	else {
-		ath10k_warn(ar, "set-rate, invalid rate type: %s  count: %d  %02hx:%02hx:%02hx:%02hx\n",
-			    buf, (int)count, (int)(buf[0]), (int)(buf[1]), (int)(buf[2]), (int)(buf[3]));
+	if (vdev_id == 0xFFFF) {
+		ath10k_warn(ar, "set-rate, unknown netdev name: %s\n", buf);
 		ret = -EINVAL;
 		goto exit;
 	}
+
+	/* Now, check the type. */
+	if (strncmp(bufptr, "beacon ", strlen("beacon ")) == 0) {
+		set_rate_type = ar->wmi.vdev_param->mgmt_rate;
+		bufptr += strlen("beacon ");
+	}
+	else if (strncmp(bufptr, "bcast ", strlen("bcast ")) == 0) {
+		set_rate_type = ar->wmi.vdev_param->bcast_data_rate;
+		bufptr += strlen("bcast ");
+	}
+	else if (strncmp(bufptr, "mcast ", strlen("mcast ")) == 0) {
+		set_rate_type = ar->wmi.vdev_param->mcast_data_rate;
+		bufptr += strlen("mcast ");
+	}
+	else {
+		ath10k_warn(ar, "set-rate, invalid rate type: %s\n",
+			    bufptr);
+		ret = -EINVAL;
+		goto exit;
+	}
+
+	/* And the band */
+	if (strncmp(bufptr, "2 ", 2) == 0) {
+		cfg_band = NL80211_BAND_2GHZ;
+		bufptr += 2;
+	}
+	else if (strncmp(bufptr, "5 ", 2) == 0) {
+		cfg_band = NL80211_BAND_5GHZ;
+		bufptr += 2;
+	}
+	else if (strncmp(bufptr, "60 ", 3) == 0) {
+		cfg_band = NL80211_BAND_60GHZ;
+		bufptr += 3;
+	}
+	else {
+		ath10k_warn(ar, "set-rate, invalid band: %s\n",
+			    bufptr);
+		ret = -EINVAL;
+		goto exit;
+	}
+
+	/* Parse the rate-code. */
+	ret = kstrtol(bufptr, 0, &rc);
+	if (ret != 0) {
+		ath10k_warn(ar, "set-rate, invalid rate-code: %s\n", bufptr);
+		goto exit;
+	}
+
+	/* Store the value so we can re-apply it if firmware is restarted. */
+	if (set_rate_type == ar->wmi.vdev_param->mgmt_rate)
+		arvif->mgt_rate[cfg_band] = rc;
+	else if (set_rate_type == ar->wmi.vdev_param->bcast_data_rate)
+		arvif->bcast_rate[cfg_band] = rc;
+	else if (set_rate_type == ar->wmi.vdev_param->mcast_data_rate)
+		arvif->mcast_rate[cfg_band] = rc;
+
+	if (ar->state != ATH10K_STATE_ON &&
+	    ar->state != ATH10K_STATE_RESTARTED) {
+		/* OK, we will set it when vdev comes up */
+		ath10k_warn(ar, "set-rates, deferred-state is down, vdev %i type: 0x%x rc: 0x%lx band: %d\n",
+			    arvif->vdev_id, set_rate_type, rc, cfg_band);
+		goto exit;
+	}
+
+	if (ath10k_mac_vif_chan(vif, &def) == 0) {
+		if (def.chan->band != cfg_band) {
+			/* We stored value, will apply it later if we move to the
+			 * different band.
+			 */
+			ath10k_warn(ar, "set-rates, deferred-other-band, vdev %i type: 0x%x rc: 0x%lx band: %d\n",
+				    arvif->vdev_id, set_rate_type, rc, cfg_band);
+			goto exit;
+		}
+	}
+
+	/* and finally, send results to the firmware. */
+	ret = ath10k_wmi_vdev_set_param(ar, arvif->vdev_id, set_rate_type, rc);
+	if (ret) {
+		ath10k_warn(ar, "set-rates: vdev %i failed to set fixed rate, param 0x%x rate-code 0x%02lx\n",
+			    arvif->vdev_id, set_rate_type, rc);
+		return ret;
+	}
+
+	ath10k_warn(ar, "set-rates, vdev %i type: 0x%x rc: 0x%lx band: %d\n",
+		    arvif->vdev_id, set_rate_type, rc, cfg_band);
+
 	ret = count;
 
 exit:
