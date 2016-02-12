@@ -3390,6 +3390,7 @@ static const struct ath10k_hif_ops ath10k_pci_hif_ops = {
 	.power_down		= ath10k_pci_hif_power_down,
 	.read32			= ath10k_pci_read32,
 	.write32		= ath10k_pci_write32,
+	.fw_crashed_dump        = ath10k_pci_fw_crashed_dump,
 	.suspend		= ath10k_pci_hif_suspend,
 	.resume			= ath10k_pci_hif_resume,
 	.fetch_cal_eeprom	= ath10k_pci_hif_fetch_cal_eeprom,
