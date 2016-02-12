@@ -2028,7 +2028,7 @@ static void ath10k_pci_dump_dbglog(struct ath10k *ar)
 
 		ath10k_dbg_save_fw_dbg_buffer(ar, (__le32 *)(buffer), len >> 2);
 		ath10k_dbg_print_fw_dbg_buffer(ar, (__le32 *)(buffer),
-					       dbuf.length/sizeof(__le32),
+					       len / sizeof(__le32),
 					       KERN_ERR);
 		kfree(buffer);
 
