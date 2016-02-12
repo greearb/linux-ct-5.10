@@ -2888,9 +2888,10 @@ static void ath10k_htt_rx_tx_compl_ind(struct ath10k *ar,
 		   resp->data_tx_completion.num_msdus);
 
 	if (test_bit(ATH10K_FW_FEATURE_TXRATE_CT,
-		     ar->running_fw->fw_file.fw_features)) {
+		     ar->running_fw->fw_file.fw_features) &&
+	    ar->running_fw->fw_file.wmi_op_version != ATH10K_FW_WMI_OP_VERSION_10_4) {
 		/* CT firmware reports tx-rate-kbps as well as the msdu id */
-		for (i = 0; i < resp->data_tx_completion_ct.num_msdus; i++) {
+		for (i = 0; i < msdu_count; i++) {
 			msdu_id = resp->data_tx_completion_ct.msdus[i].id;
 			tx_done.msdu_id = __le16_to_cpu(msdu_id);
 			tx_done.tx_rate_code = resp->data_tx_completion_ct.msdus[i].tx_rate_code;
@@ -2910,7 +2911,49 @@ static void ath10k_htt_rx_tx_compl_ind(struct ath10k *ar,
 				ath10k_txrx_tx_unref(htt, &tx_done);
 			}
 		}
+	} else if (rssi_enabled) {
+		/* Round up, firmware will align to 32-bit boundaries */
+		int storage_idx = (resp->data_tx_completion_ct.num_msdus + 1) & ~1;
+		__le16 ack_rssi;
+		__le16 rate_info;
+		/* 10.4 firmware may report the ack rssi.  If so, it is
+		 * a series of uint16 appended on the end of the report.
+		 * And, 10.4 CT firmware may also report tx-rate, which
+		 * will again be a series of uint16 appended on the end.
+		 */
+		if (WARN_ON_ONCE(skb->len < ((storage_idx * 2) + sizeof(struct htt_data_tx_completion)))) {
+			ath10k_err(ar, "Invalid length for ack-rssi report, skb->len: %d  storage_idx: %d msdu: %d\n",
+				   skb->len, storage_idx, resp->data_tx_completion_ct.num_msdus);
+			goto do_generic;
+		}
+
+		if ((resp->data_tx_completion.flags2 & HTT_TX_CMPL_FLAG_RATE_FILLED) &&
+		    WARN_ON_ONCE(skb->len < ((storage_idx * 3) + sizeof(struct htt_data_tx_completion)))) {
+			ath10k_err(ar, "Invalid length for tx-rates report, skb->len: %d  storage_idx: %d msdu: %d\n",
+				   skb->len, storage_idx, resp->data_tx_completion_ct.num_msdus);
+			goto do_generic;
+		}
+
+		tx_done.tx_rate_code = 0;
+		tx_done.tx_rate_flags = 0;
+		for (i = 0; i < resp->data_tx_completion_ct.num_msdus; i++) {
+			msdu_id = resp->data_tx_completion.msdus[i];
+			tx_done.msdu_id = __le16_to_cpu(msdu_id);
+			ack_rssi = resp->data_tx_completion.msdus[storage_idx + i];
+			tx_done.ack_rssi = __le16_to_cpu(ack_rssi);
+			if (resp->data_tx_completion.flags2 & HTT_TX_CMPL_FLAG_RATE_FILLED) {
+				rate_info = resp->data_tx_completion.msdus[storage_idx * 2 + i];
+				rate_info = __le16_to_cpu(rate_info);
+				tx_done.tx_rate_code = rate_info >> 8;
+				tx_done.tx_rate_flags = rate_info & 0xFF;
+			}
+			ath10k_txrx_tx_unref(htt, &tx_done);
+		}
 	} else {
+do_generic:
+		/* Upstream firmware does not report any tx-rate */
+		tx_done.tx_rate_code = 0;
+		tx_done.tx_rate_flags = 0;
 		for (i = 0; i < msdu_count; i++) {
 			msdus = resp->data_tx_completion.msdus;
 			msdu_id = msdus[i];
