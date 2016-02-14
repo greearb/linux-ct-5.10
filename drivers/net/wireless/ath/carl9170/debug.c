@@ -736,14 +736,16 @@ static ssize_t carl9170_debugfs_hw_iowrite32_write(struct ar9170 *ar,
 		goto out;
 	}
 
-	if (reg <= 0x100000 || reg >= 0x280000) {
-		err = -EADDRNOTAVAIL;
-		goto out;
-	}
+	if (!(reg & 0x80000000)) { /* allow some hacks, user beware! */
+		if (reg <= 0x100000 || reg >= 0x280000) {
+			err = -EADDRNOTAVAIL;
+			goto out;
+		}
 
-	if (reg & 3) {
-		err = -EINVAL;
-		goto out;
+		if (reg & 3) {
+			err = -EINVAL;
+			goto out;
+		}
 	}
 
 	err = carl9170_write_reg(ar, reg, val);
@@ -809,6 +811,7 @@ DEBUGFS_READONLY_FILE(ampdu_density, 20, "%d",
 
 DEBUGFS_READONLY_FILE(beacon_int, 20, "%d TU", ar->global_beacon_int);
 DEBUGFS_READONLY_FILE(pretbtt, 20, "%d TU", ar->global_pretbtt);
+DEBUGFS_READONLY_FILE(fw_features, 20, "0x%x", ar->fw.feature_set);
 
 void carl9170_debugfs_register(struct ar9170 *ar)
 {
@@ -876,6 +879,8 @@ void carl9170_debugfs_register(struct ar9170 *ar)
 
 	DEBUGFS_ADD(beacon_int);
 	DEBUGFS_ADD(pretbtt);
+
+	DEBUGFS_ADD(fw_features);
 
 #undef DEBUGFS_ADD
 }

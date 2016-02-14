@@ -239,6 +239,8 @@ static int carl9170_fw(struct ar9170 *ar, const __u8 *data, size_t len)
 #define SUPP(feat)						\
 	(carl9170fw_supports(otus_desc->feature_set, feat))
 
+	ar->fw.feature_set = le32_to_cpu(otus_desc->feature_set);
+
 	if (!SUPP(CARL9170FW_DUMMY_FEATURE)) {
 		dev_err(&ar->udev->dev, "invalid firmware descriptor "
 			"format detected.\n");
@@ -263,7 +265,9 @@ static int carl9170_fw(struct ar9170 *ar, const __u8 *data, size_t len)
 	if (ilog2(le32_to_cpu(otus_desc->feature_set)) >=
 		__CARL9170FW_FEATURE_NUM) {
 		dev_warn(&ar->udev->dev, "driver does not support all "
-			 "firmware features.\n");
+			 "firmware features, feature-set: %d  driver-feature-num: %d\n",
+			 le32_to_cpu(otus_desc->feature_set),
+			 __CARL9170FW_FEATURE_NUM);
 	}
 
 	if (!SUPP(CARL9170FW_COMMAND_CAM)) {
