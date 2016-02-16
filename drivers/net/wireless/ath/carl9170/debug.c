@@ -718,6 +718,32 @@ static ssize_t carl9170_debugfs_erp_write(struct ar9170 *ar, const char *buf,
 
 DEBUGFS_DECLARE_RW_FILE(erp, 80);
 
+static char *carl9170_debugfs_pattern_mode_read(struct ar9170 *ar, char *buf,
+					      size_t bufsize, ssize_t *ret)
+{
+	ADD(buf, *ret, bufsize, "pattern-mode: %d\n", ar->pattern_mode);
+	return buf;
+}
+
+static ssize_t carl9170_debugfs_pattern_mode_write(struct ar9170 *ar,
+						   const char *buf,
+						   size_t count)
+{
+	int res, val;
+
+	if (count < 1)
+		return -EINVAL;
+
+	res = sscanf(buf, "%d", &val);
+	if (res != 1)
+		return -EINVAL;
+
+	ar->pattern_mode = val;
+	return count;
+}
+
+DEBUGFS_DECLARE_RW_FILE(pattern_mode, 80);
+
 static ssize_t carl9170_debugfs_hw_iowrite32_write(struct ar9170 *ar,
 	const char *buf, size_t count)
 {
@@ -874,6 +900,7 @@ void carl9170_debugfs_register(struct ar9170 *ar)
 	DEBUGFS_ADD(bug);
 
 	DEBUGFS_ADD(erp);
+	DEBUGFS_ADD(pattern_mode);
 
 	DEBUGFS_ADD(vif_dump);
 

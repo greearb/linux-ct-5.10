@@ -898,6 +898,13 @@ static int carl9170_op_config(struct ieee80211_hw *hw, u32 changed)
 	int err = 0;
 
 	mutex_lock(&ar->mutex);
+
+	/* If we are in tx-pattern mode, then don't allow config either. */
+	if (ar->pattern_mode) {
+		err = -EBUSY;
+		goto out;
+	}
+
 	if (changed & IEEE80211_CONF_CHANGE_LISTEN_INTERVAL) {
 		/* TODO */
 		err = 0;
