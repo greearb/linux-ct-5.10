@@ -6983,6 +6983,7 @@ static struct sk_buff *ath10k_wmi_10_4_op_gen_init(struct ath10k *ar)
 #if 0
 		/* Enabling this kills performance, for whatever reason. */
 		skid_limit = TARGET_10X_AST_SKID_LIMIT_CT;
+#endif
 		if (test_bit(ATH10K_FW_FEATURE_CT_RXSWCRYPT,
 			     ar->running_fw->fw_file.fw_features) &&
 		    ath10k_modparam_nohwcrypt) {
@@ -6998,7 +6999,6 @@ static struct sk_buff *ath10k_wmi_10_4_op_gen_init(struct ath10k *ar)
 			ath10k_err(ar, "module param nohwcrypt enabled, but firmware does not support this feature.  Disabling swcrypt.\n");
 		}
 
-#endif
 		if (test_bit(ATH10K_FW_FEATURE_TXRATE_CT,
 			     ar->running_fw->fw_file.fw_features)) {
 			config.rx_decap_mode |= __cpu_to_le32(ATH10k_USE_TXCOMPL_TXRATE);
