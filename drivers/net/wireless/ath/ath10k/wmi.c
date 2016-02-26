@@ -26,12 +26,6 @@
 #define ATH10K_WMI_BARRIER_TIMEOUT_HZ (3 * HZ)
 #define ATH10K_WMI_DFS_CONF_TIMEOUT_HZ (HZ / 6)
 
-static int modparam_override_eeprom_regdomain = -1;
-module_param_named(override_eeprom_regdomain,
-		   modparam_override_eeprom_regdomain, int, 0444);
-MODULE_PARM_DESC(override_eeprom_regdomain, "Override regdomain hardcoded in EEPROM with this value (DANGEROUS).");
-
-
 /* MAIN WMI cmd track */
 static struct wmi_cmd_map wmi_cmd_map = {
 	.init_cmdid = WMI_INIT_CMDID,
@@ -5638,19 +5632,19 @@ static void ath10k_wmi_event_service_ready_work(struct work_struct *work)
 			 ar->fw_version_build);
 	}
 
-	if ((modparam_override_eeprom_regdomain != -1) &&
-	    (modparam_override_eeprom_regdomain != ar->ath_common.regulatory.current_rd)) {
+	if ((ar->eeprom_regdom != -1) &&
+	    (ar->eeprom_regdom != ar->ath_common.regulatory.current_rd)) {
 		static int do_once = 1;
 		if (do_once) {
 			ath10k_err(ar, "DANGER! You're overriding EEPROM-defined regulatory domain,"
 				   "\nfrom: 0x%x to 0x%x\n",
-				   ar->ath_common.regulatory.current_rd, modparam_override_eeprom_regdomain);
+				   ar->ath_common.regulatory.current_rd, ar->eeprom_regdom);
 			ath10k_err(ar, "Your card was not certified to operate in the domain you chose.\n");
 			ath10k_err(ar, "This might result in a violation of your local regulatory rules.\n");
 			ath10k_err(ar, "Do not ever do this unless you really know what you are doing!\n");
 			do_once = 0;
 		}
-		ar->ath_common.regulatory.current_rd = modparam_override_eeprom_regdomain | COUNTRY_ERD_FLAG;
+		ar->ath_common.regulatory.current_rd = ar->eeprom_regdom | COUNTRY_ERD_FLAG;
 	}
 
 	num_mem_reqs = __le32_to_cpu(arg.num_mem_reqs);
@@ -5661,18 +5655,28 @@ static void ath10k_wmi_event_service_ready_work(struct work_struct *work)
 	}
 
 	if (test_bit(WMI_SERVICE_PEER_CACHING, ar->wmi.svc_map)) {
-		if (test_bit(ATH10K_FW_FEATURE_PEER_FLOW_CONTROL,
-			     ar->running_fw->fw_file.fw_features))
-			ar->num_active_peers = TARGET_10_4_QCACHE_ACTIVE_PEERS_PFC +
-					       ar->max_num_vdevs;
-		else
-			ar->num_active_peers = TARGET_10_4_QCACHE_ACTIVE_PEERS +
-					       ar->max_num_vdevs;
 
-		ar->max_num_peers = TARGET_10_4_NUM_QCACHE_PEERS_MAX +
-				    ar->max_num_vdevs;
-		ar->num_tids = ar->num_active_peers * 2;
-		ar->max_num_stations = TARGET_10_4_NUM_QCACHE_PEERS_MAX;
+		/* Don't over-ride user-specified config here, but otherwise,
+		 * adjust in case we are using PEER caching.
+		 */
+		if (!(ar->fwcfg.flags & ATH10K_FWCFG_ACTIVE_PEERS)) {
+			if (test_bit(ATH10K_FW_FEATURE_PEER_FLOW_CONTROL,
+				     ar->running_fw->fw_file.fw_features))
+				ar->num_active_peers = TARGET_10_4_QCACHE_ACTIVE_PEERS_PFC +
+					ar->max_num_vdevs;
+			else
+				ar->num_active_peers = TARGET_10_4_QCACHE_ACTIVE_PEERS +
+					ar->max_num_vdevs;
+		}
+
+		if (!(ar->fwcfg.flags & ATH10K_FWCFG_PEERS))
+			ar->max_num_peers = TARGET_10_4_NUM_QCACHE_PEERS_MAX +
+				ar->max_num_vdevs;
+
+		if (!(ar->fwcfg.flags & ATH10K_FWCFG_NUM_TIDS))
+			ar->num_tids = ar->num_active_peers * 2;
+		if (!(ar->fwcfg.flags & ATH10K_FWCFG_STATIONS))
+			ar->max_num_stations = TARGET_10_4_NUM_QCACHE_PEERS_MAX;
 	}
 
 	/* TODO: Adjust max peer count for cases like WMI_SERVICE_RATECTRL_CACHE
@@ -6653,7 +6657,7 @@ static struct sk_buff *ath10k_wmi_op_gen_init(struct ath10k *ar)
 
 	config.num_peer_keys = __cpu_to_le32(TARGET_NUM_PEER_KEYS);
 	config.num_tids = __cpu_to_le32(TARGET_NUM_TIDS);
-	config.ast_skid_limit = __cpu_to_le32(TARGET_AST_SKID_LIMIT);
+	config.ast_skid_limit = __cpu_to_le32(ar->skid_limit);
 	config.tx_chain_mask = __cpu_to_le32(TARGET_TX_CHAIN_MASK);
 	config.rx_chain_mask = __cpu_to_le32(TARGET_RX_CHAIN_MASK);
 	config.rx_timeout_pri_vo = __cpu_to_le32(TARGET_RX_TIMEOUT_LO_PRI);
@@ -6713,16 +6717,13 @@ static struct sk_buff *ath10k_wmi_10_1_op_gen_init(struct ath10k *ar)
 	struct wmi_init_cmd_10x *cmd;
 	struct sk_buff *buf;
 	struct wmi_resource_config_10x config = {};
-
 	u32 val;
-	u32 skid_limit;
 
 	config.rx_decap_mode = __cpu_to_le32(ar->wmi.rx_decap_mode);
 	config.num_vdevs = __cpu_to_le32(ar->max_num_vdevs);
 	config.num_peers = __cpu_to_le32(ar->max_num_peers);
 	config.tx_chain_mask = __cpu_to_le32(TARGET_10X_TX_CHAIN_MASK);
 
-	skid_limit = TARGET_10X_AST_SKID_LIMIT;
 	config.roam_offload_max_vdev =
 		__cpu_to_le32(TARGET_10X_ROAM_OFFLOAD_MAX_VDEV);
 
@@ -6734,7 +6735,6 @@ static struct sk_buff *ath10k_wmi_10_1_op_gen_init(struct ath10k *ar)
 
 	if (test_bit(ATH10K_FW_FEATURE_WMI_10X_CT,
 		     ar->running_fw->fw_file.fw_features)) {
-		skid_limit = TARGET_10X_AST_SKID_LIMIT_CT;
 		if (test_bit(ATH10K_FW_FEATURE_CT_RXSWCRYPT,
 			     ar->running_fw->fw_file.fw_features) &&
 		    ath10k_modparam_nohwcrypt) {
@@ -6746,8 +6746,8 @@ static struct sk_buff *ath10k_wmi_10_1_op_gen_init(struct ath10k *ar)
 			ar->use_swcrypt = true;
 			ath10k_info(ar, "using rx swcrypt\n");
 		}
-		else if (ath10k_modparam_nohwcrypt) {
-			ath10k_err(ar, "module param nohwcrypt enabled, but firmware does not support this feature.  Disabling swcrypt.\n");
+		else if (ar->request_nohwcrypt) {
+			ath10k_err(ar, "nohwcrypt requested, but firmware does not support this feature.  Disabling swcrypt.\n");
 		}
 		config.rx_decap_mode |= __cpu_to_le32(ATH10k_USE_TXCOMPL_TXRATE);
 		/* Disable WoW in firmware, could make this module option perhaps? */
@@ -6762,14 +6762,14 @@ static struct sk_buff *ath10k_wmi_10_1_op_gen_init(struct ath10k *ar)
 
 		config.num_peer_keys = __cpu_to_le32(TARGET_10X_NUM_PEER_KEYS_CT);
 
-		if (ath10k_modparam_target_num_rate_ctrl_objs_ct) {
+		if (ar->num_ratectrl_objs) {
 			ath10k_info(ar, "using %d firmware rate-ctrl objects\n",
-				    ath10k_modparam_target_num_rate_ctrl_objs_ct);
-			config.tx_chain_mask |= __cpu_to_le32(ath10k_modparam_target_num_rate_ctrl_objs_ct << 24);
+				    ar->num_ratectrl_objs);
+			config.tx_chain_mask |= __cpu_to_le32(ar->num_ratectrl_objs << 24);
 		}
 	}
 	config.num_msdu_desc = __cpu_to_le32(ar->htt.max_num_pending_tx);
-	config.ast_skid_limit = __cpu_to_le32(skid_limit);
+	config.ast_skid_limit = __cpu_to_le32(ar->skid_limit);
 
 	/* Firmware will crash if this is not even multiple of 8 */
 	BUG_ON(ar->htt.max_num_pending_tx & 0x7);
@@ -6820,7 +6820,6 @@ static struct sk_buff *ath10k_wmi_10_2_op_gen_init(struct ath10k *ar)
 	struct sk_buff *buf;
 	struct wmi_resource_config_10x config = {};
 	u32 val, features;
-	u32 skid_limit;
 
 	config.rx_decap_mode = __cpu_to_le32(ar->wmi.rx_decap_mode);
 
@@ -6828,7 +6827,6 @@ static struct sk_buff *ath10k_wmi_10_2_op_gen_init(struct ath10k *ar)
 	config.num_peers = __cpu_to_le32(ar->max_num_peers);
 	config.tx_chain_mask = __cpu_to_le32(TARGET_10X_TX_CHAIN_MASK);
 
-	skid_limit = TARGET_10X_AST_SKID_LIMIT;
 	config.roam_offload_max_vdev =
 		__cpu_to_le32(TARGET_10X_ROAM_OFFLOAD_MAX_VDEV);
 
@@ -6850,10 +6848,6 @@ static struct sk_buff *ath10k_wmi_10_2_op_gen_init(struct ath10k *ar)
 
 	if (test_bit(ATH10K_FW_FEATURE_WMI_10X_CT,
 		     ar->running_fw->fw_file.fw_features)) {
-#if 0
-		/* Enabling this kills performance, for whatever reason. */
-		skid_limit = TARGET_10X_AST_SKID_LIMIT_CT;
-#endif
 		if (test_bit(ATH10K_FW_FEATURE_CT_RXSWCRYPT,
 			     ar->running_fw->fw_file.fw_features) &&
 		    ath10k_modparam_nohwcrypt) {
@@ -6865,7 +6859,7 @@ static struct sk_buff *ath10k_wmi_10_2_op_gen_init(struct ath10k *ar)
 			ar->use_swcrypt = true;
 			ath10k_info(ar, "using rx swcrypt\n");
 		}
-		else if (ath10k_modparam_nohwcrypt) {
+		else if (ar->request_nohwcrypt) {
 			ath10k_err(ar, "module param nohwcrypt enabled, but firmware does not support this feature.  Disabling swcrypt.\n");
 		}
 
@@ -6884,14 +6878,14 @@ static struct sk_buff *ath10k_wmi_10_2_op_gen_init(struct ath10k *ar)
 		config.roam_offload_max_ap_profiles = 0; /* disable roaming */
 		config.num_peer_keys = __cpu_to_le32(TARGET_10X_NUM_PEER_KEYS_CT);
 
-		if (ath10k_modparam_target_num_rate_ctrl_objs_ct) {
+		if (ar->num_ratectrl_objs) {
 			ath10k_info(ar, "using %d firmware rate-ctrl objects\n",
-				    ath10k_modparam_target_num_rate_ctrl_objs_ct);
-			config.tx_chain_mask |= __cpu_to_le32(ath10k_modparam_target_num_rate_ctrl_objs_ct << 24);
+				    ar->num_ratectrl_objs);
+			config.tx_chain_mask |= __cpu_to_le32(ar->num_ratectrl_objs << 24);
 		}
 	}
 	config.num_msdu_desc = __cpu_to_le32(ar->htt.max_num_pending_tx);
-	config.ast_skid_limit = __cpu_to_le32(skid_limit);
+	config.ast_skid_limit = __cpu_to_le32(ar->skid_limit);
 
 	/* Firmware will crash if this is not even multiple of 8 */
 	BUG_ON(ar->htt.max_num_pending_tx & 0x7);
@@ -6955,7 +6949,6 @@ static struct sk_buff *ath10k_wmi_10_4_op_gen_init(struct ath10k *ar)
 	struct wmi_init_cmd_10_4 *cmd;
 	struct sk_buff *buf;
 	struct wmi_resource_config_10_4 config = {};
-	u32 skid_limit;
 
 	config.rx_decap_mode = __cpu_to_le32(ar->wmi.rx_decap_mode);
 
@@ -6967,7 +6960,6 @@ static struct sk_buff *ath10k_wmi_10_4_op_gen_init(struct ath10k *ar)
 	config.tx_chain_mask  = __cpu_to_le32(ar->hw_params.tx_chain_mask);
 	config.rx_chain_mask  = __cpu_to_le32(ar->hw_params.rx_chain_mask);
 
-	skid_limit = TARGET_10_4_AST_SKID_LIMIT;
 	config.roam_offload_max_vdev  =
 			__cpu_to_le32(TARGET_10_4_ROAM_OFFLOAD_MAX_VDEV);
 
@@ -6995,8 +6987,8 @@ static struct sk_buff *ath10k_wmi_10_4_op_gen_init(struct ath10k *ar)
 			ar->use_swcrypt = true;
 			ath10k_info(ar, "using rx swcrypt\n");
 		}
-		else if (ath10k_modparam_nohwcrypt) {
-			ath10k_err(ar, "module param nohwcrypt enabled, but firmware does not support this feature.  Disabling swcrypt.\n");
+		else if (ar->request_nohwcrypt) {
+			ath10k_err(ar, "nohwcrypt requested, but firmware does not support this feature.  Disabling swcrypt.\n");
 		}
 
 		if (test_bit(ATH10K_FW_FEATURE_TXRATE_CT,
@@ -7019,16 +7011,16 @@ static struct sk_buff *ath10k_wmi_10_4_op_gen_init(struct ath10k *ar)
 		/* NOT-YET: config.num_peer_keys = __cpu_to_le32(TARGET_10X_NUM_PEER_KEYS_CT); */
 
 #if 0
-		if (ath10k_modparam_target_num_rate_ctrl_objs_ct) {
+		if (ar->num_ratectrl_objs) {
 			ath10k_info(ar, "using %d firmware rate-ctrl objects\n",
-				    ath10k_modparam_target_num_rate_ctrl_objs_ct);
-			config.tx_chain_mask |= __cpu_to_le32(ath10k_modparam_target_num_rate_ctrl_objs_ct << 24);
+				    ar->num_ratectrl_objs);
+			config.tx_chain_mask |= __cpu_to_le32(ar->num_ratectrl_objs << 24);
 		}
 #endif
 	}
 	config.num_msdu_desc = __cpu_to_le32(ar->htt.max_num_pending_tx);
 	ath10k_warn(ar, "msdu-desc: %d\n", ar->htt.max_num_pending_tx);
-	config.ast_skid_limit = __cpu_to_le32(skid_limit);
+	config.ast_skid_limit = __cpu_to_le32(ar->skid_limit);
 
 	/* Firmware will crash if this is not even multiple of 8 */
 	BUG_ON(ar->htt.max_num_pending_tx & 0x7);

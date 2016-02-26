@@ -642,7 +642,7 @@ struct ath10k_vif {
 	} u;
 
 	bool use_cts_prot;
-	bool nohwcrypt;
+	bool nohwcrypt; /* actual setting, based on firmware abilities, etc. */
 	int num_legacy_stations;
 	int txpower;
 	bool ftm_responder;
@@ -1245,6 +1245,38 @@ struct ath10k {
 	const struct firmware *pre_cal_file;
 	const struct firmware *cal_file;
 
+	const struct firmware *fwcfg_file;
+	struct {
+#define ATH10K_FWCFG_FWVER          (1<<0)
+#define ATH10K_FWCFG_VDEVS          (1<<1)
+#define ATH10K_FWCFG_PEERS          (1<<2)
+#define ATH10K_FWCFG_STATIONS       (1<<3)
+#define ATH10K_FWCFG_NOHWCRYPT      (1<<4)
+#define ATH10K_FWCFG_RATE_CTRL_OBJS (1<<5)
+#define ATH10K_FWCFG_TX_DESC        (1<<6)
+#define ATH10K_FWCFG_MAX_NSS        (1<<7)
+#define ATH10K_FWCFG_NUM_TIDS       (1<<8)
+#define ATH10K_FWCFG_ACTIVE_PEERS   (1<<9)
+#define ATH10K_FWCFG_SKID_LIMIT     (1<<10)
+#define ATH10K_FWCFG_REGDOM         (1<<11)
+
+		u32 flags; /* let us know which fields have been set */
+		char calname[100];
+		char fwname[100];
+		u32 fwver;
+		u32 vdevs;
+		u32 stations;
+		u32 peers;
+		u32 nohwcrypt;
+		u32 rate_ctrl_objs;
+		u32 tx_desc; /* max_num_pending_tx descriptors */
+		u32 max_nss; /* max_spatial_stream */
+		u32 num_tids;
+		u32 active_peers;
+		u32 skid_limit;
+		int regdom;
+	} fwcfg;
+
 	struct {
 		u32 vendor;
 		u32 device;
@@ -1348,6 +1380,10 @@ struct ath10k {
 	int max_num_tdls_vdevs;
 	int num_active_peers;
 	int num_tids;
+	bool request_nohwcrypt; /* desired setting */
+	u32 num_ratectrl_objs;
+	u32 skid_limit;
+	int eeprom_regdom;
 
 	struct work_struct svc_rdy_work;
 	struct sk_buff *svc_rdy_skb;

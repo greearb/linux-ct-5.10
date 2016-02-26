@@ -13,6 +13,7 @@
 #include <linux/ctype.h>
 #include <linux/pm_qos.h>
 #include <asm/byteorder.h>
+#include <linux/ctype.h>
 
 #include "core.h"
 #include "mac.h"
@@ -39,6 +40,11 @@ unsigned long ath10k_coredump_mask = BIT(ATH10K_FW_CRASH_DUMP_REGISTERS) |
 				     BIT(ATH10K_FW_CRASH_DUMP_CE_DATA);
 
 /* FIXME: most of these should be readonly */
+static int _modparam_override_eeprom_regdomain = -1;
+module_param_named(override_eeprom_regdomain,
+		   _modparam_override_eeprom_regdomain, int, 0444);
+MODULE_PARM_DESC(override_eeprom_regdomain, "Override regdomain hardcoded in EEPROM with this value (DANGEROUS).");
+
 module_param_named(debug_mask, ath10k_debug_mask, uint, 0644);
 module_param_named(cryptmode, ath10k_cryptmode_param, uint, 0644);
 module_param(uart_print, bool, 0644);
@@ -1163,6 +1169,10 @@ static void ath10k_core_free_firmware_files(struct ath10k *ar)
 
 	ath10k_swap_code_seg_release(ar, &ar->normal_mode_fw.fw_file);
 
+	if (!IS_ERR(ar->fwcfg_file))
+		release_firmware(ar->fwcfg_file);
+	ar->fwcfg_file = NULL;
+
 	ar->normal_mode_fw.fw_file.otp_data = NULL;
 	ar->normal_mode_fw.fw_file.otp_len = 0;
 
@@ -1186,9 +1196,15 @@ static int ath10k_fetch_cal_file(struct ath10k *ar)
 	if (!IS_ERR(ar->pre_cal_file))
 		goto success;
 
-	/* cal-<bus>-<id>.bin */
-	scnprintf(filename, sizeof(filename), "cal-%s-%s.bin",
-		  ath10k_bus_str(ar->hif.bus), dev_name(ar->dev));
+	if (ar->fwcfg.calname[0]) {
+		/* Use user-specified file name. */
+		strncpy(filename, ar->fwcfg.calname, sizeof(filename));
+		filename[sizeof(filename) - 1] = 0;
+	} else {
+		/* cal-<bus>-<id>.bin */
+		scnprintf(filename, sizeof(filename), "cal-%s-%s.bin",
+			  ath10k_bus_str(ar->hif.bus), dev_name(ar->dev));
+	}
 
 	ar->cal_file = ath10k_fetch_fw_file(ar, ATH10K_FW_DIR, filename);
 	if (IS_ERR(ar->cal_file))
@@ -1198,6 +1214,207 @@ success:
 	ath10k_dbg(ar, ATH10K_DBG_BOOT, "found calibration file %s/%s\n",
 		   ATH10K_FW_DIR, filename);
 
+	return 0;
+}
+
+static int ath10k_fetch_fwcfg_file(struct ath10k *ar)
+{
+	char filename[100];
+	const char* buf;
+	size_t i = 0;
+	char val[100];
+	size_t key_idx;
+	size_t val_idx;
+	char c;
+	size_t sz;
+	long t;
+
+	ar->fwcfg.flags = 0;
+
+	/* fwcfg-<bus>-<id>.txt */
+	/* If this changes, change ath10k_read_fwinfo as well. */
+	scnprintf(filename, sizeof(filename), "fwcfg-%s-%s.txt",
+		  ath10k_bus_str(ar->hif.bus), dev_name(ar->dev));
+
+	ar->fwcfg_file = ath10k_fetch_fw_file(ar, ATH10K_FW_DIR, filename);
+	if (IS_ERR(ar->fwcfg_file)) {
+		/* FW config file is optional, don't be scary. */
+		ath10k_dbg(ar, ATH10K_DBG_BOOT,
+			   "Could not find firmware config file %s/%s, continuing with defaults.\n",
+			   ATH10K_FW_DIR, filename);
+		return PTR_ERR(ar->fwcfg_file);
+	}
+
+	ath10k_dbg(ar, ATH10K_DBG_BOOT, "found firmware config file %s/%s\n",
+		   ATH10K_FW_DIR, filename);
+
+	/* Now, attempt to parse results.
+	 * Format is key=value
+	 */
+	buf = (const char*)(ar->fwcfg_file->data);
+	while (i < ar->fwcfg_file->size) {
+start_again:
+		/* First, eat space, or entire line if we have # as first char */
+		c = buf[i];
+		while (isspace(c)) {
+			i++;
+			if (i >= ar->fwcfg_file->size)
+				goto done;
+			c = buf[i];
+		}
+		/* Eat comment ? */
+		if (c == '#') {
+			i++;
+			while (i < ar->fwcfg_file->size) {
+				c = buf[i];
+				i++;
+				if (c == '\n')
+					goto start_again;
+			}
+			/* Found no newline, must be done. */
+			goto done;
+		}
+
+		/* If here, we have start of token, store it in 'filename' to save space */
+		key_idx = 0;
+		while (i < ar->fwcfg_file->size) {
+			c = buf[i];
+			if (c == '=') {
+				i++;
+				c = buf[i];
+				/* Eat any space after the '=' sign. */
+				while (i < ar->fwcfg_file->size) {
+					if (!isspace(c)) {
+						break;
+					}
+					i++;
+					c = buf[i];
+				}
+				break;
+			}
+			if (isspace(c)) {
+				i++;
+				continue;
+			}
+			filename[key_idx] = c;
+			key_idx++;
+			if (key_idx >= sizeof(filename)) {
+				/* Too long, bail out. */
+				goto done;
+			}
+			i++;
+		}
+		filename[key_idx] = 0; /* null terminate */
+
+		/* We have found the key, now find the value */
+		val_idx = 0;
+		while (i < ar->fwcfg_file->size) {
+			c = buf[i];
+			if (isspace(c))
+				break;
+			val[val_idx] = c;
+			val_idx++;
+			if (val_idx >= sizeof(val)) {
+				/* Too long, bail out. */
+				goto done;
+			}
+			i++;
+		}
+		val[val_idx] = 0; /* null terminate value */
+
+		/* We have key and value now. */
+		ath10k_warn(ar, "fwcfg key: %s  val: %s\n",
+			    filename, val);
+
+		/* Assign key and values as appropriate */
+		if (strcasecmp(filename, "calname") == 0) {
+			sz = sizeof(ar->fwcfg.calname);
+			strncpy(ar->fwcfg.calname, val, sz);
+			ar->fwcfg.calname[sz - 1] = 0; /* ensure null term */
+		}
+		else if (strcasecmp(filename, "fwname") == 0) {
+			sz = sizeof(ar->fwcfg.fwname);
+			strncpy(ar->fwcfg.fwname, val, sz);
+			ar->fwcfg.fwname[sz - 1] = 0; /* ensure null term */
+		}
+		else if (strcasecmp(filename, "fwver") == 0) {
+			if (kstrtol(val, 0, &t) == 0) {
+				ar->fwcfg.fwver = t;
+				ar->fwcfg.flags |= ATH10K_FWCFG_FWVER;
+			}
+		}
+		else if (strcasecmp(filename, "vdevs") == 0) {
+			if (kstrtol(val, 0, &t) == 0) {
+				ar->fwcfg.vdevs = t;
+				ar->fwcfg.flags |= ATH10K_FWCFG_VDEVS;
+			}
+		}
+		else if (strcasecmp(filename, "stations") == 0) {
+			if (kstrtol(val, 0, &t) == 0) {
+				ar->fwcfg.stations = t;
+				ar->fwcfg.flags |= ATH10K_FWCFG_STATIONS;
+			}
+		}
+		else if (strcasecmp(filename, "peers") == 0) {
+			if (kstrtol(val, 0, &t) == 0) {
+				ar->fwcfg.peers = t;
+				ar->fwcfg.flags |= ATH10K_FWCFG_PEERS;
+			}
+		}
+		else if (strcasecmp(filename, "nohwcrypt") == 0) {
+			if (kstrtol(val, 0, &t) == 0) {
+				ar->fwcfg.nohwcrypt = t;
+				ar->fwcfg.flags |= ATH10K_FWCFG_NOHWCRYPT;
+			}
+		}
+		else if (strcasecmp(filename, "rate_ctrl_objs") == 0) {
+			if (kstrtol(val, 0, &t) == 0) {
+				ar->fwcfg.rate_ctrl_objs = t;
+				ar->fwcfg.flags |= ATH10K_FWCFG_RATE_CTRL_OBJS;
+			}
+		}
+		else if (strcasecmp(filename, "tx_desc") == 0) {
+			if (kstrtol(val, 0, &t) == 0) {
+				ar->fwcfg.tx_desc = t;
+				ar->fwcfg.flags |= ATH10K_FWCFG_TX_DESC;
+			}
+		}
+		else if (strcasecmp(filename, "max_nss") == 0) {
+			if (kstrtol(val, 0, &t) == 0) {
+				ar->fwcfg.max_nss = t;
+				ar->fwcfg.flags |= ATH10K_FWCFG_MAX_NSS;
+			}
+		}
+		else if (strcasecmp(filename, "tids") == 0) {
+			if (kstrtol(val, 0, &t) == 0) {
+				ar->fwcfg.num_tids = t;
+				ar->fwcfg.flags |= ATH10K_FWCFG_NUM_TIDS;
+			}
+		}
+		else if (strcasecmp(filename, "active_peers") == 0) {
+			if (kstrtol(val, 0, &t) == 0) {
+				ar->fwcfg.active_peers = t;
+				ar->fwcfg.flags |= ATH10K_FWCFG_ACTIVE_PEERS;
+			}
+		}
+		else if (strcasecmp(filename, "skid_limit") == 0) {
+			if (kstrtol(val, 0, &t) == 0) {
+				ar->fwcfg.skid_limit = t;
+				ar->fwcfg.flags |= ATH10K_FWCFG_SKID_LIMIT;
+			}
+		}
+		else if (strcasecmp(filename, "regdom") == 0) {
+			if (kstrtol(val, 0, &t) == 0) {
+				ar->fwcfg.regdom = t;
+				ar->fwcfg.flags |= ATH10K_FWCFG_REGDOM;
+			}
+		}
+		else {
+			ath10k_warn(ar, "Unknown fwcfg key name -:%s:-, val: %s\n",
+				    filename, val);
+		}
+	}
+done:
 	return 0;
 }
 
@@ -2117,8 +2334,24 @@ static int ath10k_core_fetch_firmware_files(struct ath10k *ar)
 	int ret, i;
 	char fw_name[100];
 
+	/* First, see if we have a special config file for this firmware. */
+	ath10k_fetch_fwcfg_file(ar);
+
 	/* calibration file is optional, don't check for any errors */
 	ath10k_fetch_cal_file(ar);
+
+	/* Check for user-specified firmware name. */
+	if (ar->fwcfg.fwname[0] && (ar->fwcfg.flags & ATH10K_FWCFG_FWVER)) {
+		ar->fw_api = ar->fwcfg.fwver;
+		ath10k_dbg(ar, ATH10K_DBG_BOOT,
+			   "trying user-specified fw %s api %d\n",
+			   ar->fwcfg.fwname, ar->fw_api);
+
+		ret = ath10k_core_fetch_firmware_api_n(ar, ar->fwcfg.fwname,
+				&ar->normal_mode_fw.fw_file);
+		if (ret == 0)
+			goto success;
+	}
 
 	for (i = ATH10K_FW_API_MAX; i >= ATH10K_FW_API_MIN; i--) {
 		ar->fw_api = i;
@@ -2557,6 +2790,7 @@ static int ath10k_core_init_firmware_features(struct ath10k *ar)
 	switch (fw_file->wmi_op_version) {
 	case ATH10K_FW_WMI_OP_VERSION_MAIN:
 		max_num_peers = TARGET_NUM_PEERS;
+		ar->skid_limit = TARGET_AST_SKID_LIMIT;
 		ar->max_num_stations = TARGET_NUM_STATIONS;
 		ar->max_num_vdevs = TARGET_NUM_VDEVS;
 		ar->htt.max_num_pending_tx = TARGET_NUM_MSDU_DESC;
@@ -2565,7 +2799,10 @@ static int ath10k_core_init_firmware_features(struct ath10k *ar)
 		ar->max_spatial_stream = WMI_MAX_SPATIAL_STREAM;
 		break;
 	case ATH10K_FW_WMI_OP_VERSION_10_1:
-		if (test_bit(ATH10K_FW_FEATURE_WMI_10X_CT, fw_file->fw_features)) {
+		ar->skid_limit = TARGET_10X_AST_SKID_LIMIT;
+		if (test_bit(ATH10K_FW_FEATURE_WMI_10X_CT,
+			     fw_file->fw_features)) {
+			ar->skid_limit = TARGET_10X_AST_SKID_LIMIT_CT;
 			ar->max_num_peers = ath10k_modparam_target_num_peers_ct;
 			ar->max_num_stations = TARGET_10X_NUM_STATIONS;
 			ar->max_num_vdevs = ath10k_modparam_target_num_vdevs_ct;
@@ -2588,6 +2825,7 @@ static int ath10k_core_init_firmware_features(struct ath10k *ar)
 			max_num_peers = TARGET_10X_NUM_PEERS;
 			ar->max_num_stations = TARGET_10X_NUM_STATIONS;
 		}
+		ar->skid_limit = TARGET_10X_AST_SKID_LIMIT;
 		ar->max_num_vdevs = TARGET_10X_NUM_VDEVS;
 		ar->htt.max_num_pending_tx = TARGET_10X_NUM_MSDU_DESC;
 
@@ -2618,6 +2856,7 @@ static int ath10k_core_init_firmware_features(struct ath10k *ar)
 		break;
 	case ATH10K_FW_WMI_OP_VERSION_10_4:
 		max_num_peers = TARGET_10_4_NUM_PEERS;
+		ar->skid_limit = TARGET_10_4_AST_SKID_LIMIT;
 		ar->max_num_stations = TARGET_10_4_NUM_STATIONS;
 		ar->num_active_peers = TARGET_10_4_ACTIVE_PEERS;
 		ar->max_num_vdevs = TARGET_10_4_NUM_VDEVS;
@@ -2639,6 +2878,7 @@ static int ath10k_core_init_firmware_features(struct ath10k *ar)
 			ar->max_num_peers = ath10k_modparam_target_num_peers_ct;
 			ar->max_num_vdevs = ath10k_modparam_target_num_vdevs_ct;
 			ar->htt.max_num_pending_tx = ath10k_modparam_target_num_msdu_desc_ct;
+			ar->max_num_vdevs = 8;
 		}
 
 		break;
@@ -2677,6 +2917,34 @@ static int ath10k_core_init_firmware_features(struct ath10k *ar)
 			return -EINVAL;
 		}
 	}
+
+	ar->request_nohwcrypt = ath10k_modparam_nohwcrypt;
+	ar->num_ratectrl_objs = ath10k_modparam_target_num_rate_ctrl_objs_ct;
+	ar->eeprom_regdom = _modparam_override_eeprom_regdomain;
+
+	/* Apply user-specified over-rides, if any. */
+	if (ar->fwcfg.flags & ATH10K_FWCFG_VDEVS)
+		ar->max_num_vdevs = ar->fwcfg.vdevs;
+	if (ar->fwcfg.flags & ATH10K_FWCFG_PEERS)
+		ar->max_num_peers = ar->fwcfg.peers;
+	if (ar->fwcfg.flags & ATH10K_FWCFG_STATIONS)
+		ar->max_num_stations = ar->fwcfg.stations;
+	if (ar->fwcfg.flags & ATH10K_FWCFG_NOHWCRYPT)
+		ar->request_nohwcrypt = ar->fwcfg.nohwcrypt;
+	if (ar->fwcfg.flags & ATH10K_FWCFG_RATE_CTRL_OBJS)
+		ar->num_ratectrl_objs = ar->fwcfg.rate_ctrl_objs;
+	if (ar->fwcfg.flags & ATH10K_FWCFG_TX_DESC)
+		ar->htt.max_num_pending_tx = ar->fwcfg.tx_desc;
+	if (ar->fwcfg.flags & ATH10K_FWCFG_MAX_NSS)
+		ar->max_spatial_stream = ar->fwcfg.max_nss;
+	if (ar->fwcfg.flags & ATH10K_FWCFG_NUM_TIDS)
+		ar->num_tids = ar->fwcfg.num_tids;
+	if (ar->fwcfg.flags & ATH10K_FWCFG_ACTIVE_PEERS)
+		ar->num_active_peers = ar->fwcfg.active_peers;
+	if (ar->fwcfg.flags & ATH10K_FWCFG_SKID_LIMIT)
+		ar->skid_limit = ar->fwcfg.skid_limit;
+	if (ar->fwcfg.flags & ATH10K_FWCFG_REGDOM)
+		ar->eeprom_regdom = ar->fwcfg.regdom;
 
 	return 0;
 }
