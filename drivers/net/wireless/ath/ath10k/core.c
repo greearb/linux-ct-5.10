@@ -2715,23 +2715,6 @@ static int ath10k_core_init_firmware_features(struct ath10k *ar)
 		return -EINVAL;
 	}
 
-	/* CT 10.1 firmware slowly added features, all mostly under one feature
-	 * flag.  But, for 10.2, I need to add features at a time so that we can
-	 * maintain ability to bisect the firmware and to have fine-grained support
-	 * for enabling/disabling firmware features.  For backwards-compt with 10.1
-	 * firmware, set all the flags here.
-	 */
-	if (test_bit(ATH10K_FW_FEATURE_WMI_10X_CT, fw_file->fw_features) &&
-	    (fw_file->wmi_op_version == ATH10K_FW_WMI_OP_VERSION_10_1)) {
-		__set_bit(ATH10K_FW_FEATURE_SET_SPECIAL_CT, fw_file->fw_features);
-		__set_bit(ATH10K_FW_FEATURE_REGDUMP_CT, fw_file->fw_features);
-		__set_bit(ATH10K_FW_FEATURE_TXRATE_CT, fw_file->fw_features);
-		__set_bit(ATH10K_FW_FEATURE_FLUSH_ALL_CT, fw_file->fw_features);
-		__set_bit(ATH10K_FW_FEATURE_PINGPONG_READ_CT, fw_file->fw_features);
-		__set_bit(ATH10K_FW_FEATURE_SKIP_CH_RES_CT, fw_file->fw_features);
-		__set_bit(ATH10K_FW_FEATURE_NOP_CT, fw_file->fw_features);
-	}
-
 	ar->wmi.rx_decap_mode = ATH10K_HW_TXRX_NATIVE_WIFI;
 	switch (ath10k_cryptmode_param) {
 	case ATH10K_CRYPT_MODE_HW:
@@ -2794,6 +2777,47 @@ static int ath10k_core_init_firmware_features(struct ath10k *ar)
 		} else {
 			fw_file->wmi_op_version = ATH10K_FW_WMI_OP_VERSION_MAIN;
 		}
+	}
+
+	/* Backwards compatibility for firmwares without
+	 * ATH10K_FW_IE_HTT_OP_VERSION.
+	 */
+	if (fw_file->htt_op_version == ATH10K_FW_HTT_OP_VERSION_UNSET) {
+		switch (fw_file->wmi_op_version) {
+		case ATH10K_FW_WMI_OP_VERSION_MAIN:
+			fw_file->htt_op_version = ATH10K_FW_HTT_OP_VERSION_MAIN;
+			break;
+		case ATH10K_FW_WMI_OP_VERSION_10_1:
+		case ATH10K_FW_WMI_OP_VERSION_10_2:
+		case ATH10K_FW_WMI_OP_VERSION_10_2_4:
+			fw_file->htt_op_version = ATH10K_FW_HTT_OP_VERSION_10_1;
+			break;
+		case ATH10K_FW_WMI_OP_VERSION_TLV:
+			fw_file->htt_op_version = ATH10K_FW_HTT_OP_VERSION_TLV;
+			break;
+		case ATH10K_FW_WMI_OP_VERSION_10_4:
+		case ATH10K_FW_WMI_OP_VERSION_UNSET:
+		case ATH10K_FW_WMI_OP_VERSION_MAX:
+			WARN_ON(1);
+			return -EINVAL;
+		}
+	}
+
+	/* CT 10.1 firmware slowly added features, all mostly under one feature
+	 * flag.  But, for 10.2, I need to add features at a time so that we can
+	 * maintain ability to bisect the firmware and to have fine-grained support
+	 * for enabling/disabling firmware features.  For backwards-compt with 10.1
+	 * firmware, set all the flags here.
+	 */
+	if (test_bit(ATH10K_FW_FEATURE_WMI_10X_CT, fw_file->fw_features) &&
+	    (fw_file->wmi_op_version == ATH10K_FW_WMI_OP_VERSION_10_1)) {
+		__set_bit(ATH10K_FW_FEATURE_SET_SPECIAL_CT, fw_file->fw_features);
+		__set_bit(ATH10K_FW_FEATURE_REGDUMP_CT, fw_file->fw_features);
+		__set_bit(ATH10K_FW_FEATURE_TXRATE_CT, fw_file->fw_features);
+		__set_bit(ATH10K_FW_FEATURE_FLUSH_ALL_CT, fw_file->fw_features);
+		__set_bit(ATH10K_FW_FEATURE_PINGPONG_READ_CT, fw_file->fw_features);
+		__set_bit(ATH10K_FW_FEATURE_SKIP_CH_RES_CT, fw_file->fw_features);
+		__set_bit(ATH10K_FW_FEATURE_NOP_CT, fw_file->fw_features);
 	}
 
 	switch (fw_file->wmi_op_version) {
@@ -2902,30 +2926,6 @@ static int ath10k_core_init_firmware_features(struct ath10k *ar)
 		ar->max_num_peers = ar->hw_params.num_peers;
 	else
 		ar->max_num_peers = max_num_peers;
-
-	/* Backwards compatibility for firmwares without
-	 * ATH10K_FW_IE_HTT_OP_VERSION.
-	 */
-	if (fw_file->htt_op_version == ATH10K_FW_HTT_OP_VERSION_UNSET) {
-		switch (fw_file->wmi_op_version) {
-		case ATH10K_FW_WMI_OP_VERSION_MAIN:
-			fw_file->htt_op_version = ATH10K_FW_HTT_OP_VERSION_MAIN;
-			break;
-		case ATH10K_FW_WMI_OP_VERSION_10_1:
-		case ATH10K_FW_WMI_OP_VERSION_10_2:
-		case ATH10K_FW_WMI_OP_VERSION_10_2_4:
-			fw_file->htt_op_version = ATH10K_FW_HTT_OP_VERSION_10_1;
-			break;
-		case ATH10K_FW_WMI_OP_VERSION_TLV:
-			fw_file->htt_op_version = ATH10K_FW_HTT_OP_VERSION_TLV;
-			break;
-		case ATH10K_FW_WMI_OP_VERSION_10_4:
-		case ATH10K_FW_WMI_OP_VERSION_UNSET:
-		case ATH10K_FW_WMI_OP_VERSION_MAX:
-			ath10k_err(ar, "htt op version not found from fw meta data");
-			return -EINVAL;
-		}
-	}
 
 	ar->request_nohwcrypt = ath10k_modparam_nohwcrypt;
 	ar->num_ratectrl_objs = ath10k_modparam_target_num_rate_ctrl_objs_ct;
