@@ -2003,6 +2003,7 @@ static inline int __ieee80211_resume(struct ieee80211_hw *hw)
 }
 
 /* utility functions/constants */
+bool ieee80211_any_band_supports_80mhz(struct ieee80211_local *local);
 extern const void *const mac80211_wiphy_privid; /* for wiphy privid */
 int ieee80211_frame_duration(enum nl80211_band band, size_t len,
 			     int rate, int erp, int short_preamble,

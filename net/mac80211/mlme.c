@@ -4957,8 +4957,6 @@ static int ieee80211_prep_channel(struct ieee80211_sub_if_data *sdata,
 	bool is_5ghz = cbss->channel->band == NL80211_BAND_5GHZ;
 	struct ieee80211_bss *bss = (void *)cbss->priv;
 	int ret;
-	u32 i;
-	bool have_80mhz;
 
 	sband = local->hw.wiphy->bands[cbss->channel->band];
 
@@ -5040,18 +5038,7 @@ static int ieee80211_prep_channel(struct ieee80211_sub_if_data *sdata,
 			ifmgd->flags |= IEEE80211_STA_DISABLE_HE;
 	}
 
-	/* Allow VHT if at least one channel on the sband supports 80 MHz */
-	have_80mhz = false;
-	for (i = 0; i < sband->n_channels; i++) {
-		if (sband->channels[i].flags & (IEEE80211_CHAN_DISABLED |
-						IEEE80211_CHAN_NO_80MHZ))
-			continue;
-
-		have_80mhz = true;
-		break;
-	}
-
-	if (!have_80mhz)
+	if (!ieee80211_any_band_supports_80mhz(local))
 		ifmgd->flags |= IEEE80211_STA_DISABLE_VHT;
 
 	if (sband->band == NL80211_BAND_S1GHZ) {
