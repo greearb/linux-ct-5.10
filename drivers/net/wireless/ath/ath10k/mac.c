@@ -10504,7 +10504,8 @@ int ath10k_mac_register(struct ath10k *ar)
 	ieee80211_hw_set(ar->hw, AP_LINK_PS);
 	ieee80211_hw_set(ar->hw, SPECTRUM_MGMT);
 	ieee80211_hw_set(ar->hw, SUPPORT_FAST_XMIT);
-	ieee80211_hw_set(ar->hw, CONNECTION_MONITOR);
+	if (ar->bmiss_offload_max_vdev > 0)
+		ieee80211_hw_set(ar->hw, CONNECTION_MONITOR);
 	ieee80211_hw_set(ar->hw, SUPPORTS_PER_STA_GTK);
 	ieee80211_hw_set(ar->hw, WANT_MONITOR_VIF);
 	ieee80211_hw_set(ar->hw, CHANCTX_STA_CSA);

@@ -6668,8 +6668,7 @@ static struct sk_buff *ath10k_wmi_op_gen_init(struct ath10k *ar)
 	config.scan_max_pending_reqs =
 		__cpu_to_le32(TARGET_SCAN_MAX_PENDING_REQS);
 
-	config.bmiss_offload_max_vdev =
-		__cpu_to_le32(TARGET_BMISS_OFFLOAD_MAX_VDEV);
+	config.bmiss_offload_max_vdev = __cpu_to_le32(ar->bmiss_offload_max_vdev);
 
 	config.roam_offload_max_vdev =
 		__cpu_to_le32(TARGET_ROAM_OFFLOAD_MAX_VDEV);
@@ -6730,8 +6729,8 @@ static struct sk_buff *ath10k_wmi_10_1_op_gen_init(struct ath10k *ar)
 	config.roam_offload_max_ap_profiles =
 		__cpu_to_le32(TARGET_10X_ROAM_OFFLOAD_MAX_AP_PROFILES);
 	config.num_peer_keys = __cpu_to_le32(TARGET_10X_NUM_PEER_KEYS);
-	config.bmiss_offload_max_vdev =
-		__cpu_to_le32(TARGET_10X_BMISS_OFFLOAD_MAX_VDEV);
+
+	config.bmiss_offload_max_vdev = __cpu_to_le32(ar->bmiss_offload_max_vdev);
 
 	if (test_bit(ATH10K_FW_FEATURE_WMI_10X_CT,
 		     ar->running_fw->fw_file.fw_features)) {
@@ -6754,11 +6753,6 @@ static struct sk_buff *ath10k_wmi_10_1_op_gen_init(struct ath10k *ar)
 		config.rx_decap_mode |= __cpu_to_le32(ATH10k_DISABLE_WOW);
 		config.roam_offload_max_vdev = 0; /* disable roaming */
 		config.roam_offload_max_ap_profiles = 0; /* disable roaming */
-
-		/* Disable beacon-miss logic, old code had it at 2 vdevs, which is not
-		 * nearly enough for us anyway..
-		 */
-		config.bmiss_offload_max_vdev = 0;
 
 		config.num_peer_keys = __cpu_to_le32(TARGET_10X_NUM_PEER_KEYS_CT);
 
@@ -6833,6 +6827,7 @@ static struct sk_buff *ath10k_wmi_10_2_op_gen_init(struct ath10k *ar)
 	config.roam_offload_max_ap_profiles =
 		__cpu_to_le32(TARGET_10X_ROAM_OFFLOAD_MAX_AP_PROFILES);
 	config.num_peer_keys = __cpu_to_le32(TARGET_10X_NUM_PEER_KEYS);
+	config.bmiss_offload_max_vdev = __cpu_to_le32(ar->bmiss_offload_max_vdev);
 
 	if (ath10k_peer_stats_enabled(ar)) {
 		config.num_peers = __cpu_to_le32(TARGET_10X_TX_STATS_NUM_PEERS);
@@ -6843,8 +6838,6 @@ static struct sk_buff *ath10k_wmi_10_2_op_gen_init(struct ath10k *ar)
 	}
 
 	config.tx_chain_mask = __cpu_to_le32(TARGET_10X_TX_CHAIN_MASK);
-	config.bmiss_offload_max_vdev =
-		__cpu_to_le32(TARGET_10X_BMISS_OFFLOAD_MAX_VDEV);
 
 	if (test_bit(ATH10K_FW_FEATURE_WMI_10X_CT,
 		     ar->running_fw->fw_file.fw_features)) {
@@ -6870,10 +6863,6 @@ static struct sk_buff *ath10k_wmi_10_2_op_gen_init(struct ath10k *ar)
 		/* Disable WoW in firmware, could make this module option perhaps? */
 		config.rx_decap_mode |= __cpu_to_le32(ATH10k_DISABLE_WOW);
 
-		/* Disable beacon-miss logic, old code had it at 2 vdevs, which is not
-		 * nearly enough for us anyway..
-		 */
-		config.bmiss_offload_max_vdev = 0;
 		config.roam_offload_max_vdev = 0; /* disable roaming */
 		config.roam_offload_max_ap_profiles = 0; /* disable roaming */
 		config.num_peer_keys = __cpu_to_le32(TARGET_10X_NUM_PEER_KEYS_CT);
@@ -6966,8 +6955,7 @@ static struct sk_buff *ath10k_wmi_10_4_op_gen_init(struct ath10k *ar)
 	config.roam_offload_max_ap_profiles =
 			__cpu_to_le32(TARGET_10_4_ROAM_OFFLOAD_MAX_PROFILES);
 	config.num_peer_keys  = __cpu_to_le32(TARGET_10_4_NUM_PEER_KEYS);
-	config.bmiss_offload_max_vdev =
-			__cpu_to_le32(TARGET_10_4_BMISS_OFFLOAD_MAX_VDEV);
+	config.bmiss_offload_max_vdev = __cpu_to_le32(ar->bmiss_offload_max_vdev);
 	config.qwrap_config = __cpu_to_le32(TARGET_10_4_QWRAP_CONFIG);
 
 	if (test_bit(ATH10K_FW_FEATURE_WMI_10X_CT,
@@ -7002,10 +6990,6 @@ static struct sk_buff *ath10k_wmi_10_4_op_gen_init(struct ath10k *ar)
 		/* Disable WoW in firmware, could make this module option perhaps? */
 		config.rx_decap_mode |= __cpu_to_le32(ATH10k_DISABLE_WOW);
 
-		/* Disable beacon-miss logic, old code had it at 2 vdevs, which is not
-		 * nearly enough for us anyway..
-		 */
-		config.bmiss_offload_max_vdev = 0;
 		config.roam_offload_max_vdev = 0; /* disable roaming */
 		config.roam_offload_max_ap_profiles = 0; /* disable roaming */
 		/* NOT-YET: config.num_peer_keys = __cpu_to_le32(TARGET_10X_NUM_PEER_KEYS_CT); */
