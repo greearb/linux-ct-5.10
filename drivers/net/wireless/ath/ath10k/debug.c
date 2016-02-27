@@ -876,6 +876,65 @@ static const struct file_operations fops_simulate_fw_crash = {
 	.llseek = default_llseek,
 };
 
+static ssize_t ath10k_read_debug_level(struct file *file,
+				       char __user *user_buf,
+				       size_t count, loff_t *ppos)
+{
+	int sz;
+	const char buf[] =
+		"To change debug level, set value adding up desired flags:\n"
+		"PCI:                0x1\n"
+		"WMI:                0x2\n"
+		"HTC:                0x4\n"
+		"HTT:                0x8\n"
+		"MAC:               0x10\n"
+		"BOOT:              0x20\n"
+		"PCI-DUMP:          0x40\n"
+		"HTT-DUMP:          0x80\n"
+		"MGMT:             0x100\n"
+		"DATA:             0x200\n"
+		"BMI:              0x400\n"
+		"REGULATORY:       0x800\n"
+		"TESTMODE:        0x1000\n"
+		"INFO-AS-DBG: 0x40000000\n"
+		"FW:          0x80000000\n"
+		"ALL:         0xFFFFFFFF\n";
+	char wbuf[sizeof(buf) + 60];
+	sz = snprintf(wbuf, sizeof(wbuf), "Current debug level: 0x%x\n\n%s",
+		      ath10k_debug_mask, buf);
+	wbuf[sizeof(wbuf) - 1] = 0;
+
+	return simple_read_from_buffer(user_buf, count, ppos, wbuf, sz);
+}
+
+/* Set logging level.
+ */
+static ssize_t ath10k_write_debug_level(struct file *file,
+					const char __user *user_buf,
+					size_t count, loff_t *ppos)
+{
+	struct ath10k *ar = file->private_data;
+	int ret;
+	unsigned long mask;
+
+	ret = kstrtoul_from_user(user_buf, count, 0, &mask);
+	if (ret)
+		return ret;
+
+	ath10k_warn(ar, "Setting debug-mask to: 0x%lx  old: 0x%x\n",
+		    mask, ath10k_debug_mask);
+	ath10k_debug_mask = mask;
+	return count;
+}
+
+static const struct file_operations fops_debug_level = {
+	.read = ath10k_read_debug_level,
+	.write = ath10k_write_debug_level,
+	.open = simple_open,
+	.owner = THIS_MODULE,
+	.llseek = default_llseek,
+};
+
 static ssize_t ath10k_read_set_rates(struct file *file,
 				     char __user *user_buf,
 				     size_t count, loff_t *ppos)
@@ -3277,6 +3336,9 @@ int ath10k_debug_register(struct ath10k *ar)
 
 	debugfs_create_file("simulate_fw_crash", 0600, ar->debug.debugfs_phy, ar,
 			    &fops_simulate_fw_crash);
+
+	debugfs_create_file("debug_level", 0600, ar->debug.debugfs_phy,
+			    ar, &fops_debug_level);
 
 	debugfs_create_file("reg_addr", 0600, ar->debug.debugfs_phy, ar,
 			    &fops_reg_addr);
