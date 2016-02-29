@@ -2873,8 +2873,11 @@ static void ath10k_htt_rx_tx_compl_ind(struct ath10k *ar,
 		break;
 	}
 
-	ath10k_dbg(ar, ATH10K_DBG_HTT, "htt tx completion num_msdus %d\n",
-		   resp->data_tx_completion.num_msdus);
+	ath10k_dbg(ar, ATH10K_DBG_HTT,
+		   "htt tx completion num_msdus %d status: %d  discard: %d  no-ack: %d\n",
+		   resp->data_tx_completion.num_msdus, status,
+		   tx_done.status == HTT_TX_COMPL_STATE_DISCARD,
+		   tx_done.status == HTT_TX_COMPL_STATE_NOACK);
 
 	msdu_count = resp->data_tx_completion.num_msdus;
 	msdus = resp->data_tx_completion.msdus;
@@ -4113,6 +4116,9 @@ bool ath10k_htt_t2h_msg_handler(struct ath10k *ar, struct sk_buff *skb)
 			}
 			break;
 		case HTT_MGMT_TX_STATUS_RETRY:
+			tx_done.status = HTT_TX_COMPL_STATE_NOACK;
+			break;
+		case HTT_MGMT_TX_STATUS_TXFILT:
 			tx_done.status = HTT_TX_COMPL_STATE_NOACK;
 			break;
 		case HTT_MGMT_TX_STATUS_DROP:

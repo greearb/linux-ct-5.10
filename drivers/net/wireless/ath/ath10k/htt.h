@@ -384,7 +384,9 @@ struct htt_mgmt_tx_desc {
 enum htt_mgmt_tx_status {
 	HTT_MGMT_TX_STATUS_OK    = 0,
 	HTT_MGMT_TX_STATUS_RETRY = 1,
-	HTT_MGMT_TX_STATUS_DROP  = 2
+	HTT_MGMT_TX_STATUS_DROP  = 2,
+	HTT_MGMT_TX_STATUS_TXFILT = 3 /* Seems to be logically similar to
+					 RETRY failure. */
 };
 
 /*=== target -> host messages ===============================================*/
