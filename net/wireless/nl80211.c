@@ -4700,7 +4700,7 @@ static int nl80211_parse_tx_bitrate_mask(struct genl_info *info,
 		}
 		sband = rdev->wiphy.bands[band];
 		if (!sband) {
-			pr_err("sband[%d] is null\n", band);
+			/* pr_err("sband[%d] is null\n", band); */
 			return -EINVAL;
 		}
 		err = nla_parse_nested_deprecated(tb, NL80211_TXRATE_MAX,
