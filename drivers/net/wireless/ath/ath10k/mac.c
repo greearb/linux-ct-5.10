@@ -10233,6 +10233,10 @@ static struct ieee80211_iface_limit ath10k_10_4_ct_if_limits[] = {
 			| BIT(NL80211_IFTYPE_MESH_POINT)
 #endif
 	},
+	{
+	.max	= 1,
+	.types	= BIT(NL80211_IFTYPE_ADHOC)
+	},
 };
 
 static struct ieee80211_iface_combination ath10k_10_4_ct_if_comb[] = {
