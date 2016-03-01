@@ -321,6 +321,7 @@ void ath10k_debug_fw_stats_process(struct ath10k *ar, struct sk_buff *skb)
 		int i;
 
 		if ((ar->running_fw->fw_file.wmi_op_version == ATH10K_FW_WMI_OP_VERSION_10_2) ||
+		    (ar->running_fw->fw_file.wmi_op_version == ATH10K_FW_WMI_OP_VERSION_10_4) ||
 		    (ar->running_fw->fw_file.wmi_op_version == ATH10K_FW_WMI_OP_VERSION_10_2_4)) {
 			const struct wmi_10_2_stats_event *ev2 = (void *)skb->data;
 			regdump = (struct ath10k_reg_dump*)(ev2->data);
