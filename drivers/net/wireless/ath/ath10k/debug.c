@@ -401,6 +401,9 @@ void ath10k_debug_fw_stats_process(struct ath10k *ar, struct sk_buff *skb)
 			case SW_SHORT_RETRIES:
 				sptr->short_retries = __le32_to_cpu(regdump->regpair[i].reg_val);
 				break;
+			case ADC_TEMP:
+				sptr->adc_temp = __le32_to_cpu(regdump->regpair[i].reg_val);
+				break;
 			}/* switch */
 		}
 		complete(&ar->debug.fw_stats_complete);
@@ -685,6 +688,8 @@ static ssize_t ath10k_read_fw_regs(struct file *file, char __user *user_buf,
 			 "MAC-PCU-RXFILTER", fw_regs->pcu_rxfilter);
 	len += scnprintf(buf + len, buf_len - len, "%30s 0x%08x\n",
 			 "SW-RXFILTER", fw_regs->sw_rxfilter);
+	len += scnprintf(buf + len, buf_len - len, "%30s 0x%08x\n",
+			 "ADC-TEMP", fw_regs->adc_temp);
 
 	spin_unlock_bh(&ar->data_lock);
 
@@ -1725,6 +1730,7 @@ static const char ath10k_gstrings_stats[][ETH_GSTRING_LEN] = {
 	"d_fw_powerup_failed", /* boolean */
 	"d_short_tx_retries", /* RTS tx retries */
 	"d_long_tx_retries", /* DATA tx retries */
+	"d_fw_adc_temp", /* ADC Temperature readings. */
 };
 
 #define ATH10K_SSTATS_LEN ARRAY_SIZE(ath10k_gstrings_stats)
@@ -1843,6 +1849,7 @@ void ath10k_debug_get_et_stats(struct ieee80211_hw *hw,
 	data[i++] = ar->fw_powerup_failed;
 	data[i++] = ar->debug.fw_stats.short_retries;
 	data[i++] = ar->debug.fw_stats.long_retries;
+	data[i++] = ar->debug.fw_stats.adc_temp;
 
 	spin_unlock_bh(&ar->data_lock);
 

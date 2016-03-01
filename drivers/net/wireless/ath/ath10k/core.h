@@ -370,6 +370,10 @@ struct ath10k_fw_stats {
 	u32 sw_rxfilter;
 	u32 short_retries; // RTS packet retries
 	u32 long_retries; // Data packet retries
+	u32 adc_temp; /* ADC Temperature readings, one octet for each chain.
+		       * Value of 0x78 for 2,3 means not-read/not-active,
+		       * and 0x7B for 0,1 mean means the same.
+		       */
 };
 
 #define ATH10K_TPC_TABLE_TYPE_FLAG	1
