@@ -3333,9 +3333,11 @@ struct wmi_start_scan_arg {
 
 /* CT Firmware only, v15 and higher */
 /* Don't advertise any HT support in scan req */
-#define WMI_SCAN_DISABLE_HT  0x40000000
+#define WMI_SCAN_DISABLE_HT    0x40000000
+#define WMI_SCAN_DISABLE_HT_4  0x00400000 /* 10.4 stole the bits I was using in 10.1. --Ben */
 /* Don't advertise any VHT support in scan req */
-#define WMI_SCAN_DISABLE_VHT 0x80000000
+#define WMI_SCAN_DISABLE_VHT   0x80000000
+#define WMI_SCAN_DISABLE_VHT_4 0x00800000
 
 /* WMI_SCAN_CLASS_MASK must be the same value as IEEE80211_SCAN_CLASS_MASK */
 #define WMI_SCAN_CLASS_MASK 0xFF000000

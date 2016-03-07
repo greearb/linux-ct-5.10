@@ -6627,6 +6627,30 @@ static int ath10k_mac_tdls_vif_stations_count(struct ieee80211_hw *hw,
 	return data.num_tdls_stations;
 }
 
+static u32 ath10k_calc_ct_scan_flags(struct ath10k *ar,
+				     struct ieee80211_vif *vif)
+{
+	u32 rv = 0;
+
+	if (test_bit(ATH10K_FW_FEATURE_WMI_10X_CT,
+		     ar->running_fw->fw_file.fw_features)) {
+		if (ar->running_fw->fw_file.wmi_op_version == ATH10K_FW_WMI_OP_VERSION_10_4) {
+			if (!ath10k_mac_vif_has_any_ht(ar, vif))
+				rv |= WMI_SCAN_DISABLE_HT_4;
+
+			if (!ath10k_mac_vif_has_any_vht(ar, vif))
+				rv |= WMI_SCAN_DISABLE_VHT_4;
+		} else {
+			if (!ath10k_mac_vif_has_any_ht(ar, vif))
+				rv |= WMI_SCAN_DISABLE_HT;
+
+			if (!ath10k_mac_vif_has_any_vht(ar, vif))
+				rv |= WMI_SCAN_DISABLE_VHT;
+		}
+	}
+	return rv;
+}
+
 static int ath10k_hw_scan(struct ieee80211_hw *hw,
 			  struct ieee80211_vif *vif,
 			  struct ieee80211_scan_request *hw_req)
@@ -6673,23 +6697,16 @@ static int ath10k_hw_scan(struct ieee80211_hw *hw,
 	arg.vdev_id = arvif->vdev_id;
 	arg.scan_id = ATH10K_SCAN_ID;
 
-	if (test_bit(ATH10K_FW_FEATURE_WMI_10X_CT,
+	arg.scan_ctrl_flags |= ath10k_calc_ct_scan_flags(ar, vif);
+
+	if (test_bit(ATH10K_FW_FEATURE_CT_RATEMASK,
 		     ar->running_fw->fw_file.fw_features)) {
-		if (!ath10k_mac_vif_has_any_ht(ar, vif))
-			arg.scan_ctrl_flags |= WMI_SCAN_DISABLE_HT;
-
-		if (!ath10k_mac_vif_has_any_vht(ar, vif))
-			arg.scan_ctrl_flags |= WMI_SCAN_DISABLE_VHT;
-
-		if (test_bit(ATH10K_FW_FEATURE_CT_RATEMASK,
-			     ar->running_fw->fw_file.fw_features)) {
-			/* Firmware with this feature fixes a bug in firmware
-			 * that would not allow one to disable CCK and OFDM rates.
-			 * Host stack sets up the IEs, so tell firmware to leave it
-			 * alone.
-			 */
-			skip_legacy_rates = true;
-		}
+		/* Firmware with this feature fixes a bug in firmware
+		 * that would not allow one to disable CCK and OFDM rates.
+		 * Host stack sets up the IEs, so tell firmware to leave it
+		 * alone.
+		 */
+		skip_legacy_rates = true;
 	}
 
 	if (!skip_legacy_rates) {
@@ -8248,14 +8265,7 @@ static int ath10k_remain_on_channel(struct ieee80211_hw *hw,
 	if (ath10k_mac_vif_has_any_ofdm(ar, vif, (1 << chan->band)))
 		arg.scan_ctrl_flags |= WMI_SCAN_ADD_OFDM_RATES;
 
-	if (test_bit(ATH10K_FW_FEATURE_WMI_10X_CT,
-		     ar->running_fw->fw_file.fw_features)) {
-		if (!ath10k_mac_vif_has_any_ht(ar, vif))
-			arg.scan_ctrl_flags |= WMI_SCAN_DISABLE_HT;
-
-		if (!ath10k_mac_vif_has_any_vht(ar, vif))
-			arg.scan_ctrl_flags |= WMI_SCAN_DISABLE_VHT;
-	}
+	arg.scan_ctrl_flags |= ath10k_calc_ct_scan_flags(ar, vif);
 
 	ret = ath10k_start_scan(ar, &arg);
 	if (ret) {
