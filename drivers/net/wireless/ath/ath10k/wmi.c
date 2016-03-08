@@ -4634,7 +4634,7 @@ void ath10k_wmi_event_profile_match(struct ath10k *ar, struct sk_buff *skb)
 
 void ath10k_wmi_event_debug_print(struct ath10k *ar, struct sk_buff *skb)
 {
-	char buf[101], c;
+	char buf[WMI_MAX_DEBUG_MESG + 1], c;
 	int i;
 
 	for (i = 0; i < sizeof(buf) - 1; i++) {
