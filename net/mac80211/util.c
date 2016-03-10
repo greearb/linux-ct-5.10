@@ -100,6 +100,72 @@ EXPORT_SYMBOL(ieee80211_get_bssid);
 unsigned long IEEE80211_MAX_QUEUE_MAP[3] = { -1L, -1L, -1L };
 EXPORT_SYMBOL(IEEE80211_MAX_QUEUE_MAP);
 
+/**
+ * ieee80211_check_all_rates_disabled: Calculate which rate-sets are disabled
+ *    in all bands.
+ * @disable_ht_cfg  Holds array of enable/disable values for each band.
+ * @disable_vht_cfg  Holds array of enable/disable values for each band.
+ * @disable_ht  Return value:  is HT disabled for all bands.
+ * @disable_vht  Return value:  is VHT disabled for all bands.
+ */
+void ieee80211_check_all_rates_disabled(u8 bands_used,
+					bool *disable_ht_cfg,
+					bool *disable_vht_cfg,
+					bool *disable_ht,
+					bool *disable_vht)
+{
+	int i;
+
+	*disable_ht = true;
+	*disable_vht = true;
+	for (i = 0; i < NUM_NL80211_BANDS; i++) {
+		if (bands_used & (1 << i)) {
+			if (!disable_ht_cfg[i])
+				*disable_ht = false;
+			if (!disable_vht_cfg[i])
+				*disable_vht = false;
+		}
+	}
+}
+
+/**
+ * ieee80211_check_disabled_rates: Calculate which bands have zero rates
+ *  configured for HT and VHT.
+ * @disable_ht  Holds return value, array of length IEEE80211_NUM_BANDS.
+ * @disable_vht  Holds return value, array of length IEEE80211_NUM_BANDS.
+ */
+void ieee80211_check_disabled_rates(struct ieee80211_sub_if_data *sdata,
+				    bool *disable_ht,
+				    bool *disable_vht)
+{
+	int i;
+	int j;
+
+	/* Disable HT, VHT where we have no rates set. */
+	for (i = 0; i < NUM_NL80211_BANDS; i++) {
+		disable_ht[i] = false;
+		disable_vht[i] = false;
+		if (!sdata->cfg_advert_bitrate_mask_set)
+			continue;
+
+		disable_ht[i] = true;
+		disable_vht[i] = true;
+		for (j = 0; j < IEEE80211_HT_MCS_MASK_LEN; j++) {
+			if (sdata->cfg_advert_bitrate_mask.control[i].ht_mcs[j]) {
+				disable_ht[i] = false;
+				break;
+			}
+		}
+
+		for (j = 0; j < NL80211_VHT_NSS_MAX; j++) {
+			if (sdata->cfg_advert_bitrate_mask.control[i].vht_mcs[j]) {
+				disable_vht[i] = false;
+				break;
+			}
+		}
+	}
+}
+
 void ieee80211_tx_set_protected(struct ieee80211_tx_data *tx)
 {
 	struct sk_buff *skb;
@@ -1976,7 +2042,8 @@ static int ieee80211_build_preq_ies_band(struct ieee80211_sub_if_data *sdata,
 		*offset = noffset;
 	}
 
-	if (sband->ht_cap.ht_supported) {
+	if (sband->ht_cap.ht_supported &&
+	    !(flags & IEEE80211_PROBE_FLAG_DISABLE_HT)) {
 		if (end - pos < 2 + sizeof(struct ieee80211_ht_cap))
 			goto out_err;
 		pos = ieee80211_ie_build_ht_cap(pos, &sband->ht_cap,
@@ -2010,7 +2077,8 @@ static int ieee80211_build_preq_ies_band(struct ieee80211_sub_if_data *sdata,
 
 	have_80mhz = ieee80211_any_band_supports_80mhz(local);
 
-	if (sband->vht_cap.vht_supported && have_80mhz) {
+	if (sband->vht_cap.vht_supported && have_80mhz &&
+	    !(flags & IEEE80211_PROBE_FLAG_DISABLE_VHT)) {
 		if (end - pos < 2 + sizeof(struct ieee80211_vht_cap))
 			goto out_err;
 		pos = ieee80211_ie_build_vht_cap(pos, &sband->vht_cap,
@@ -2123,6 +2191,11 @@ struct sk_buff *ieee80211_build_probe_req(struct ieee80211_sub_if_data *sdata,
 	struct ieee80211_mgmt *mgmt;
 	int ies_len;
 	u32 rate_masks[NUM_NL80211_BANDS] = {};
+	bool disable_ht_cfg[NUM_NL80211_BANDS];
+	bool disable_vht_cfg[NUM_NL80211_BANDS];
+	bool disable_ht;
+	bool disable_vht;
+	u8 bands_used;
 	struct ieee80211_scan_ies dummy_ie_desc;
 
 	/*
@@ -2142,6 +2215,13 @@ struct sk_buff *ieee80211_build_probe_req(struct ieee80211_sub_if_data *sdata,
 		return NULL;
 
 	rate_masks[chan->band] = ratemask;
+
+	bands_used = BIT(chan->band);
+
+	ieee80211_check_disabled_rates(sdata, disable_ht_cfg, disable_vht_cfg);
+	ieee80211_check_all_rates_disabled(bands_used, disable_ht_cfg,
+					   disable_vht_cfg,
+					   &disable_ht, &disable_vht);
 	ies_len = ieee80211_build_preq_ies(sdata, skb_tail_pointer(skb),
 					   skb_tailroom(skb), &dummy_ie_desc,
 					   ie, ie_len, BIT(chan->band),

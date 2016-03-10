@@ -336,6 +336,8 @@ static bool ieee80211_prep_hw_scan(struct ieee80211_sub_if_data *sdata)
 	u8 bands_used = 0;
 	int i, ielen, n_chans;
 	u32 flags = 0;
+	bool disable_ht = 0;
+	bool disable_vht = 0;
 
 	req = rcu_dereference_protected(local->scan_req,
 					lockdep_is_held(&local->mtx));
@@ -370,6 +372,15 @@ static bool ieee80211_prep_hw_scan(struct ieee80211_sub_if_data *sdata)
 			local->hw_scan_band++;
 		} while (!n_chans);
 	}
+
+	ieee80211_check_all_rates_disabled(bands_used,
+					   local->hw_scan_req->disable_ht,
+					   local->hw_scan_req->disable_vht,
+					   &disable_ht, &disable_vht);
+	if (disable_ht)
+		flags |= IEEE80211_PROBE_FLAG_DISABLE_HT;
+	if (disable_vht)
+		flags |= IEEE80211_PROBE_FLAG_DISABLE_VHT;
 
 	local->hw_scan_req->req.n_channels = n_chans;
 	ieee80211_prepare_scan_chandef(&chandef, req->scan_width);
@@ -731,6 +742,10 @@ static int __ieee80211_start_scan(struct ieee80211_sub_if_data *sdata,
 		local->hw_scan_req->req.scan_6ghz_params =
 			req->scan_6ghz_params;
 		local->hw_scan_req->req.scan_6ghz = req->scan_6ghz;
+
+		ieee80211_check_disabled_rates(sdata,
+					       local->hw_scan_req->disable_ht,
+					       local->hw_scan_req->disable_vht);
 
 		/*
 		 * After allocating local->hw_scan_req, we must
@@ -1282,6 +1297,10 @@ int __ieee80211_request_sched_scan_start(struct ieee80211_sub_if_data *sdata,
 	struct cfg80211_chan_def chandef;
 	int ret, i, iebufsz, num_bands = 0;
 	u32 rate_masks[NUM_NL80211_BANDS] = {};
+	bool disable_ht_cfg[NUM_NL80211_BANDS];
+	bool disable_vht_cfg[NUM_NL80211_BANDS];
+	bool disable_ht;
+	bool disable_vht;
 	u8 bands_used = 0;
 	u8 *ie;
 	u32 flags = 0;
@@ -1312,6 +1331,14 @@ int __ieee80211_request_sched_scan_start(struct ieee80211_sub_if_data *sdata,
 
 	ieee80211_prepare_scan_chandef(&chandef, req->scan_width);
 
+	ieee80211_check_disabled_rates(sdata, disable_ht_cfg, disable_vht_cfg);
+	ieee80211_check_all_rates_disabled(bands_used, disable_ht_cfg,
+					   disable_vht_cfg,
+					   &disable_ht, &disable_vht);
+	if (disable_ht)
+		flags |= IEEE80211_PROBE_FLAG_DISABLE_HT;
+	if (disable_vht)
+		flags |= IEEE80211_PROBE_FLAG_DISABLE_VHT;
 	ieee80211_build_preq_ies(sdata, ie, num_bands * iebufsz,
 				 &sched_scan_ies, req->ie,
 				 req->ie_len, bands_used, rate_masks, &chandef,

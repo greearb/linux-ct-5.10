@@ -1242,7 +1242,7 @@ static int cfg80211_wext_siwrate(struct net_device *dev,
 	if (!match)
 		return -EINVAL;
 
-	return rdev_set_bitrate_mask(rdev, dev, NULL, &mask);
+	return rdev_set_bitrate_mask(rdev, dev, NULL, &mask, false);
 }
 
 static int cfg80211_wext_giwrate(struct net_device *dev,

@@ -3369,7 +3369,8 @@ static int ath6kl_cfg80211_sscan_stop(struct wiphy *wiphy,
 static int ath6kl_cfg80211_set_bitrate(struct wiphy *wiphy,
 				       struct net_device *dev,
 				       const u8 *addr,
-				       const struct cfg80211_bitrate_mask *mask)
+				       const struct cfg80211_bitrate_mask *mask,
+				       bool is_advert_mask)
 {
 	struct ath6kl *ar = ath6kl_priv(dev);
 	struct ath6kl_vif *vif = netdev_priv(dev);

@@ -975,6 +975,13 @@ struct ieee80211_sub_if_data {
 	u32 beacon_rateidx_mask[NUM_NL80211_BANDS];
 	bool beacon_rate_set;
 
+	/* Store bitrate mask configured from user-space.  This is for
+	 * rates that should be advertised in probe requests, etc.  This
+	 * is NOT directly related to the tx-rate-ctrl logic configuration.
+	 */
+	struct cfg80211_bitrate_mask cfg_advert_bitrate_mask;
+	bool cfg_advert_bitrate_mask_set; /* Has user set the mask? */
+
 	union {
 		struct ieee80211_if_ap ap;
 		struct ieee80211_if_wds wds;
@@ -1726,6 +1733,14 @@ int ieee80211_mesh_csa_beacon(struct ieee80211_sub_if_data *sdata,
 int ieee80211_mesh_finish_csa(struct ieee80211_sub_if_data *sdata);
 
 /* scan/BSS handling */
+void ieee80211_check_disabled_rates(struct ieee80211_sub_if_data *sdata,
+				    bool *disable_ht,
+				    bool *disable_vht);
+void ieee80211_check_all_rates_disabled(u8 bands_used,
+					bool *disable_ht_cfg,
+					bool *disable_vht_cfg,
+					bool *disable_ht,
+					bool *disable_vht);
 void ieee80211_scan_work(struct work_struct *work);
 int ieee80211_request_ibss_scan(struct ieee80211_sub_if_data *sdata,
 				const u8 *ssid, u8 ssid_len,
@@ -2189,6 +2204,8 @@ enum {
 	IEEE80211_PROBE_FLAG_DIRECTED		= BIT(0),
 	IEEE80211_PROBE_FLAG_MIN_CONTENT	= BIT(1),
 	IEEE80211_PROBE_FLAG_RANDOM_SN		= BIT(2),
+	IEEE80211_PROBE_FLAG_DISABLE_HT		= BIT(3),
+	IEEE80211_PROBE_FLAG_DISABLE_VHT	= BIT(4),
 };
 
 int ieee80211_build_preq_ies(struct ieee80211_sub_if_data *sdata, u8 *buffer,

@@ -2916,11 +2916,18 @@ static int ieee80211_set_cqm_rssi_range_config(struct wiphy *wiphy,
 static int ieee80211_set_bitrate_mask(struct wiphy *wiphy,
 				      struct net_device *dev,
 				      const u8 *addr,
-				      const struct cfg80211_bitrate_mask *mask)
+				      const struct cfg80211_bitrate_mask *mask,
+				      bool is_advert_bitmask)
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 	struct ieee80211_local *local = wdev_priv(dev->ieee80211_ptr);
 	int i, ret;
+
+	if (is_advert_bitmask) {
+		memcpy(&sdata->cfg_advert_bitrate_mask, mask, sizeof(*mask));
+		sdata->cfg_advert_bitrate_mask_set = true;
+		return 0;
+	}
 
 	if (!ieee80211_sdata_running(sdata))
 		return -ENETDOWN;
