@@ -6599,16 +6599,6 @@ struct wmi_common_peer_assoc_complete_cmd {
 	__le32 peer_vht_caps;
 	__le32 peer_phymode;
 	struct wmi_vht_rate_set peer_vht_rates;
-
-	/* CT firmware ver 15+ only */
-#define PEER_ASSOC_EXT_USE_OVERRIDES (1<<0)
-	__le32 ext_flags;
-	u8 rate_overrides[20]; /* There are 150 rates...this holds 160, and keeps
-				* things 32-bit aligned.  If rate_overrides_set is 1,
-				* any rate NOT specified in rate_overrides will be
-				* disabled.
-				*/
-
 };
 
 struct wmi_main_peer_assoc_complete_cmd {
@@ -6622,6 +6612,26 @@ struct wmi_main_peer_assoc_complete_cmd {
 
 struct wmi_10_1_peer_assoc_complete_cmd {
 	struct wmi_common_peer_assoc_complete_cmd cmd;
+} __packed;
+
+struct wmi_ct_assoc_overrides {
+	/* CT firmware ver 15+ only */
+#define PEER_ASSOC_EXT_USE_OVERRIDES (1<<0)
+#define PEER_ASSOC_EXT_IGNORE_MCS_4_NSS_MASK (1<<1)
+#define PEER_ASSOC_EXT_LEN_32        (1<<2) /* Has 32-override bytes */
+	__le32 ext_flags;
+
+#define RATE_OVERRIDES_COUNT 32
+	/* Space for 256 rates.  If rate_overrides_set is 1,
+	 * any rate NOT specified in rate_overrides will be
+	 * disabled.
+	 */
+	u8 rate_overrides[RATE_OVERRIDES_COUNT];
+} __packed;
+
+struct wmi_10_1_peer_assoc_complete_cmd_ct {
+	struct wmi_10_1_peer_assoc_complete_cmd cmd;
+	struct wmi_ct_assoc_overrides overrides;
 } __packed;
 
 #define WMI_PEER_ASSOC_INFO0_MAX_MCS_IDX_LSB 0
@@ -6639,9 +6649,19 @@ struct wmi_10_2_peer_assoc_complete_cmd {
 #define WMI_PEER_NSS_160MHZ_MASK	GENMASK(2, 0)
 #define WMI_PEER_NSS_80_80MHZ_MASK	GENMASK(5, 3)
 
+struct wmi_10_2_peer_assoc_complete_cmd_ct {
+	struct wmi_10_2_peer_assoc_complete_cmd cmd;
+	struct wmi_ct_assoc_overrides overrides;
+} __packed;
+
 struct wmi_10_4_peer_assoc_complete_cmd {
 	struct wmi_10_2_peer_assoc_complete_cmd cmd;
 	__le32 peer_bw_rxnss_override;
+} __packed;
+
+struct wmi_10_4_peer_assoc_complete_cmd_ct {
+	struct wmi_10_4_peer_assoc_complete_cmd cmd;
+	struct wmi_ct_assoc_overrides overrides;
 } __packed;
 
 struct wmi_peer_assoc_complete_arg {
@@ -6666,7 +6686,7 @@ struct wmi_peer_assoc_complete_arg {
 
 	/* CT firmware only (beta-15 and higher ) */
 	bool has_rate_overrides;
-	u8 rate_overrides[20];
+	u8 rate_overrides[RATE_OVERRIDES_COUNT];
 };
 
 struct wmi_peer_add_wds_entry_cmd {

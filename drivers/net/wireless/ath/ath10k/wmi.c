@@ -7830,10 +7830,39 @@ ath10k_wmi_peer_assoc_fill(struct ath10k *ar, void *buf,
 		/* Add some CT firmware specific stuff */
 		vid |= (1<<31); /* ext field exists */
 		if (arg->has_rate_overrides) {
+			int i;
+			int opver = ar->running_fw->fw_file.wmi_op_version;
 			ext_flags |= PEER_ASSOC_EXT_USE_OVERRIDES;
-			memcpy(cmd->rate_overrides, arg->rate_overrides, sizeof(cmd->rate_overrides));
+			ext_flags |= PEER_ASSOC_EXT_LEN_32;
+
+			ath10k_warn(ar, "overrides: len %d\n", (int)(sizeof(arg->rate_overrides)));
+			for (i = 0; i<sizeof(arg->rate_overrides); i++) {
+				ath10k_warn(ar, "[%i] 0x%x\n",
+					    i, arg->rate_overrides[i]);
+			}
+			if (opver == ATH10K_FW_WMI_OP_VERSION_10_4) {
+				struct wmi_10_4_peer_assoc_complete_cmd_ct *c = (void*)cmd;
+				memcpy(c->overrides.rate_overrides, arg->rate_overrides,
+				       sizeof(c->overrides.rate_overrides));
+				c->overrides.ext_flags = __cpu_to_le32(ext_flags);
+			}
+			else if ((opver == ATH10K_FW_WMI_OP_VERSION_10_2) ||
+				 (opver == ATH10K_FW_WMI_OP_VERSION_10_2_4)) {
+				struct wmi_10_2_peer_assoc_complete_cmd_ct *c = (void*)cmd;
+				memcpy(c->overrides.rate_overrides, arg->rate_overrides,
+				       sizeof(c->overrides.rate_overrides));
+				c->overrides.ext_flags = __cpu_to_le32(ext_flags);
+			}
+			else if (opver == ATH10K_FW_WMI_OP_VERSION_10_1) {
+				struct wmi_10_1_peer_assoc_complete_cmd_ct *c = (void*)cmd;
+				memcpy(c->overrides.rate_overrides, arg->rate_overrides,
+				       sizeof(c->overrides.rate_overrides));
+				c->overrides.ext_flags = __cpu_to_le32(ext_flags);
+			}
+			else {
+				WARN_ON_ONCE(1);
+			}
 		}
-		cmd->ext_flags= __cpu_to_le32(ext_flags);
 	}
 
 	cmd->vdev_id            = __cpu_to_le32(vid);
@@ -7961,7 +7990,7 @@ static struct sk_buff *
 ath10k_wmi_10_1_op_gen_peer_assoc(struct ath10k *ar,
 				  const struct wmi_peer_assoc_complete_arg *arg)
 {
-	size_t len = sizeof(struct wmi_10_1_peer_assoc_complete_cmd);
+	size_t len = sizeof(struct wmi_10_1_peer_assoc_complete_cmd_ct);
 	struct sk_buff *skb;
 	int ret;
 
@@ -7987,7 +8016,7 @@ static struct sk_buff *
 ath10k_wmi_10_2_op_gen_peer_assoc(struct ath10k *ar,
 				  const struct wmi_peer_assoc_complete_arg *arg)
 {
-	size_t len = sizeof(struct wmi_10_2_peer_assoc_complete_cmd);
+	size_t len = sizeof(struct wmi_10_2_peer_assoc_complete_cmd_ct);
 	struct sk_buff *skb;
 	int ret;
 
@@ -8012,7 +8041,7 @@ static struct sk_buff *
 ath10k_wmi_10_4_op_gen_peer_assoc(struct ath10k *ar,
 				  const struct wmi_peer_assoc_complete_arg *arg)
 {
-	size_t len = sizeof(struct wmi_10_4_peer_assoc_complete_cmd);
+	size_t len = sizeof(struct wmi_10_4_peer_assoc_complete_cmd_ct);
 	struct sk_buff *skb;
 	int ret;
 

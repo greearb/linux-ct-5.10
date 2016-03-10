@@ -2332,6 +2332,11 @@ ath10k_peer_assoc_h_vht_masked(const u16 vht_mcs_mask[NL80211_VHT_NSS_MAX])
 static void ath10k_set_rate_enabled(int rix, u8 *rt_array, int val) {
 	int idx = rix / 8;
 	int bit = rix - (idx * 8);
+
+	//pr_err(" rix: %d  idx: %d  bit: %d\n", rix, idx, bit);
+	if (WARN_ON_ONCE(idx >= RATE_OVERRIDES_COUNT))
+		return;
+
 	if (val) {
 		rt_array[idx] |= (1<<bit);
 	}
@@ -2354,6 +2359,7 @@ static void ath10k_peer_assoc_h_rate_overrides(struct ath10k *ar,
 	int i;
 	int j;
 	int hw_rix;
+	int hw_nss = ar->num_rf_chains;
 
 	if (! test_bit(ATH10K_FW_FEATURE_CT_RATEMASK,
 		       ar->running_fw->fw_file.fw_features))
@@ -2369,7 +2375,8 @@ static void ath10k_peer_assoc_h_rate_overrides(struct ath10k *ar,
 	ratemask = arvif->bitrate_mask.control[band].legacy;
 	rates = sband->bitrates;
 
-	ath10k_warn(ar, "band: %d  ratemask: 0x%x\n", band, ratemask);
+	ath10k_warn(ar, "band: %d  ratemask: 0x%x  hw-nss: %d\n",
+		    band, ratemask, hw_nss);
 
 	arg->has_rate_overrides = true;
 
@@ -2399,17 +2406,18 @@ static void ath10k_peer_assoc_h_rate_overrides(struct ath10k *ar,
 	 * using normal rate-set info as far as I can tell, so set both to the
 	 * same value.
 	 */
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < hw_nss; i++) {
 		unsigned int mcs = arvif->bitrate_mask.control[band].ht_mcs[i];
+		//ath10k_warn(ar, "ht-mcs [%i]: 0x%x\n", i, mcs);
 		for (j = 0; j<8; j++) {
 			if (mcs & (1<<j)) {
 				hw_rix = 12 + i * 8 + j;
 				ath10k_dbg(ar, ATH10K_DBG_MAC,
 					   "set-enabled, ht: hw-rix: %d, %d  i: %d j: %d\n",
-					   hw_rix, hw_rix + 3 * 8, i, j);
+					   hw_rix, hw_rix + hw_nss * 8, i, j);
 				ath10k_set_rate_enabled(hw_rix, arg->rate_overrides, 1);
 				/* Set HT40 rateset too */
-				ath10k_set_rate_enabled(hw_rix + 3 * 8, arg->rate_overrides, 1);
+				ath10k_set_rate_enabled(hw_rix + hw_nss * 8, arg->rate_overrides, 1);
 			}
 		}
 	}
@@ -2421,19 +2429,20 @@ static void ath10k_peer_assoc_h_rate_overrides(struct ath10k *ar,
 	 * using normal rate-set info as far as I can tell, so set all three to the
 	 * same value.
 	 */
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < hw_nss; i++) {
 		unsigned int mcs = arvif->bitrate_mask.control[band].vht_mcs[i];
-		for (j = 0; j<16; j++) {
+		//ath10k_warn(ar, "vht-mcs [%i]: 0x%x\n", i, mcs);
+		for (j = 0; j<10; j++) {
 			if (mcs & (1<<j)) {
-				hw_rix = 12 + 6 * 8 + i * 10 + j;
+				hw_rix = 12 + (hw_nss * 2) * 8 + i * 10 + j;
 				ath10k_dbg(ar, ATH10K_DBG_MAC,
 					   "set-enabled, vht: hw-rix: %d, %d, %d  i: %d j: %d\n",
-					   hw_rix, hw_rix + 3 * 10, hw_rix + 6 * 10, i, j);
+					   hw_rix, hw_rix + hw_nss * 10, hw_rix + hw_nss * 2 * 10, i, j);
 				ath10k_set_rate_enabled(hw_rix, arg->rate_overrides, 1);
 				/* Set HT40 rateset too */
-				ath10k_set_rate_enabled(hw_rix + 3 * 10, arg->rate_overrides, 1);
+				ath10k_set_rate_enabled(hw_rix + hw_nss * 10, arg->rate_overrides, 1);
 				/* Set HT80 rateset too */
-				ath10k_set_rate_enabled(hw_rix + 6 * 10, arg->rate_overrides, 1);
+				ath10k_set_rate_enabled(hw_rix + hw_nss * 2 * 10, arg->rate_overrides, 1);
 			}
 		}
 	}
