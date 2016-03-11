@@ -6766,7 +6766,10 @@ static struct sk_buff *ath10k_wmi_10_1_op_gen_init(struct ath10k *ar)
 	config.ast_skid_limit = __cpu_to_le32(ar->skid_limit);
 
 	/* Firmware will crash if this is not even multiple of 8 */
-	BUG_ON(ar->htt.max_num_pending_tx & 0x7);
+	if (WARN_ON(ar->htt.max_num_pending_tx & 0x7)) {
+		ath10k_err(ar, "tx-descriptors must be multiple of 8: %d\n",
+			   ar->htt.max_num_pending_tx);
+	}
 
 	config.num_tids = __cpu_to_le32(TARGET_10X_NUM_TIDS);
 	config.rx_chain_mask = __cpu_to_le32(TARGET_10X_RX_CHAIN_MASK);
@@ -6877,7 +6880,10 @@ static struct sk_buff *ath10k_wmi_10_2_op_gen_init(struct ath10k *ar)
 	config.ast_skid_limit = __cpu_to_le32(ar->skid_limit);
 
 	/* Firmware will crash if this is not even multiple of 8 */
-	BUG_ON(ar->htt.max_num_pending_tx & 0x7);
+	if (WARN_ON(ar->htt.max_num_pending_tx & 0x7)) {
+		ath10k_err(ar, "tx-descriptors must be multiple of 8: %d\n",
+			   ar->htt.max_num_pending_tx);
+	}
 
 	config.rx_chain_mask = __cpu_to_le32(TARGET_10X_RX_CHAIN_MASK);
 	config.rx_timeout_pri_vo = __cpu_to_le32(TARGET_10X_RX_TIMEOUT_LO_PRI);
@@ -7007,7 +7013,10 @@ static struct sk_buff *ath10k_wmi_10_4_op_gen_init(struct ath10k *ar)
 	config.ast_skid_limit = __cpu_to_le32(ar->skid_limit);
 
 	/* Firmware will crash if this is not even multiple of 8 */
-	BUG_ON(ar->htt.max_num_pending_tx & 0x7);
+	if (WARN_ON(ar->htt.max_num_pending_tx & 0x7)) {
+		ath10k_err(ar, "tx-descriptors must be multiple of 8: %d\n",
+			   ar->htt.max_num_pending_tx);
+	}
 
 	config.num_active_peers = __cpu_to_le32(ar->num_active_peers);
 	config.num_tids = __cpu_to_le32(ar->num_tids);
