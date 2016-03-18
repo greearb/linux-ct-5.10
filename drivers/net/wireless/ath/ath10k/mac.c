@@ -2395,9 +2395,9 @@ static void ath10k_peer_assoc_h_rate_overrides(struct ath10k *ar,
 			/* ofdm rates start at rix 4 */
 			hw_rix = rates->hw_value + 4;
 		}
-		ath10k_dbg(ar, ATH10K_DBG_MAC,
-			   "set-enabled, bitrate: %d  i: %d  hw-value: %d hw-rix: %d\n",
-			   rates->bitrate, i, rates->hw_value, hw_rix);
+		//ath10k_dbg(ar, ATH10K_DBG_MAC,
+		//	   "set-enabled, bitrate: %d  i: %d  hw-value: %d hw-rix: %d\n",
+		//	   rates->bitrate, i, rates->hw_value, hw_rix);
 		ath10k_set_rate_enabled(hw_rix, arg->rate_overrides, 1);
 	}
 
@@ -2412,9 +2412,9 @@ static void ath10k_peer_assoc_h_rate_overrides(struct ath10k *ar,
 		for (j = 0; j<8; j++) {
 			if (mcs & (1<<j)) {
 				hw_rix = 12 + i * 8 + j;
-				ath10k_dbg(ar, ATH10K_DBG_MAC,
-					   "set-enabled, ht: hw-rix: %d, %d  i: %d j: %d\n",
-					   hw_rix, hw_rix + hw_nss * 8, i, j);
+				//ath10k_dbg(ar, ATH10K_DBG_MAC,
+				//	   "set-enabled, ht: hw-rix: %d, %d  i: %d j: %d\n",
+				//	   hw_rix, hw_rix + hw_nss * 8, i, j);
 				ath10k_set_rate_enabled(hw_rix, arg->rate_overrides, 1);
 				/* Set HT40 rateset too */
 				ath10k_set_rate_enabled(hw_rix + hw_nss * 8, arg->rate_overrides, 1);
@@ -2435,9 +2435,9 @@ static void ath10k_peer_assoc_h_rate_overrides(struct ath10k *ar,
 		for (j = 0; j<10; j++) {
 			if (mcs & (1<<j)) {
 				hw_rix = 12 + (hw_nss * 2) * 8 + i * 10 + j;
-				ath10k_dbg(ar, ATH10K_DBG_MAC,
-					   "set-enabled, vht: hw-rix: %d, %d, %d  i: %d j: %d\n",
-					   hw_rix, hw_rix + hw_nss * 10, hw_rix + hw_nss * 2 * 10, i, j);
+				//ath10k_dbg(ar, ATH10K_DBG_MAC,
+				//	   "set-enabled, vht: hw-rix: %d, %d, %d  i: %d j: %d\n",
+				//	   hw_rix, hw_rix + hw_nss * 10, hw_rix + hw_nss * 2 * 10, i, j);
 				ath10k_set_rate_enabled(hw_rix, arg->rate_overrides, 1);
 				/* Set HT40 rateset too */
 				ath10k_set_rate_enabled(hw_rix + hw_nss * 10, arg->rate_overrides, 1);
