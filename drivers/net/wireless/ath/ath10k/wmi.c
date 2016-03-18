@@ -6998,7 +6998,12 @@ static struct sk_buff *ath10k_wmi_10_4_op_gen_init(struct ath10k *ar)
 
 		config.roam_offload_max_vdev = 0; /* disable roaming */
 		config.roam_offload_max_ap_profiles = 0; /* disable roaming */
-		/* NOT-YET: config.num_peer_keys = __cpu_to_le32(TARGET_10X_NUM_PEER_KEYS_CT); */
+		/* 3 per peer is likely enough, but technically, there is room for 4
+		 * The default is 2 per peer, but that is not enough when testing
+		 * lots of station vdevs with encryption since each 'real' peer can
+		 * have 4 keys, and the self-peer has one key.
+		 */
+		config.num_peer_keys = __cpu_to_le32(3);
 
 #if 0
 		if (ar->num_ratectrl_objs) {
@@ -7844,10 +7849,11 @@ ath10k_wmi_peer_assoc_fill(struct ath10k *ar, void *buf,
 			ext_flags |= PEER_ASSOC_EXT_USE_OVERRIDES;
 			ext_flags |= PEER_ASSOC_EXT_LEN_32;
 
-			ath10k_warn(ar, "overrides: len %d\n", (int)(sizeof(arg->rate_overrides)));
+			ath10k_dbg(ar, ATH10K_DBG_WMI,
+				   "overrides: len %d\n", (int)(sizeof(arg->rate_overrides)));
 			for (i = 0; i<sizeof(arg->rate_overrides); i++) {
-				ath10k_warn(ar, "[%i] 0x%x\n",
-					    i, arg->rate_overrides[i]);
+				ath10k_dbg(ar, ATH10K_DBG_WMI, "[%i] 0x%x\n",
+					   i, arg->rate_overrides[i]);
 			}
 			if (opver == ATH10K_FW_WMI_OP_VERSION_10_4) {
 				struct wmi_10_4_peer_assoc_complete_cmd_ct *c = (void*)cmd;
