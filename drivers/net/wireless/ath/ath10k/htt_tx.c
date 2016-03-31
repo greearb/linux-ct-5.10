@@ -532,6 +532,9 @@ void ath10k_htt_tx_destroy(struct ath10k_htt *htt)
 static void ath10k_htt_flush_tx_queue(struct ath10k_htt *htt)
 {
 	ath10k_htc_stop_hl(htt->ar);
+
+	tasklet_kill(&htt->txrx_compl_task);
+
 	idr_for_each(&htt->pending_tx, ath10k_htt_tx_clean_up_pending, htt->ar);
 }
 
