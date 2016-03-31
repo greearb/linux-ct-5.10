@@ -336,7 +336,7 @@ void ath10k_peer_map_event(struct ath10k_htt *htt,
 		wake_up(&ar->peer_mapping_wq);
 	}
 
-	ath10k_dbg(ar, ATH10K_DBG_HTT, "htt peer map vdev %d peer %pM id %d\n",
+	ath10k_warn(ar, /*ATH10K_DBG_HTT,*/ "htt peer map vdev %d peer %pM id %d\n",
 		   ev->vdev_id, ev->addr, ev->peer_id);
 
 	WARN_ON(ar->peer_map[ev->peer_id] && (ar->peer_map[ev->peer_id] != peer));
@@ -364,10 +364,11 @@ void ath10k_peer_unmap_event(struct ath10k_htt *htt,
 	if (!peer) {
 		ath10k_warn(ar, "peer-unmap-event: unknown peer id %d\n",
 			    ev->peer_id);
+		ath10k_dump_peer_info(ar);
 		goto exit;
 	}
 
-	ath10k_dbg(ar, ATH10K_DBG_HTT, "htt peer unmap vdev %d peer %pM id %d\n",
+	ath10k_warn(ar, /*ATH10K_DBG_HTT,*/ "removing peer, htt peer unmap vdev %d peer %pM id %d\n",
 		   peer->vdev_id, peer->addr, ev->peer_id);
 
 	ar->peer_map[ev->peer_id] = NULL;
