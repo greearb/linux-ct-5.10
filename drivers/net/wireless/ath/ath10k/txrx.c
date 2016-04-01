@@ -364,7 +364,7 @@ void ath10k_peer_unmap_event(struct ath10k_htt *htt,
 	if (!peer) {
 		ath10k_warn(ar, "peer-unmap-event: unknown peer id %d\n",
 			    ev->peer_id);
-		ath10k_dump_peer_info(ar);
+		/* ath10k_dump_peer_info(ar); */
 		goto exit;
 	}
 
