@@ -7027,7 +7027,8 @@ static struct sk_buff *ath10k_wmi_10_4_op_gen_init(struct ath10k *ar)
 #endif
 	}
 	config.num_msdu_desc = __cpu_to_le32(ar->htt.max_num_pending_tx);
-	ath10k_warn(ar, "msdu-desc: %d\n", ar->htt.max_num_pending_tx);
+	ath10k_warn(ar, "msdu-desc: %d  skid: %d\n",
+		    ar->htt.max_num_pending_tx, ar->skid_limit);
 	config.ast_skid_limit = __cpu_to_le32(ar->skid_limit);
 
 	/* Firmware will crash if this is not even multiple of 8 */
