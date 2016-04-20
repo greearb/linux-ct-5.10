@@ -1182,6 +1182,8 @@ struct ath10k {
 	} msa;
 	u8 mac_addr[ETH_ALEN];
 
+	struct ieee80211_iface_combination if_comb[8];
+
 	enum ath10k_hw_rev hw_rev;
 	u16 dev_id;
 	bool fw_powerup_failed; /* If true, might take reboot to recover. */
@@ -1560,5 +1562,6 @@ void ath10k_core_unregister(struct ath10k *ar);
 int ath10k_core_fetch_board_file(struct ath10k *ar, int bd_ie_type);
 int ath10k_core_check_dt(struct ath10k *ar);
 void ath10k_core_free_board_files(struct ath10k *ar);
+void ath10k_core_free_limits(struct ath10k* ar);
 
 #endif /* _CORE_H_ */

@@ -3688,6 +3688,16 @@ int ath10k_core_register(struct ath10k *ar,
 }
 EXPORT_SYMBOL(ath10k_core_register);
 
+void ath10k_core_free_limits(struct ath10k* ar)
+{
+	int i;
+	for (i = 0; i < ARRAY_SIZE(ar->if_comb); i++) {
+		kfree(ar->if_comb[i].limits);
+	}
+	memset(&ar->if_comb, 0, sizeof(ar->if_comb));
+}
+EXPORT_SYMBOL(ath10k_core_free_limits);
+
 void ath10k_core_unregister(struct ath10k *ar)
 {
 	cancel_work_sync(&ar->register_work);
@@ -3712,6 +3722,8 @@ void ath10k_core_unregister(struct ath10k *ar)
 
 	ath10k_core_free_firmware_files(ar);
 	ath10k_core_free_board_files(ar);
+
+	ath10k_core_free_limits(ar);
 
 	ath10k_debug_unregister(ar);
 }
