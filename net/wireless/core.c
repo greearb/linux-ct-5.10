@@ -592,8 +592,11 @@ static int wiphy_verify_combinations(struct wiphy *wiphy)
 				return -EINVAL;
 			all_iftypes |= types;
 
-			if (WARN_ON(!c->limits[j].max))
+			if (WARN_ON(!c->limits[j].max)) {
+				pr_err("comb[%i] limits[%i] has bad max: %d\n",
+				       i, j, c->limits[j].max);
 				return -EINVAL;
+			}
 
 			/* Shouldn't list software iftypes in combinations! */
 			if (WARN_ON(wiphy->software_iftypes & types))

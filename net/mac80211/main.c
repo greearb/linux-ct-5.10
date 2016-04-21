@@ -902,8 +902,10 @@ int ieee80211_register_hw(struct ieee80211_hw *hw)
 
 	if (ieee80211_hw_check(hw, QUEUE_CONTROL) &&
 	    (local->hw.offchannel_tx_hw_queue == IEEE80211_INVAL_HW_QUEUE ||
-	     local->hw.offchannel_tx_hw_queue >= local->hw.queues))
+	     local->hw.offchannel_tx_hw_queue >= local->hw.queues)) {
+		pr_err("queue-ctrl mismatch.\n");
 		return -EINVAL;
+	}
 
 	if ((hw->wiphy->features & NL80211_FEATURE_TDLS_CHANNEL_SWITCH) &&
 	    (!local->ops->tdls_channel_switch ||
@@ -921,8 +923,10 @@ int ieee80211_register_hw(struct ieee80211_hw *hw)
 		return -EINVAL;
 
 #ifdef CONFIG_PM
-	if (hw->wiphy->wowlan && (!local->ops->suspend || !local->ops->resume))
+	if (hw->wiphy->wowlan && (!local->ops->suspend || !local->ops->resume)) {
+		pr_err("wowlan mismatch.\n");
 		return -EINVAL;
+	}
 #endif
 
 	if (!local->use_chanctx) {
@@ -931,8 +935,10 @@ int ieee80211_register_hw(struct ieee80211_hw *hw)
 
 			comb = &local->hw.wiphy->iface_combinations[i];
 
-			if (comb->num_different_channels > 1)
+			if (comb->num_different_channels > 1) {
+				pr_err("num-diff-channels: %d > 1\n", comb->num_different_channels);
 				return -EINVAL;
+			}
 		}
 	} else {
 		/*
@@ -940,8 +946,10 @@ int ieee80211_register_hw(struct ieee80211_hw *hw)
 		 * because there's no clear definition of which channel WDS
 		 * type interfaces use
 		 */
-		if (local->hw.wiphy->interface_modes & BIT(NL80211_IFTYPE_WDS))
+		if (local->hw.wiphy->interface_modes & BIT(NL80211_IFTYPE_WDS)) {
+			pr_err("wds mismatch\n");
 			return -EINVAL;
+		}
 
 		/* DFS is not supported with multi-channel combinations yet */
 		for (i = 0; i < local->hw.wiphy->n_iface_combinations; i++) {
@@ -950,14 +958,18 @@ int ieee80211_register_hw(struct ieee80211_hw *hw)
 			comb = &local->hw.wiphy->iface_combinations[i];
 
 			if (comb->radar_detect_widths &&
-			    comb->num_different_channels > 1)
+			    comb->num_different_channels > 1) {
+				pr_err("dfs multi-channel mismatch\n");
 				return -EINVAL;
+			}
 		}
 	}
 
 	/* Only HW csum features are currently compatible with mac80211 */
-	if (WARN_ON(hw->netdev_features & ~MAC80211_SUPPORTED_FEATURES))
+	if (WARN_ON(hw->netdev_features & ~MAC80211_SUPPORTED_FEATURES)) {
+		pr_err("whitelist mismatch\n");
 		return -EINVAL;
+	}
 
 	if (hw->max_report_rates == 0)
 		hw->max_report_rates = hw->max_rates;
@@ -1055,8 +1067,10 @@ int ieee80211_register_hw(struct ieee80211_hw *hw)
 
 		for (j = 0; j < c->n_limits; j++)
 			if ((c->limits[j].types & BIT(NL80211_IFTYPE_ADHOC)) &&
-			    c->limits[j].max > 1)
+			    c->limits[j].max > 1) {
+				pr_err("n-limits[%i][%i] mismatch: %d, IBSS\n", i, j, c->limits[j].max);
 				return -EINVAL;
+			}
 	}
 
 	local->int_scan_req = kzalloc(sizeof(*local->int_scan_req) +
@@ -1088,6 +1102,7 @@ int ieee80211_register_hw(struct ieee80211_hw *hw)
 	} else if (ieee80211_hw_check(&local->hw, SIGNAL_UNSPEC)) {
 		local->hw.wiphy->signal_type = CFG80211_SIGNAL_TYPE_UNSPEC;
 		if (hw->max_signal <= 0) {
+			pr_err("max_signal: %d < 0\n", hw->max_signal);
 			result = -EINVAL;
 			goto fail_workqueue;
 		}
