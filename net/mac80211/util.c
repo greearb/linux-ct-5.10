@@ -2998,6 +2998,7 @@ u8 *ieee80211_ie_build_ht_cap(u8 *pos, struct ieee80211_sta_ht_cap *ht_cap,
 			IEEE80211_HT_AMPDU_PARM_DENSITY_SHIFT);
 
 	/* MCS set */
+	/* TODO:  Allow over-riding the mcs set (probe requests) */
 	memcpy(pos, &ht_cap->mcs, sizeof(ht_cap->mcs));
 	pos += sizeof(ht_cap->mcs);
 
