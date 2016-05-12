@@ -86,6 +86,20 @@ static const struct ieee80211_channel ath9k_5ghz_chantable[] = {
 	CHAN5G(5785, 35), /* Channel 157 */
 	CHAN5G(5805, 36), /* Channel 161 */
 	CHAN5G(5825, 37), /* Channel 165 */
+
+	/* 4.9Ghz channels, public safety channels, license is required in US
+	 * and most other regulatory domains!
+	 */
+	CHAN5G(4915, 38), /* Channel 183 */
+	CHAN5G(4920, 39), /* Channel 184 */
+	CHAN5G(4925, 40), /* Channel 185 */
+	CHAN5G(4935, 41), /* Channel 187 */
+	CHAN5G(4940, 42), /* Channel 188 */
+	CHAN5G(4945, 43), /* Channel 189 */
+	CHAN5G(4960, 44), /* Channel 192 */
+	CHAN5G(4970, 45), /* Channel 194 */
+	CHAN5G(4980, 46), /* Channel 196 */
+#define ATH9K_NUM_49GHZ_CHANNELS 9
 };
 
 /* Atheros hardware rate code addition for short preamble */
@@ -122,14 +136,28 @@ static struct ieee80211_rate ath9k_legacy_rates[] = {
 			 IEEE80211_RATE_SUPPORTS_10MHZ)),
 };
 
+static bool ath9k_49ghz_capable(struct ath_hw* ah)
+{
+	/* Seems AR9580 supports 4.9ghz, at least. */
+	switch (ah->hw_version.devid) {
+	case AR9300_DEVID_AR9580:
+		return true;
+	}
+	return false;
+}
+
+
 int ath9k_cmn_init_channels_rates(struct ath_common *common)
 {
 	struct ath_hw *ah = (struct ath_hw *)common->ah;
 	void *channels;
+	int num_5ghz_chan = ARRAY_SIZE(ath9k_5ghz_chantable);
+	if (!ath9k_49ghz_capable(ah))
+		num_5ghz_chan -= ATH9K_NUM_49GHZ_CHANNELS;
 
 	BUILD_BUG_ON(ARRAY_SIZE(ath9k_2ghz_chantable) +
-		     ARRAY_SIZE(ath9k_5ghz_chantable) !=
-		     ATH9K_NUM_CHANNELS);
+		     ARRAY_SIZE(ath9k_5ghz_chantable) >
+		     ATH9K_MAX_NUM_CHANNELS);
 
 	if (ah->caps.hw_caps & ATH9K_HW_CAP_2GHZ) {
 		channels = devm_kzalloc(ah->dev,
@@ -149,17 +177,15 @@ int ath9k_cmn_init_channels_rates(struct ath_common *common)
 	}
 
 	if (ah->caps.hw_caps & ATH9K_HW_CAP_5GHZ) {
-		channels = devm_kzalloc(ah->dev,
-			sizeof(ath9k_5ghz_chantable), GFP_KERNEL);
+		int ch_sz = num_5ghz_chan * sizeof(ath9k_5ghz_chantable[0]);
+		channels = devm_kzalloc(ah->dev, ch_sz, GFP_KERNEL);
 		if (!channels)
 			return -ENOMEM;
 
-		memcpy(channels, ath9k_5ghz_chantable,
-		       sizeof(ath9k_5ghz_chantable));
+		memcpy(channels, ath9k_5ghz_chantable, ch_sz);
 		common->sbands[NL80211_BAND_5GHZ].channels = channels;
 		common->sbands[NL80211_BAND_5GHZ].band = NL80211_BAND_5GHZ;
-		common->sbands[NL80211_BAND_5GHZ].n_channels =
-			ARRAY_SIZE(ath9k_5ghz_chantable);
+		common->sbands[NL80211_BAND_5GHZ].n_channels = num_5ghz_chan;
 		common->sbands[NL80211_BAND_5GHZ].bitrates =
 			ath9k_legacy_rates + 4;
 		common->sbands[NL80211_BAND_5GHZ].n_bitrates =

@@ -73,7 +73,7 @@
 
 #define ATH9K_RSSI_BAD			-128
 
-#define ATH9K_NUM_CHANNELS	38
+#define ATH9K_MAX_NUM_CHANNELS	47
 
 /* Register read/write primitives */
 #define REG_WRITE(_ah, _reg, _val) \
@@ -781,7 +781,7 @@ struct ath_hw {
 	struct ath9k_hw_version hw_version;
 	struct ath9k_ops_config config;
 	struct ath9k_hw_capabilities caps;
-	struct ath9k_channel channels[ATH9K_NUM_CHANNELS];
+	struct ath9k_channel channels[ATH9K_MAX_NUM_CHANNELS];
 	struct ath9k_channel *curchan;
 
 	union {
