@@ -2670,6 +2670,11 @@ static ssize_t ath10k_write_ct_special(struct file *file,
 	else if (id == SET_SPECIAL_ID_RC_MAX_PER_THR) {
 		ar->eeprom_overrides.rc_rate_max_per_thr = val;
 	}
+	else if (id == SET_SPECIAL_ID_STA_TXBW_MASK) {
+		/* Specify Station tx bandwidth mask (20, 40, 80Mhz). */
+		ar->eeprom_overrides.tx_sta_bw_mask = val;
+		ath10k_warn(ar, "Setting sta-tx-bw-mask to 0x%x\n", val);
+	}
 	/* else, pass it through to firmware...but will not be stored locally, so
 	 * won't survive through firmware reboots, etc.
 	 */
@@ -2705,6 +2710,7 @@ static ssize_t ath10k_read_ct_special(struct file *file,
 		"id: 5 Allow-AMSDU-IBSS, 1 enabled, 0 disabled, global setting.\n"
 		"id: 6 Max TX-Power, 0-65535:  Latch max-tx-power, in 0.5 dbM Units.\n"
 		"id: 7 RC max PER Threshold: 0-256 (50 is default). Tune with Care.\n"
+		"id: 8 STA-TX-BW-MASK,  0:  all, 0x1: 20Mhz, 0x2 40Mhz, 0x4 80Mhz \n"
 		"\n";
 
 	return simple_read_from_buffer(user_buf, count, ppos, buf, strlen(buf));

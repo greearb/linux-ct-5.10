@@ -1522,6 +1522,7 @@ struct ath10k {
 		} bands[2];
 		u8 thresh62_ext;
 		u8 rc_rate_max_per_thr; /* Firmware rate-ctrl alg. tuning. */
+		u8 tx_sta_bw_mask; /* 0:  all, 0x1: 20Mhz, 0x2 40Mhz, 0x4 80Mhz */
 		bool allow_ibss_amsdu;
 		u16 max_txpower;
 	} eeprom_overrides;
