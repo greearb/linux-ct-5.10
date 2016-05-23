@@ -1681,6 +1681,15 @@ static bool ieee80211_tx_frags(struct ieee80211_local *local,
 					ieee80211_purge_tx_queue(&local->hw,
 								 skbs);
 					return true;
+				} else if (!txpending) {
+					u32 len = skb_queue_len(&local->pending[q]);
+					if (len >= max_pending_qsize) {
+						__skb_unlink(skb, skbs);
+						spin_unlock_irqrestore(&local->queue_stop_reason_lock,
+								       flags);
+						ieee80211_free_txskb(&local->hw, skb);
+						continue; /* process next skb in list */
+					}
 				}
 			} else {
 
@@ -1707,8 +1716,9 @@ static bool ieee80211_tx_frags(struct ieee80211_local *local,
 				spin_unlock_irqrestore(&local->queue_stop_reason_lock,
 						       flags);
 				if (do_free) {
-					dev_kfree_skb_any(skb);
 					/* TODO:  Add counter for this */
+					ieee80211_free_txskb(&local->hw, skb);
+					continue;
 				}
 
 				return false;
