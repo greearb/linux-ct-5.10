@@ -209,6 +209,44 @@ static const struct file_operations fops_wmi_services = {
 	.owner = THIS_MODULE,
 	.llseek = default_llseek,
 };
+
+static ssize_t ath10k_read_misc(struct file *file,
+				char __user *user_buf,
+				size_t count, loff_t *ppos)
+{
+	struct ath10k *ar = file->private_data;
+	char *buf;
+	unsigned int len = 0, buf_len = 1000;
+	ssize_t ret_cnt;
+
+	buf = kzalloc(buf_len, GFP_KERNEL);
+	if (!buf)
+		return -ENOMEM;
+
+	mutex_lock(&ar->conf_mutex);
+
+	if (len > buf_len)
+		len = buf_len;
+
+	/* Probably need some sort of locking on the tx-queue?? */
+	len = snprintf(buf, 1000, "off-channel qlen: %d\n",
+		       skb_queue_len(&ar->offchan_tx_queue));
+
+	ret_cnt = simple_read_from_buffer(user_buf, count, ppos, buf, len);
+
+	mutex_unlock(&ar->conf_mutex);
+
+	kfree(buf);
+	return ret_cnt;
+}
+
+static const struct file_operations fops_misc = {
+	.read = ath10k_read_misc,
+	.open = simple_open,
+	.owner = THIS_MODULE,
+	.llseek = default_llseek,
+};
+
 static ssize_t ath10k_read_fwinfo(struct file *file,
 				  char __user *user_buf,
 				  size_t count, loff_t *ppos)
@@ -3344,6 +3382,9 @@ int ath10k_debug_register(struct ath10k *ar)
 
 	debugfs_create_file("simulate_fw_crash", 0600, ar->debug.debugfs_phy, ar,
 			    &fops_simulate_fw_crash);
+
+	debugfs_create_file("misc", 0400, ar->debug.debugfs_phy, ar,
+			    &fops_misc);
 
 	debugfs_create_file("debug_level", 0600, ar->debug.debugfs_phy,
 			    ar, &fops_debug_level);
