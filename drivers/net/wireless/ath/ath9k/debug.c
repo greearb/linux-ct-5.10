@@ -1409,6 +1409,50 @@ static const struct file_operations fops_chanbw = {
 	.llseek = default_llseek,
 };
 
+static ssize_t read_file_adjust_half(struct file *file, char __user *user_buf,
+			     size_t count, loff_t *ppos)
+{
+	struct ath_softc *sc = file->private_data;
+	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+	char buf[32];
+	unsigned int len;
+
+	len = sprintf(buf, "0x%08x\n", common->plus_half_mhz_center);
+	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
+}
+
+static ssize_t write_file_adjust_half(struct file *file, const char __user *user_buf,
+			     size_t count, loff_t *ppos)
+{
+	struct ath_softc *sc = file->private_data;
+	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+	unsigned long adjust_half;
+	char buf[32];
+	ssize_t len;
+
+	len = min(count, sizeof(buf) - 1);
+	if (copy_from_user(buf, user_buf, len))
+		return -EFAULT;
+
+	buf[len] = '\0';
+	if (kstrtoul(buf, 0, &adjust_half))
+		return -EINVAL;
+
+	common->plus_half_mhz_center = !!adjust_half;
+	if (!test_bit(ATH_OP_INVALID, &common->op_flags))
+		ath9k_ops.config(sc->hw, IEEE80211_CONF_CHANGE_CHANNEL);
+
+	return count;
+}
+
+static const struct file_operations fops_adjust_half = {
+	.read = read_file_adjust_half,
+	.write = write_file_adjust_half,
+	.open = simple_open,
+	.owner = THIS_MODULE,
+	.llseek = default_llseek,
+};
+
 
 int ath9k_init_debug(struct ath_hw *ah)
 {
@@ -1431,6 +1475,8 @@ int ath9k_init_debug(struct ath_hw *ah)
 
 	debugfs_create_file("chanbw", S_IRUSR | S_IWUSR, sc->debug.debugfs_phy,
 			    sc, &fops_chanbw);
+	debugfs_create_file("adjust_half", S_IRUSR | S_IWUSR, sc->debug.debugfs_phy,
+			    sc, &fops_adjust_half);
 	debugfs_create_devm_seqfile(sc->dev, "dma", sc->debug.debugfs_phy,
 				    read_file_dma);
 	debugfs_create_devm_seqfile(sc->dev, "interrupt", sc->debug.debugfs_phy,

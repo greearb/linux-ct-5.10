@@ -152,6 +152,7 @@ static int ar9003_hw_set_channel(struct ath_hw *ah, struct ath9k_channel *chan)
 	u32 freq, chan_frac, div, channelSel = 0, reg32 = 0;
 	struct chan_centers centers;
 	int loadSynthChannel;
+	struct ath_common *common = ath9k_hw_common(ah);
 
 	ath9k_hw_get_channel_centers(ah, chan, &centers);
 	freq = centers.synth_center;
@@ -190,6 +191,9 @@ static int ar9003_hw_set_channel(struct ath_hw *ah, struct ath9k_channel *chan)
 			channelSel = (channelSel << 17) | chan_frac;
 		} else {
 			channelSel = CHANSEL_5G(freq);
+			/* Support fractional 5Mhz center freq for 4.9Ghz */
+			if (common->plus_half_mhz_center)
+				channelSel += CHANSEL_5G_HALF; /* See CHANSEL_5G(_freq) */
 			/* Doubler is ON, so, divide channelSel by 2. */
 			channelSel >>= 1;
 		}
