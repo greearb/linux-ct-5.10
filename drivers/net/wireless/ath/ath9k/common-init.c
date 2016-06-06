@@ -95,11 +95,21 @@ static const struct ieee80211_channel ath9k_5ghz_chantable[] = {
 	CHAN5G(4925, 40), /* Channel 185 */
 	CHAN5G(4935, 41), /* Channel 187 */
 	CHAN5G(4940, 42), /* Channel 188 */
-	CHAN5G(4945, 43), /* Channel 189 */
-	CHAN5G(4960, 44), /* Channel 192 */
-	CHAN5G(4970, 45), /* Channel 194 */
-	CHAN5G(4980, 46), /* Channel 196 */
-#define ATH9K_NUM_49GHZ_CHANNELS 9
+	CHAN5G(4942, 43), /* Cisco 4.9 Ch 1, 5Mhz, requires +500Khz hack */
+	CHAN5G(4945, 44), /* Channel 189 */
+	CHAN5G(4947, 45), /* Cisco 4.9 Ch 2, 5Mhz, requires +500Khz hack */
+	CHAN5G(4952, 46), /* Cisco 4.9 Ch 3, 5Mhz, requires +500Khz hack */
+	CHAN5G(4957, 47), /* Cisco 4.9 Ch 4, 5Mhz, requires +500Khz hack */
+	CHAN5G(4960, 48), /* Channel 192 */
+	CHAN5G(4962, 49), /* Cisco 4.9 Ch 5, 5Mhz, requires +500Khz hack */
+	CHAN5G(4967, 50), /* Cisco 4.9 Ch 6, 5Mhz, requires +500Khz hack */
+	CHAN5G(4970, 51), /* Channel 194 */
+	CHAN5G(4972, 52), /* Cisco 4.9 Ch 7, 5Mhz, requires +500Khz hack */
+	CHAN5G(4977, 53), /* Cisco 4.9 Ch 8, 5Mhz, requires +500Khz hack */
+	CHAN5G(4980, 54), /* Channel 196 */
+	CHAN5G(4982, 55), /* Cisco 4.9 Ch 9, 5Mhz, requires +500Khz hack */
+	CHAN5G(4987, 56), /* Cisco 4.9 Ch 10, 5Mhz, requires +500Khz hack */
+#define ATH9K_NUM_49GHZ_CHANNELS 19
 };
 
 /* Atheros hardware rate code addition for short preamble */
