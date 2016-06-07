@@ -769,6 +769,7 @@ static int __ieee80211_start_scan(struct ieee80211_sub_if_data *sdata,
 	if (hw_scan) {
 		__set_bit(SCAN_HW_SCANNING, &local->scanning);
 	} else if ((req->n_channels == 1) &&
+		   (req->scan_width == 0) &&
 		   (req->channels[0] == local->_oper_chandef.chan)) {
 		/*
 		 * If we are scanning only on the operating channel
