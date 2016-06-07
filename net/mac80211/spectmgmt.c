@@ -122,7 +122,9 @@ int ieee80211_parse_ch_switch_ie(struct ieee80211_sub_if_data *sdata,
 		/* keep width for 5/10 MHz channels */
 		switch (sdata->vif.bss_conf.chandef.width) {
 		case NL80211_CHAN_WIDTH_5:
+		case NL80211_CHAN_WIDTH_5_NOHT:
 		case NL80211_CHAN_WIDTH_10:
+		case NL80211_CHAN_WIDTH_10_NOHT:
 			csa_ie->chandef.width =
 				sdata->vif.bss_conf.chandef.width;
 			break;

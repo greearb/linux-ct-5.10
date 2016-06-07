@@ -354,6 +354,8 @@ static void _ieee80211_start_next_roc(struct ieee80211_local *local)
 		 */
 		roc->on_channel = roc->chan == local->_oper_chandef.chan &&
 				  local->_oper_chandef.width != NL80211_CHAN_WIDTH_5 &&
+				  local->_oper_chandef.width != NL80211_CHAN_WIDTH_5_NOHT &&
+				  local->_oper_chandef.width != NL80211_CHAN_WIDTH_10_NOHT &&
 				  local->_oper_chandef.width != NL80211_CHAN_WIDTH_10;
 
 		/* start this ROC */

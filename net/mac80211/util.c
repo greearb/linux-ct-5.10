@@ -2043,7 +2043,10 @@ static int ieee80211_build_preq_ies_band(struct ieee80211_sub_if_data *sdata,
 	}
 
 	if (sband->ht_cap.ht_supported &&
-	    !(flags & IEEE80211_PROBE_FLAG_DISABLE_HT)) {
+	    (!(flags & IEEE80211_PROBE_FLAG_DISABLE_HT)) &&
+	    chandef->width != NL80211_CHAN_WIDTH_5_NOHT &&
+	    chandef->width != NL80211_CHAN_WIDTH_10_NOHT &&
+	    chandef->width != NL80211_CHAN_WIDTH_20_NOHT) {
 		if (end - pos < 2 + sizeof(struct ieee80211_ht_cap))
 			goto out_err;
 		pos = ieee80211_ie_build_ht_cap(pos, &sband->ht_cap,
@@ -2198,12 +2201,26 @@ struct sk_buff *ieee80211_build_probe_req(struct ieee80211_sub_if_data *sdata,
 	u8 bands_used;
 	struct ieee80211_scan_ies dummy_ie_desc;
 
+#if 0
+	/* Apply channel-width over-rides. */
+	switch(sdata->wdev.handoff_config.scan_width) {
+		case 5:
+			chandef.width = NL80211_CHAN_WIDTH_5_NOHT;
+			break;
+		case 10:
+			chandef.width = NL80211_CHAN_WIDTH_10_NOHT;
+			break;
+		default:
+			chandef.width = sdata->vif.bss_conf.chandef.width;
+			break;
+	}
+#endif
+
 	/*
 	 * Do not send DS Channel parameter for directed probe requests
 	 * in order to maximize the chance that we get a response.  Some
 	 * badly-behaved APs don't respond when this parameter is included.
 	 */
-	chandef.width = sdata->vif.bss_conf.chandef.width;
 	if (flags & IEEE80211_PROBE_FLAG_DIRECTED)
 		chandef.chan = NULL;
 	else
@@ -3991,6 +4008,22 @@ u32 ieee80211_chandef_downgrade(struct cfg80211_chan_def *c)
 	int tmp;
 
 	switch (c->width) {
+	case NL80211_CHAN_WIDTH_5:
+		c->width = NL80211_CHAN_WIDTH_5_NOHT;
+		ret = IEEE80211_STA_DISABLE_HT | IEEE80211_STA_DISABLE_VHT;
+		break;
+	case NL80211_CHAN_WIDTH_10_NOHT:
+		c->width = NL80211_CHAN_WIDTH_5;
+		ret = IEEE80211_STA_DISABLE_VHT;
+		break;
+	case NL80211_CHAN_WIDTH_10:
+		c->width = NL80211_CHAN_WIDTH_10_NOHT;
+		ret = IEEE80211_STA_DISABLE_HT | IEEE80211_STA_DISABLE_VHT;
+		break;
+	case NL80211_CHAN_WIDTH_20_NOHT:
+		c->width = NL80211_CHAN_WIDTH_10;
+		ret = IEEE80211_STA_DISABLE_VHT;
+		break;
 	case NL80211_CHAN_WIDTH_20:
 		c->width = NL80211_CHAN_WIDTH_20_NOHT;
 		ret = IEEE80211_STA_DISABLE_HT | IEEE80211_STA_DISABLE_VHT;
@@ -4027,7 +4060,6 @@ u32 ieee80211_chandef_downgrade(struct cfg80211_chan_def *c)
 		      IEEE80211_STA_DISABLE_160MHZ;
 		break;
 	default:
-	case NL80211_CHAN_WIDTH_20_NOHT:
 		WARN_ON_ONCE(1);
 		c->width = NL80211_CHAN_WIDTH_20_NOHT;
 		ret = IEEE80211_STA_DISABLE_HT | IEEE80211_STA_DISABLE_VHT;
@@ -4037,10 +4069,9 @@ u32 ieee80211_chandef_downgrade(struct cfg80211_chan_def *c)
 	case NL80211_CHAN_WIDTH_4:
 	case NL80211_CHAN_WIDTH_8:
 	case NL80211_CHAN_WIDTH_16:
-	case NL80211_CHAN_WIDTH_5:
-	case NL80211_CHAN_WIDTH_10:
+	case NL80211_CHAN_WIDTH_5_NOHT:
 		WARN_ON_ONCE(1);
-		/* keep c->width */
+		c->width = NL80211_CHAN_WIDTH_5_NOHT;
 		ret = IEEE80211_STA_DISABLE_HT | IEEE80211_STA_DISABLE_VHT;
 		break;
 	}

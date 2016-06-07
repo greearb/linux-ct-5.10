@@ -252,7 +252,9 @@ bool ieee80211_ht_cap_ie_to_sta_ht_cap(struct ieee80211_sub_if_data *sdata,
 		WARN_ON_ONCE(1);
 		fallthrough;
 	case NL80211_CHAN_WIDTH_5:
+	case NL80211_CHAN_WIDTH_5_NOHT:
 	case NL80211_CHAN_WIDTH_10:
+	case NL80211_CHAN_WIDTH_10_NOHT:
 		/*We don't support dynamic change of 5/10 BW
 		 * se we can leave it at 20*/
 	case NL80211_CHAN_WIDTH_20_NOHT:

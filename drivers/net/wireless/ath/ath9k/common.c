@@ -326,8 +326,16 @@ static void ath9k_cmn_update_ichannel(struct ath_common *common,
 	switch (width) {
 	case NL80211_CHAN_WIDTH_5:
 		flags |= CHANNEL_QUARTER;
+		flags |= CHANNEL_HT;
+		break;
+	case NL80211_CHAN_WIDTH_5_NOHT:
+		flags |= CHANNEL_QUARTER;
 		break;
 	case NL80211_CHAN_WIDTH_10:
+		flags |= CHANNEL_HALF;
+		flags |= CHANNEL_HT;
+		break;
+	case NL80211_CHAN_WIDTH_10_NOHT:
 		flags |= CHANNEL_HALF;
 		break;
 	case NL80211_CHAN_WIDTH_20_NOHT:

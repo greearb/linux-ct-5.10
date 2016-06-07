@@ -1070,8 +1070,10 @@ ieee80211_chandef_get_shift(struct cfg80211_chan_def *chandef)
 {
 	switch (chandef->width) {
 	case NL80211_CHAN_WIDTH_5:
+	case NL80211_CHAN_WIDTH_5_NOHT:
 		return 2;
 	case NL80211_CHAN_WIDTH_10:
+	case NL80211_CHAN_WIDTH_10_NOHT:
 		return 1;
 	default:
 		return 0;

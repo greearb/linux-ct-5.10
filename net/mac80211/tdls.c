@@ -313,7 +313,9 @@ ieee80211_tdls_chandef_vht_upgrade(struct ieee80211_sub_if_data *sdata,
 
 	/* only support upgrading non-narrow channels up to 80Mhz */
 	if (max_width == NL80211_CHAN_WIDTH_5 ||
-	    max_width == NL80211_CHAN_WIDTH_10)
+	    max_width == NL80211_CHAN_WIDTH_10 ||
+	    max_width == NL80211_CHAN_WIDTH_5_NOHT ||
+	    max_width == NL80211_CHAN_WIDTH_10_NOHT)
 		return;
 
 	if (max_width > NL80211_CHAN_WIDTH_80)

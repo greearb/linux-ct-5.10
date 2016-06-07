@@ -315,7 +315,9 @@ void ieee80211_recalc_chanctx_min_def(struct ieee80211_local *local,
 
 	/* don't optimize non-20MHz based and radar_enabled confs */
 	if (ctx->conf.def.width == NL80211_CHAN_WIDTH_5 ||
+	    ctx->conf.def.width == NL80211_CHAN_WIDTH_5_NOHT ||
 	    ctx->conf.def.width == NL80211_CHAN_WIDTH_10 ||
+	    ctx->conf.def.width == NL80211_CHAN_WIDTH_10_NOHT ||
 	    ctx->conf.def.width == NL80211_CHAN_WIDTH_1 ||
 	    ctx->conf.def.width == NL80211_CHAN_WIDTH_2 ||
 	    ctx->conf.def.width == NL80211_CHAN_WIDTH_4 ||

@@ -3321,6 +3321,8 @@ static int ieee80211_set_csa_beacon(struct ieee80211_sub_if_data *sdata,
 				return -EINVAL;
 		case NL80211_CHAN_WIDTH_5:
 		case NL80211_CHAN_WIDTH_10:
+		case NL80211_CHAN_WIDTH_5_NOHT:
+		case NL80211_CHAN_WIDTH_10_NOHT:
 		case NL80211_CHAN_WIDTH_20_NOHT:
 		case NL80211_CHAN_WIDTH_20:
 			break;

@@ -34,6 +34,22 @@ void cfg80211_chandef_create(struct cfg80211_chan_def *chandef,
 	chandef->edmg.channels = 0;
 
 	switch (chan_type) {
+	case NL80211_CHAN_NO_HT5:
+		chandef->width = NL80211_CHAN_WIDTH_5_NOHT;
+		chandef->center_freq1 = chan->center_freq;
+		break;
+	case NL80211_CHAN_HT5:
+		chandef->width = NL80211_CHAN_WIDTH_5;
+		chandef->center_freq1 = chan->center_freq;
+		break;
+	case NL80211_CHAN_NO_HT10:
+		chandef->width = NL80211_CHAN_WIDTH_10_NOHT;
+		chandef->center_freq1 = chan->center_freq;
+		break;
+	case NL80211_CHAN_HT10:
+		chandef->width = NL80211_CHAN_WIDTH_10;
+		chandef->center_freq1 = chan->center_freq;
+		break;
 	case NL80211_CHAN_NO_HT:
 		chandef->width = NL80211_CHAN_WIDTH_20_NOHT;
 		chandef->center_freq1 = chan->center_freq;
@@ -212,7 +228,9 @@ bool cfg80211_chandef_valid(const struct cfg80211_chan_def *chandef)
 
 	switch (chandef->width) {
 	case NL80211_CHAN_WIDTH_5:
+	case NL80211_CHAN_WIDTH_5_NOHT:
 	case NL80211_CHAN_WIDTH_10:
+	case NL80211_CHAN_WIDTH_10_NOHT:
 	case NL80211_CHAN_WIDTH_20:
 	case NL80211_CHAN_WIDTH_20_NOHT:
 		if (ieee80211_chandef_to_khz(chandef) !=
@@ -1026,9 +1044,11 @@ bool cfg80211_chandef_usable(struct wiphy *wiphy,
 		width = 16;
 		break;
 	case NL80211_CHAN_WIDTH_5:
+	case NL80211_CHAN_WIDTH_5_NOHT:
 		width = 5;
 		break;
 	case NL80211_CHAN_WIDTH_10:
+	case NL80211_CHAN_WIDTH_10_NOHT:
 		prohibited_flags |= IEEE80211_CHAN_NO_10MHZ;
 		width = 10;
 		break;

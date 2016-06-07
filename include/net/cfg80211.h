@@ -765,6 +765,14 @@ static inline enum nl80211_channel_type
 cfg80211_get_chandef_type(const struct cfg80211_chan_def *chandef)
 {
 	switch (chandef->width) {
+	case NL80211_CHAN_WIDTH_5:
+		return NL80211_CHAN_HT5;
+	case NL80211_CHAN_WIDTH_10:
+		return NL80211_CHAN_HT10;
+	case NL80211_CHAN_WIDTH_5_NOHT:
+		return NL80211_CHAN_NO_HT5;
+	case NL80211_CHAN_WIDTH_10_NOHT:
+		return NL80211_CHAN_NO_HT10;
 	case NL80211_CHAN_WIDTH_20_NOHT:
 		return NL80211_CHAN_NO_HT;
 	case NL80211_CHAN_WIDTH_20:
@@ -880,8 +888,10 @@ ieee80211_chandef_rate_flags(struct cfg80211_chan_def *chandef)
 {
 	switch (chandef->width) {
 	case NL80211_CHAN_WIDTH_5:
+	case NL80211_CHAN_WIDTH_5_NOHT:
 		return IEEE80211_RATE_SUPPORTS_5MHZ;
 	case NL80211_CHAN_WIDTH_10:
+	case NL80211_CHAN_WIDTH_10_NOHT:
 		return IEEE80211_RATE_SUPPORTS_10MHZ;
 	default:
 		break;
@@ -905,9 +915,11 @@ ieee80211_chandef_max_power(struct cfg80211_chan_def *chandef)
 {
 	switch (chandef->width) {
 	case NL80211_CHAN_WIDTH_5:
+	case NL80211_CHAN_WIDTH_5_NOHT:
 		return min(chandef->chan->max_reg_power - 6,
 			   chandef->chan->max_power);
 	case NL80211_CHAN_WIDTH_10:
+	case NL80211_CHAN_WIDTH_10_NOHT:
 		return min(chandef->chan->max_reg_power - 3,
 			   chandef->chan->max_power);
 	default:
@@ -6320,8 +6332,10 @@ cfg80211_chandef_to_scan_width(const struct cfg80211_chan_def *chandef)
 {
 	switch (chandef->width) {
 	case NL80211_CHAN_WIDTH_5:
+	case NL80211_CHAN_WIDTH_5_NOHT:
 		return NL80211_BSS_CHAN_WIDTH_5;
 	case NL80211_CHAN_WIDTH_10:
+	case NL80211_CHAN_WIDTH_10_NOHT:
 		return NL80211_BSS_CHAN_WIDTH_10;
 	default:
 		return NL80211_BSS_CHAN_WIDTH_20;

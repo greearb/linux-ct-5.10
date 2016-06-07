@@ -577,7 +577,9 @@ static void rate_idx_match_mask(s8 *rate_idx, u16 *rate_flags,
 		switch (chan_width) {
 		case NL80211_CHAN_WIDTH_20_NOHT:
 		case NL80211_CHAN_WIDTH_5:
+		case NL80211_CHAN_WIDTH_5_NOHT:
 		case NL80211_CHAN_WIDTH_10:
+		case NL80211_CHAN_WIDTH_10_NOHT:
 			return;
 		default:
 			break;
