@@ -5065,6 +5065,12 @@ static int ieee80211_prep_channel(struct ieee80211_sub_if_data *sdata,
 						     s1g_oper,
 						     &chandef, false);
 
+	if (cbss->scan_width == NL80211_BSS_CHAN_WIDTH_5)
+		chandef.width = NL80211_CHAN_WIDTH_5;
+	else if (cbss->scan_width == NL80211_BSS_CHAN_WIDTH_10)
+		chandef.width = NL80211_CHAN_WIDTH_10;
+
+
 	sdata->needed_rx_chains = min(ieee80211_ht_vht_rx_chains(sdata, cbss),
 				      local->rx_chains);
 
