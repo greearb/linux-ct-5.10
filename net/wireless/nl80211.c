@@ -2995,6 +2995,12 @@ int nl80211_parse_chandef(struct cfg80211_registered_device *rdev,
 		return -EINVAL;
 	}
 
+	/*Special case to enable quarter/half HT rates*/
+	if (chandef->width == NL80211_CHAN_WIDTH_20 &&
+		info->attrs[NL80211_ATTR_CHANNEL_WIDTH])
+		chandef->width =
+			nla_get_u32(info->attrs[NL80211_ATTR_CHANNEL_WIDTH]);
+
 	if ((chandef->width == NL80211_CHAN_WIDTH_5 ||
 	     chandef->width == NL80211_CHAN_WIDTH_10) &&
 	    !(rdev->wiphy.flags & WIPHY_FLAG_SUPPORTS_5_10_MHZ)) {

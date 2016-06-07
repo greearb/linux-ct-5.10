@@ -379,6 +379,9 @@ static int ieee80211_config_bw(struct ieee80211_sub_if_data *sdata,
 	if (ifmgd->flags & IEEE80211_STA_DISABLE_HT || !ht_oper)
 		return 0;
 
+	if (ieee80211_chandef_rate_flags(&sdata->vif.bss_conf.chandef))
+		return 0;
+
 	/* don't check VHT if we associated as non-VHT station */
 	if (ifmgd->flags & IEEE80211_STA_DISABLE_VHT)
 		vht_oper = NULL;
@@ -5056,6 +5059,12 @@ static int ieee80211_prep_channel(struct ieee80211_sub_if_data *sdata,
 		else
 			sdata_info(sdata,
 				   "AP missing S1G operation element?\n");
+	}
+
+	if (cbss->scan_width == NL80211_BSS_CHAN_WIDTH_5 ||
+	    cbss->scan_width == NL80211_BSS_CHAN_WIDTH_10) {
+		sband->ht_cap.cap &= ~IEEE80211_HT_CAP_SUP_WIDTH_20_40;
+		sband->ht_cap.cap &= ~IEEE80211_HT_CAP_SGI_40;
 	}
 
 	ifmgd->flags |= ieee80211_determine_chantype(sdata, sband,
