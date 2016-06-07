@@ -8351,6 +8351,12 @@ static int nl80211_trigger_scan(struct sk_buff *skb, struct genl_info *info)
 	if (err)
 		goto out_free;
 
+	/*Special case to enable quarter/half HT rates*/
+	if (info->attrs[NL80211_ATTR_CHANNEL_WIDTH]) {
+		u32 tmp = nla_get_u32(info->attrs[NL80211_ATTR_CHANNEL_WIDTH]);
+		request->scan_width = cfg80211_chan_to_scan_width(tmp);
+	}
+
 	request->no_cck =
 		nla_get_flag(info->attrs[NL80211_ATTR_TX_NO_CCK_RATE]);
 
@@ -10830,6 +10836,11 @@ static int nl80211_connect(struct sk_buff *skb, struct genl_info *info)
 			return -EINVAL;
 		}
 		connect.flags |= CONNECT_REQ_EXTERNAL_AUTH_SUPPORT;
+	}
+
+	if (info->attrs[NL80211_ATTR_CHANNEL_WIDTH]) {
+		u32 tmp = nla_get_u32(info->attrs[NL80211_ATTR_CHANNEL_WIDTH]);
+		connect.scan_width = cfg80211_chan_to_scan_width(tmp);
 	}
 
 	wdev_lock(dev->ieee80211_ptr);
