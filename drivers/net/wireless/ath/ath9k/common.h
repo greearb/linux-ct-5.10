@@ -26,6 +26,13 @@
 #include "common-debug.h"
 #include "common-spectral.h"
 
+#ifdef STANDALONE_CT
+#define NL80211_CHAN_WIDTH_5 (NL80211_CHAN_WIDTH_160+1)
+#define NL80211_CHAN_WIDTH_10 (NL80211_CHAN_WIDTH_160+2)
+#define NL80211_CHAN_WIDTH_5_NOHT (NL80211_CHAN_WIDTH_160+3)
+#define NL80211_CHAN_WIDTH_10_NOHT (NL80211_CHAN_WIDTH_160+4)
+#endif
+
 /* Common header for Atheros 802.11n base driver cores */
 
 #define WME_BA_BMP_SIZE         64
