@@ -48,7 +48,7 @@
 #define ATH10K_MAX_NUM_MGMT_PENDING 128
 
 /* number of failed packets (20 packets with 16 sw reties each) */
-#define ATH10K_KICKOUT_THRESHOLD (20 * 16)
+#define DEFAULT_ATH10K_KICKOUT_THRESHOLD (20 * 16)
 
 /*
  * Use insanely high numbers to make sure that the firmware implementation
@@ -1349,6 +1349,7 @@ struct ath10k {
 	/* protected by conf_mutex */
 	bool radar_enabled;
 	int num_started_vdevs;
+	u32 sta_xretry_kickout_thresh;
 
 	/* Protected by conf-mutex */
 	u8 cfg_tx_chainmask;

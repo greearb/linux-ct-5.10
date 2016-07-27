@@ -3765,6 +3765,7 @@ struct ath10k *ath10k_core_create(size_t priv_size, struct device *dev,
 		return NULL;
 
 	ar->eeprom_overrides.max_txpower = 0xFFFF;
+	ar->sta_xretry_kickout_thresh = DEFAULT_ATH10K_KICKOUT_THRESHOLD;
 
 	ar->ath_common.priv = ar;
 	ar->ath_common.hw = ar->hw;
