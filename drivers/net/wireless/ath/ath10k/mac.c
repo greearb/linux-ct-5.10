@@ -272,6 +272,7 @@ static int ath10k_send_key(struct ath10k_vif *arvif,
 		.key_flags = flags,
 		.macaddr = macaddr,
 	};
+	int ret1, ret2;
 
 	lockdep_assert_held(&arvif->ar->conf_mutex);
 
@@ -316,7 +317,13 @@ static int ath10k_send_key(struct ath10k_vif *arvif,
 		arg.key_data = NULL;
 	}
 
-	return ath10k_wmi_vdev_install_key(arvif->ar, &arg);
+	ret1 = ath10k_wmi_vdev_install_key(arvif->ar, &arg);
+	ret2 = ath10k_wmi_barrier(ar);
+	if (ret2) {
+		ath10k_err(ar, "failed to ping firmware: %d\n", ret2);
+		return ret2;
+	}
+	return ret1;
 }
 
 static int ath10k_install_key(struct ath10k_vif *arvif,
