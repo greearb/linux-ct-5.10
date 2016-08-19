@@ -4582,6 +4582,25 @@ static void ath10k_mac_txq_unref(struct ath10k *ar, struct ieee80211_txq *txq)
 	if (!txq)
 		return;
 
+#if 0
+	/* BEN:  Used to have this in 4.20, maybe no longer needed? */
+	struct ieee80211_txq *txq_tmp;
+	spin_lock_bh(&ar->txqs_lock);
+	if (!list_empty(&artxq->list))
+		list_del_init(&artxq->list);
+
+	/* Remove from ar->txqs in case it still exists there. */
+	list_for_each_entry_safe(walker, tmp, &ar->txqs, list) {
+		txq_tmp = container_of((void *)walker, struct ieee80211_txq,
+				       drv_priv);
+		if (txq_tmp == txq) {
+			list_del(&walker->list);
+			WARN_ON_ONCE(1);
+		}
+	}
+	spin_unlock_bh(&ar->txqs_lock);
+#endif
+
 	spin_lock_bh(&ar->htt.tx_lock);
 	idr_for_each_entry(&ar->htt.pending_tx, msdu, msdu_id) {
 		cb = ATH10K_SKB_CB(msdu);
