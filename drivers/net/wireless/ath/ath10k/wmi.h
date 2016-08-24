@@ -6406,16 +6406,23 @@ enum wmi_peer_param {
 	WMI_PEER_CHAN_WIDTH = 0x4,
 	WMI_PEER_NSS        = 0x5,
 	WMI_PEER_USE_4ADDR  = 0x6,
+	/** Enable extended peer stats */
+	WMI_PEER_EXT_STATS_ENABLE = 0x7,
+	/*Use FIXED Pwr */
 	WMI_PEER_USE_FIXED_PWR = 0x8,
+	/* Set peer fixed rate */
 	WMI_PEER_PARAM_FIXED_RATE = 0x9,
 	WMI_PEER_DEBUG      = 0xa,
+	/* peer NSS for VHT160 - Extended NSS support */
+	WMI_PEER_NSS_VHT160 = 0xb,
+	/* peer NSS for VHT160 - Extended NSS support */
+	WMI_PEER_NSS_VHT80_80 = 0xc,
 	WMI_PEER_PHYMODE    = 0xd,
+
+	/* Whitelist peer TIDs */
+	WMI_PEER_SET_MU_WHITELIST =0x10,
+
 	WMI_PEER_DUMMY_VAR  = 0xff, /* dummy parameter for STA PS workaround */
-	WMI_PEER_FETCH_RC   = 0x10 /* Fetch rate-ctrl cache from host via DMA
-				    * Call this before setting rate-ctrl logic so that
-				    * firmware will have the firmware data in it's cache.
-				    * It is racy, but better than nothing.
-				    */
 };
 
 struct wmi_peer_set_param_cmd {
