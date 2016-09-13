@@ -181,7 +181,7 @@ static const struct carl9170_debugfs_fops carl_debugfs_##name ##_ops = {\
 	},								\
 }
 
-#define DEBUGFS_DECLARE_FILE(name, _read, _write, _read_bufsize, _attr)	\
+#define DEBUGFS_DECLARE_FILE(name, _read, _write, _read_bufsize, _attr) \
 	__DEBUGFS_DECLARE_FILE(name, _read, _write, _read_bufsize,	\
 			       _attr, CARL9170_STARTED)			\
 
@@ -742,7 +742,7 @@ static ssize_t carl9170_debugfs_pattern_mode_write(struct ar9170 *ar,
 	return count;
 }
 
-DEBUGFS_DECLARE_RW_FILE(pattern_mode, 80);
+__DEBUGFS_DECLARE_RW_FILE(pattern_mode, 80, CARL9170_STOPPED);
 
 static ssize_t carl9170_debugfs_hw_iowrite32_write(struct ar9170 *ar,
 	const char *buf, size_t count)
