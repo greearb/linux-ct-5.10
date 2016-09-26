@@ -262,12 +262,37 @@ static ssize_t ath10k_read_fwinfo(struct file *file,
 
 	mutex_lock(&ar->conf_mutex);
 
-	if (len > buf_len)
-		len = buf_len;
-
-	len = snprintf(buf, 1000, "directory: %s\nfirmware:  %s\nfwcfg: fwcfg-%s-%s.txt\n",
+	len = snprintf(buf, buf_len, "directory: %s\nfirmware:  %s\nfwcfg:     fwcfg-%s-%s.txt\nbus:       %s\nfeatures:  ",
 		       ar->hw_params.fw.dir, ar->running_fw->fw_file.fw_name,
-		       ath10k_bus_str(ar->hif.bus), dev_name(ar->dev));
+		       ath10k_bus_str(ar->hif.bus), dev_name(ar->dev), dev_name(ar->dev));
+	ath10k_core_get_fw_features_str(ar, buf + len, buf_len - len);
+
+	/* Just to be safe */
+	buf[buf_len - 1] = 0;
+	len = strlen(buf);
+
+	len += snprintf(buf + len, buf_len - len, "\nversion:   %s\nhw_rev:    ",
+			ar->hw->wiphy->fw_version);
+	switch (ar->hw_rev) {
+	case ATH10K_HW_QCA988X:
+		len += snprintf(buf + len, buf_len - len, "988x\n");
+		break;
+	case ATH10K_HW_QCA6174:
+		len += snprintf(buf + len, buf_len - len, "6174\n");
+		break;
+	case ATH10K_HW_QCA99X0:
+		len += snprintf(buf + len, buf_len - len, "99x0\n");
+		break;
+	case ATH10K_HW_QCA9984:
+		len += snprintf(buf + len, buf_len - len, "9984\n");
+		break;
+	case ATH10K_HW_QCA9377:
+		len += snprintf(buf + len, buf_len - len, "9377\n");
+		break;
+	case ATH10K_HW_QCA4019:
+		len += snprintf(buf + len, buf_len - len, "4019\n");
+		break;
+	}
 
 	ret_cnt = simple_read_from_buffer(user_buf, count, ppos, buf, len);
 
