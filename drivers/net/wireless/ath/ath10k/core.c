@@ -1673,9 +1673,9 @@ static int ath10k_core_fetch_board_data_api_n(struct ath10k *ar,
 	if (ret)
 		goto err;
 
-	/* Save firmware name so we can display it later. */
-	strlcpy(ar->normal_mode_fw.fw_file.fw_name, filename,
-		sizeof(ar->normal_mode_fw.fw_file.fw_name));
+	/* Save firmware board name so we can display it later. */
+	strlcpy(ar->normal_mode_fw.fw_file.fw_board_name, filename,
+		sizeof(ar->normal_mode_fw.fw_file.fw_board_name));
 
 	return 0;
 
