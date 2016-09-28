@@ -55,6 +55,11 @@ int modparam_noht;
 module_param_named(noht, modparam_noht, int, 0444);
 MODULE_PARM_DESC(noht, "Disable MPDU aggregation.");
 
+static int modparam_override_eeprom_regdomain = -1;
+module_param_named(override_eeprom_regdomain,
+		   modparam_override_eeprom_regdomain, int, 0444);
+MODULE_PARM_DESC(override_eeprom_regdomain, "Override regdomain hardcoded in EEPROM with this value (DANGEROUS).");
+
 #define RATE(_bitrate, _hw_rate, _txpidx, _flags) {	\
 	.bitrate	= (_bitrate),			\
 	.flags		= (_flags),			\
@@ -1974,6 +1979,16 @@ static int carl9170_parse_eeprom(struct ar9170 *ar)
 	ar->num_channels = chans;
 
 	regulatory->current_rd = le16_to_cpu(ar->eeprom.reg_domain[0]);
+
+	if (modparam_override_eeprom_regdomain != -1) {
+		printk(KERN_ERR "carl9170: DANGER! You're overriding EEPROM-defined regulatory domain,"
+		       "\nfrom: 0x%x to 0x%x\n",
+		       regulatory->current_rd, modparam_override_eeprom_regdomain);
+		printk(KERN_ERR "carl9170: Your card was not certified to operate in the domain you chose.\n");
+		printk(KERN_ERR "carl9170: This might result in a violation of your local regulatory rules.\n");
+		printk(KERN_ERR "carl9170: Do not ever do this unless you really know what you are doing!\n");
+		regulatory->current_rd = modparam_override_eeprom_regdomain | COUNTRY_ERD_FLAG;
+	}
 
 	/* second part of wiphy init */
 	SET_IEEE80211_PERM_ADDR(ar->hw, ar->eeprom.mac_address);
