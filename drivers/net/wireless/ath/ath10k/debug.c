@@ -2710,6 +2710,15 @@ static ssize_t ath10k_write_ct_special(struct file *file,
 		ar->eeprom_overrides.rifs_enable_override = val;
 		ath10k_warn(ar, "Setting RIFS enable override to 0x%x\n", val);
 	}
+	else if (id == SET_SPECIAL_ID_WMI_WD) {
+		ar->eeprom_overrides.wmi_wd_keepalive_ms = val;
+		ath10k_warn(ar, "Setting WMI WD to 0x%x\n", val);
+		if (val == 0)
+			goto unlock; /* 0 means don't set */
+
+		if (val == 0xFFFFFFFF)
+			val = 0; /* 0xFFFFFFFF means disable, FW uses 0 to mean disable */
+	}
 	/* Below here are local driver hacks, and not necessarily passed directly to firmware. */
 	else if (id == 0x1001) {
 		/* Set station failed-transmit kickout threshold. */
@@ -2759,6 +2768,7 @@ static ssize_t ath10k_read_ct_special(struct file *file,
 		"id: 8 STA-TX-BW-MASK,  0:  all, 0x1: 20Mhz, 0x2 40Mhz, 0x4 80Mhz \n"
 		"id: 9 pdev failed retry threshold, U16, 10.1 firmware default is 0x40\n"
 		"id: 0xA Enable(1)/Disable(0) baseband RIFS.  Default is disabled.\n"
+		"id: 0xB WMI WD Keepalive(ms): 0xFFFFFFFF disables, otherwise suggest 8000+.\n"
 		"\nBelow here are not actually sent to firmware directly, but configure the driver.\n"
 		"id: 0x1001 set sta-kickout threshold due to tx-failures (0 means disable.  Default is 20 * 16.)\n"
 		"\n";
