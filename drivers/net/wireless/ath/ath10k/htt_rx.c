@@ -1400,6 +1400,12 @@ static void ath10k_htt_rx_h_undecap_raw(struct ath10k *ar,
 	if (WARN_ON_ONCE(!(is_first && is_last) && !msdu_limit_err))
 		return;
 
+	/* We see zero length msdus, not sure why.  At least don't
+	 * try to trim it further.
+	 */
+	if (unlikely(msdu->len < 4))
+		return;
+
 	skb_trim(msdu, msdu->len - FCS_LEN);
 
 	/* Push original 80211 header */
