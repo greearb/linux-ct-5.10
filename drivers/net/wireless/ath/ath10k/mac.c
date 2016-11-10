@@ -3008,7 +3008,7 @@ static bool ath10k_mac_sta_has_ofdm_only(struct ieee80211_vif *vif,
 	u32 msk = arvif->bitrate_mask.control[NL80211_BAND_2GHZ].legacy &
 		sta->supp_rates[NL80211_BAND_2GHZ];
 	/* We have 12 bits of legacy rates, first 4 are /b (CCK) rates. */
-	return (msk & 0xfff) == 0xff0;
+	return (msk & 0xff0) && !(msk & 0xf);
 }
 
 static bool ath10k_mac_sta_has_ofdm_and_cck(struct ieee80211_vif *vif,
@@ -3018,7 +3018,7 @@ static bool ath10k_mac_sta_has_ofdm_and_cck(struct ieee80211_vif *vif,
 	u32 msk = arvif->bitrate_mask.control[NL80211_BAND_2GHZ].legacy &
 		sta->supp_rates[NL80211_BAND_2GHZ];
 	/* We have 12 bits of legacy rates, first 4 are /b (CCK) rates. */
-	return (msk & 0xfff) == 0xfff;
+	return ((msk & 0xf) && (msk & 0xff0));
 }
 
 static enum wmi_phy_mode ath10k_mac_get_phymode_vht(struct ath10k *ar,
