@@ -2001,6 +2001,9 @@ static int ieee80211_build_preq_ies_band(struct ieee80211_sub_if_data *sdata,
 	}
 
 	ext_rates_len = num_rates - supp_rates_len;
+	/*pr_err("build-preq-ies-band, ext-rates-len: %d  num-rates: %d  supp-rates-len: %d\n",
+	  ext_rates_len, num_rates, supp_rates_len);*/
+
 	if (ext_rates_len > 0) {
 		if (end - pos < 2 + ext_rates_len)
 			goto out_err;

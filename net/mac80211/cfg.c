@@ -2926,6 +2926,8 @@ static int ieee80211_set_bitrate_mask(struct wiphy *wiphy,
 	if (is_advert_bitmask) {
 		memcpy(&sdata->cfg_advert_bitrate_mask, mask, sizeof(*mask));
 		sdata->cfg_advert_bitrate_mask_set = true;
+		/*sdata_info(sdata, "set-bitrate-mask advert, legacy[0]: 0x%x  legacy[1]: 0x%x\n",
+		  mask->control[0].legacy, mask->control[1].legacy);*/
 		return 0;
 	}
 
