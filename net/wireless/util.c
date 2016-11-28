@@ -1204,7 +1204,9 @@ static u32 cfg80211_calculate_bitrate_dmg(struct rate_info *rate)
 		[31] = 25030,
 	};
 
-	if (WARN_ON_ONCE(rate->mcs >= ARRAY_SIZE(__mcs2bitrate)))
+	if (WARN_ONCE(rate->mcs >= ARRAY_SIZE(__mcs2bitrate),
+		      "rate->mcs: %d  array-size mcs2bitrate: %d\n",
+		      rate->mcs, (u32)(ARRAY_SIZE(__mcs2bitrate))))
 		return 0;
 
 	return __mcs2bitrate[rate->mcs];
