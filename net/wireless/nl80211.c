@@ -4669,7 +4669,7 @@ static int nl80211_parse_tx_bitrate_mask(struct genl_info *info,
 		sband = rdev->wiphy.bands[i];
 
 		if (!sband) {
-			pr_err("sband[%d] is null\n", i);
+			/*pr_err("sband[%d] is null\n", i);*/
 			continue;
 		}
 
