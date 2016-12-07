@@ -6858,11 +6858,10 @@ static struct sk_buff *ath10k_wmi_10_2_op_gen_init(struct ath10k *ar)
 
 	if (ath10k_peer_stats_enabled(ar)) {
 		config.num_peers = __cpu_to_le32(TARGET_10X_TX_STATS_NUM_PEERS);
-		config.num_tids = __cpu_to_le32(TARGET_10X_TX_STATS_NUM_TIDS);
 	} else {
 		config.num_peers = __cpu_to_le32(TARGET_10X_NUM_PEERS);
-		config.num_tids = __cpu_to_le32(TARGET_10X_NUM_TIDS);
 	}
+	config.num_tids = __cpu_to_le32(ar->num_tids);
 
 	config.tx_chain_mask = __cpu_to_le32(TARGET_10X_TX_CHAIN_MASK);
 
