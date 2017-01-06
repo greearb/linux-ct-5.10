@@ -878,14 +878,20 @@ static int ath10k_mac_set_rts(struct ath10k_vif *arvif, u32 value)
 static int ath10k_peer_delete(struct ath10k *ar, u32 vdev_id, const u8 *addr)
 {
 	int ret;
+	int tries = 3;
 
 	lockdep_assert_held(&ar->conf_mutex);
 
-	ret = ath10k_wmi_peer_delete(ar, vdev_id, addr);
-	if (ret)
-		return ret;
+	do {
+		ret = ath10k_wmi_peer_delete(ar, vdev_id, addr);
+		if (ret)
+			return ret;
 
-	ret = ath10k_wait_for_peer_deleted(ar, vdev_id, addr);
+		ret = ath10k_wait_for_peer_deleted(ar, vdev_id, addr);
+		if (ret == 0) /* else, try again, maybe FW dropped a msg? */
+			break;
+	} while (--tries);
+
 	if (ret)
 		return ret;
 
