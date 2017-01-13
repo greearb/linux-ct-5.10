@@ -3,11 +3,8 @@
 #define _UAPI_IF_TUNNEL_H_
 
 #include <linux/types.h>
-#include <linux/if.h>
-#include <linux/ip.h>
-#include <linux/in6.h>
 #include <asm/byteorder.h>
-
+#include <linux/if.h>
 
 #define SIOCGETTUNNEL   (SIOCDEVPRIVATE + 0)
 #define SIOCADDTUNNEL   (SIOCDEVPRIVATE + 1)
