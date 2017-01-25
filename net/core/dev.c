@@ -4182,8 +4182,18 @@ static int __dev_queue_xmit(struct sk_buff *skb, struct net_device *sb_dev,
 				}
 			}
 			HARD_TX_UNLOCK(dev, txq);
-			net_crit_ratelimited("Virtual device %s asks to queue packet!\n",
-					     dev->name);
+			{
+				/* This spams when using pktgen on 802.1q vlans.  Doesn't seem
+				 * to actually cause any harm, so make sure this message is not
+				 * repeated more than once. --Ben
+				 */
+				static int done_one = 0;
+				if (!done_one) {
+					net_crit_ratelimited("Virtual device %s asks to queue packet!\n",
+							     dev->name);
+					done_one = 1;
+				}
+			}
 		} else {
 			/* Recursion is detected! It is possible,
 			 * unfortunately
