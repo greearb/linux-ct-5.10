@@ -3003,6 +3003,8 @@ static int ieee80211_start_radar_detection(struct wiphy *wiphy,
 
 	mutex_lock(&local->mtx);
 	if (!list_empty(&local->roc_list) || local->scanning) {
+		sdata_info(sdata, "start-radar failed, roc-list-empty: %d  scanning: %ld\n",
+			   list_empty(&local->roc_list), local->scanning);
 		err = -EBUSY;
 		goto out_unlock;
 	}
@@ -3013,8 +3015,11 @@ static int ieee80211_start_radar_detection(struct wiphy *wiphy,
 
 	err = ieee80211_vif_use_channel(sdata, chandef,
 					IEEE80211_CHANCTX_SHARED);
-	if (err)
+	if (err) {
+		sdata_info(sdata, "start-radar failed, vif-use-channel check failed: %d\n",
+			   err);
 		goto out_unlock;
+	}
 
 	ieee80211_queue_delayed_work(&sdata->local->hw,
 				     &sdata->dfs_cac_timer_work,
