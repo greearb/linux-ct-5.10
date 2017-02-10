@@ -2402,6 +2402,7 @@ static void ath10k_peer_assoc_h_rate_overrides(struct ath10k *ar,
 	int i;
 	int j;
 	int hw_rix;
+	bool ok160 = false;
 
 	/* So, what we really want here is the max number of chains the firmware
 	 * is compiled for.  But, since we can have 3x3 firmware run on 2x2 chips,
@@ -2423,6 +2424,10 @@ static void ath10k_peer_assoc_h_rate_overrides(struct ath10k *ar,
 		ath10k_warn(ar, "rate-override:  Skipping un-supported device-id, hw-nss: %d dev-id: 0x%x\n",
 			    hw_nss, ar->dev_id);
 		return;
+	}
+
+	if (ar->dev_id == QCA9984_1_0_DEVICE_ID) {
+		ok160 = true;
 	}
 
 	if (hw_nss < 3) {
@@ -2512,6 +2517,9 @@ static void ath10k_peer_assoc_h_rate_overrides(struct ath10k *ar,
 				ath10k_set_rate_enabled(hw_rix + hw_nss * 10, arg->rate_overrides, 1);
 				/* Set HT80 rateset too */
 				ath10k_set_rate_enabled(hw_rix + hw_nss * 2 * 10, arg->rate_overrides, 1);
+				/* And for NICs that support 160Mhz, set those */
+				if (ok160)
+					ath10k_set_rate_enabled(hw_rix + hw_nss * 3 * 10, arg->rate_overrides, 1);
 			}
 		}
 	}
