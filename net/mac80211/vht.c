@@ -54,6 +54,29 @@ void ieee80211_apply_vhtcap_overrides(struct ieee80211_sub_if_data *sdata,
 	__check_vhtcap_disable(sdata, vht_cap,
 			       IEEE80211_VHT_CAP_TX_ANTENNA_PATTERN);
 
+	/* Allow disabling 160Mhz or 80+80 */
+	if (sdata->u.mgd.vht_capa_mask.vht_cap_info &
+	    cpu_to_le32(IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_MASK)) {
+		u32 cap, n;
+
+		n = le32_to_cpu(sdata->u.mgd.vht_capa.vht_cap_info) &
+			IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_MASK;
+		n >>= IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_SHIFT;
+		cap = vht_cap->cap & IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_MASK;
+		cap >>= IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_SHIFT;
+
+		if (n < cap) {
+			vht_cap->cap &=
+				~IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_MASK;
+			vht_cap->cap |=
+				n << IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_SHIFT;
+
+			/* Cannot do short GI 160 if we cannot do 160 or 80+80 */
+			if (n == 0)
+				vht_cap->cap &= ~IEEE80211_VHT_CAP_SHORT_GI_160;
+		}
+	}
+
 	/* Allow user to decrease AMPDU length exponent */
 	if (sdata->u.mgd.vht_capa_mask.vht_cap_info &
 	    cpu_to_le32(IEEE80211_VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MASK)) {

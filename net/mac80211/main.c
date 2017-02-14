@@ -509,6 +509,7 @@ static const struct ieee80211_ht_cap mac80211_ht_capa_mod_mask = {
 static const struct ieee80211_vht_cap mac80211_vht_capa_mod_mask = {
 	.vht_cap_info =
 		cpu_to_le32(IEEE80211_VHT_CAP_RXLDPC |
+			    IEEE80211_VHT_CAP_SUPP_CHAN_WIDTH_MASK |
 			    IEEE80211_VHT_CAP_SHORT_GI_80 |
 			    IEEE80211_VHT_CAP_SHORT_GI_160 |
 			    IEEE80211_VHT_CAP_RXSTBC_MASK |
