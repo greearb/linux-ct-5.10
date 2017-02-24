@@ -162,6 +162,7 @@ struct netns_ipv4 {
 	int sysctl_tcp_tso_win_divisor;
 	int sysctl_tcp_workaround_signed_windows;
 	int sysctl_tcp_limit_output_bytes;
+	int sysctl_tcp_tsq_limit_output_interval;
 	int sysctl_tcp_challenge_ack_limit;
 	int sysctl_tcp_min_tso_segs;
 	int sysctl_tcp_min_rtt_wlen;
