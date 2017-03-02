@@ -5860,6 +5860,7 @@ static int ath10k_mac_set_txbf_conf(struct ath10k_vif *arvif)
 {
 	u32 value = 0;
 	struct ath10k *ar = arvif->ar;
+	struct ieee80211_vif *vif = arvif->vif;
 	int nsts;
 	int sound_dim;
 
@@ -5879,17 +5880,21 @@ static int ath10k_mac_set_txbf_conf(struct ath10k_vif *arvif)
 	if (!value)
 		return 0;
 
-	if (ar->vht_cap_info & IEEE80211_VHT_CAP_SU_BEAMFORMER_CAPABLE)
+	if ((ar->vht_cap_info & IEEE80211_VHT_CAP_SU_BEAMFORMER_CAPABLE) &&
+	    (vif->type != NL80211_IFTYPE_STATION))
 		value |= WMI_VDEV_PARAM_TXBF_SU_TX_BFER;
 
-	if (ar->vht_cap_info & IEEE80211_VHT_CAP_MU_BEAMFORMER_CAPABLE)
+	if ((ar->vht_cap_info & IEEE80211_VHT_CAP_MU_BEAMFORMER_CAPABLE) &&
+	    (vif->type != NL80211_IFTYPE_STATION))
 		value |= (WMI_VDEV_PARAM_TXBF_MU_TX_BFER |
 			  WMI_VDEV_PARAM_TXBF_SU_TX_BFER);
 
-	if (ar->vht_cap_info & IEEE80211_VHT_CAP_SU_BEAMFORMEE_CAPABLE)
+	if ((ar->vht_cap_info & IEEE80211_VHT_CAP_SU_BEAMFORMEE_CAPABLE) &&
+	    (vif->type == NL80211_IFTYPE_STATION))
 		value |= WMI_VDEV_PARAM_TXBF_SU_TX_BFEE;
 
-	if (ar->vht_cap_info & IEEE80211_VHT_CAP_MU_BEAMFORMEE_CAPABLE)
+	if ((ar->vht_cap_info & IEEE80211_VHT_CAP_MU_BEAMFORMEE_CAPABLE) &&
+		(vif->type == NL80211_IFTYPE_STATION))
 		value |= (WMI_VDEV_PARAM_TXBF_MU_TX_BFEE |
 			  WMI_VDEV_PARAM_TXBF_SU_TX_BFEE);
 
