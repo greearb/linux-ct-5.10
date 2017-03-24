@@ -206,6 +206,10 @@ module_param(max_vfs, uint, 0);
 MODULE_PARM_DESC(max_vfs, "Maximum number of virtual functions to allocate per physical function");
 #endif /* CONFIG_PCI_IOV */
 
+static unsigned int max_rss_qs;
+module_param(max_rss_qs, uint, 0);
+MODULE_PARM_DESC(max_rss_qs, "Maximum number of RSS queues.  Forcing lower will use less IRQ resources.");
+
 static pci_ers_result_t igb_io_error_detected(struct pci_dev *,
 		     pci_channel_state_t);
 static pci_ers_result_t igb_io_slot_reset(struct pci_dev *);
@@ -3892,6 +3896,9 @@ unsigned int igb_get_max_rss_queues(struct igb_adapter *adapter)
 		max_rss_queues = IGB_MAX_RX_QUEUES;
 		break;
 	}
+
+	if (max_rss_qs && max_rss_qs < max_rss_queues)
+		max_rss_queues = max_rss_qs;
 
 	return max_rss_queues;
 }
