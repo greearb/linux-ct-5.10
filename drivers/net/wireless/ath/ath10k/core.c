@@ -1419,6 +1419,11 @@ start_again:
 			if (kstrtol(val, 0, &t) == 0) {
 				ar->fwcfg.max_amsdus = t;
 				ar->fwcfg.flags |= ATH10K_FWCFG_MAX_AMSDUS;
+				if (ar->fwcfg.max_amsdus > 31) {
+					ath10k_warn(ar, "Invalid fwcfg max_amsdus value: %d.  Must not be greater than 31.\n",
+						    ar->fwcfg.max_amsdus);
+					ar->fwcfg.max_amsdus = 31;
+				}
 			}
 		}
 		else {
