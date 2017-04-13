@@ -1415,6 +1415,12 @@ start_again:
 				ar->fwcfg.flags |= ATH10K_FWCFG_BMISS_VDEVS;
 			}
 		}
+		else if (strcasecmp(filename, "max_amsdus") == 0) {
+			if (kstrtol(val, 0, &t) == 0) {
+				ar->fwcfg.max_amsdus = t;
+				ar->fwcfg.flags |= ATH10K_FWCFG_MAX_AMSDUS;
+			}
+		}
 		else {
 			ath10k_warn(ar, "Unknown fwcfg key name -:%s:-, val: %s\n",
 				    filename, val);
@@ -2963,6 +2969,12 @@ static int ath10k_core_init_firmware_features(struct ath10k *ar)
 		ar->eeprom_regdom = ar->fwcfg.regdom;
 	if (ar->fwcfg.flags & ATH10K_FWCFG_BMISS_VDEVS)
 		ar->bmiss_offload_max_vdev = ar->fwcfg.bmiss_vdevs;
+
+	if (!(test_bit(ATH10K_FLAG_RAW_MODE, &ar->dev_flags))) {
+		/* Don't disable raw-mode hack, but otherwise allow override */
+		if (ar->fwcfg.flags & ATH10K_FWCFG_MAX_AMSDUS)
+			ar->htt.max_num_amsdu = ar->fwcfg.max_amsdus;
+	}
 
 	/* Some firmware may compile out beacon-miss logic to save firmware RAM
 	 * and instruction RAM.
