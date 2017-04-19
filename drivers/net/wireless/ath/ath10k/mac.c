@@ -2503,20 +2503,37 @@ static void ath10k_peer_assoc_h_rate_overrides(struct ath10k *ar,
 	 * using normal rate-set info as far as I can tell, so set all three to the
 	 * same value.
 	 */
+	/* NOTE: VHT has some illegal rates (VHT-20 MCS 9 at 1x1 and 2x2, and MCS6 at VHT-80).  If user has
+	 * specified only these rates, then the rateset for that bandwidth will be null, and that will
+	 * crash the firmware.  So, try to set the nearest thing.
+	 */
+
+
 	for (i = 0; i < hw_nss; i++) {
 		unsigned int mcs = arvif->bitrate_mask.control[band].vht_mcs[i];
 		ath10k_dbg(ar, ATH10K_DBG_MAC2, "vht-mcs [%i]: 0x%x\n", i, mcs);
 		for (j = 0; j<10; j++) {
 			if (mcs & (1<<j)) {
+				int hw_rix_20_40, hw_rix_80;
 				hw_rix = 12 + (hw_nss * 2) * 8 + i * 10 + j;
+				hw_rix_20_40 = hw_rix;
+				hw_rix_80 = hw_rix;
+				if ((i < 2) && (j == 9)) {
+					/* Requested invalid rate:  mcs-9 for 1x1 or 2x2, use nearest. */
+					hw_rix_20_40 = 12 + (hw_nss * 2) * 8 + i * 10 + 8;
+				}
+				if ((i == 2) && (j == 6)) {
+					/* Requested invalid rate:  mcs-6 for 80Mhz, use nearest. */
+					hw_rix_80 = 12 + (hw_nss * 2) * 8 + i * 10 + 5;
+				}
 				ath10k_dbg(ar, ATH10K_DBG_MAC2,
-					   "set-enabled, vht: hw-rix: %d, %d, %d  i: %d j: %d\n",
-					   hw_rix, hw_rix + hw_nss * 10, hw_rix + hw_nss * 2 * 10, i, j);
-				ath10k_set_rate_enabled(hw_rix, arg->rate_overrides, 1);
+					   "set-enabled, vht: hw-rix-20-40: %d, hw-rix-80: %d  orig-hw-rix: %d  %d, %d  i: %d j: %d\n",
+					   hw_rix_20_40, hw_rix_80, hw_rix, hw_rix + hw_nss * 10, hw_rix + hw_nss * 2 * 10, i, j);
+				ath10k_set_rate_enabled(hw_rix_20_40, arg->rate_overrides, 1);
 				/* Set HT40 rateset too */
-				ath10k_set_rate_enabled(hw_rix + hw_nss * 10, arg->rate_overrides, 1);
+				ath10k_set_rate_enabled(hw_rix_20_40 + hw_nss * 10, arg->rate_overrides, 1);
 				/* Set HT80 rateset too */
-				ath10k_set_rate_enabled(hw_rix + hw_nss * 2 * 10, arg->rate_overrides, 1);
+				ath10k_set_rate_enabled(hw_rix_80 + hw_nss * 2 * 10, arg->rate_overrides, 1);
 				/* And for NICs that support 160Mhz, set those */
 				if (ok160)
 					ath10k_set_rate_enabled(hw_rix + hw_nss * 3 * 10, arg->rate_overrides, 1);
