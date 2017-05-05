@@ -2015,6 +2015,8 @@ enum wmi_10_4_event_id {
 	WMI_10_4_HOST_SWFDA_EVENTID,
 	WMI_10_4_ESP_ESTIMATE_EVENTID,
 	WMI_10_4_DFS_STATUS_CHECK_EVENTID,
+
+	WMI_10_4_CSI_MESG_EVENTID = WMI_10_4_END_EVENTID - 2, /* CT Specific event ID */
 	WMI_10_4_PDEV_UTF_EVENTID = WMI_10_4_END_EVENTID - 1,
 };
 
@@ -7710,6 +7712,7 @@ int ath10k_wmi_event_mgmt_tx_bundle_compl(struct ath10k *ar, struct sk_buff *skb
 void ath10k_wmi_event_chan_info(struct ath10k *ar, struct sk_buff *skb);
 void ath10k_wmi_event_echo(struct ath10k *ar, struct sk_buff *skb);
 int ath10k_wmi_event_debug_mesg(struct ath10k *ar, struct sk_buff *skb);
+int ath10k_wmi_event_csi_mesg(struct ath10k *ar, struct sk_buff *skb);
 void ath10k_wmi_event_update_stats(struct ath10k *ar, struct sk_buff *skb);
 void ath10k_wmi_event_vdev_start_resp(struct ath10k *ar, struct sk_buff *skb);
 void ath10k_wmi_event_vdev_stopped(struct ath10k *ar, struct sk_buff *skb);

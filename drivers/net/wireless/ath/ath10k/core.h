@@ -1537,6 +1537,7 @@ struct ath10k {
 					  * Units are actually 1/1024 of a second, but pretty close to ms, at least.
 					  */
 		u32 ct_pshack;
+		u32 ct_csi;
 	} eeprom_overrides;
 
 	/* must be last */

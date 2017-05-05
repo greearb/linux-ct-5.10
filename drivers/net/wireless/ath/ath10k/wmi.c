@@ -2931,6 +2931,82 @@ int ath10k_wmi_event_debug_mesg(struct ath10k *ar, struct sk_buff *skb)
 	return 0;
 }
 
+int ath10k_wmi_event_csi_mesg(struct ath10k *ar, struct sk_buff *skb)
+{
+	__le32 *ibuf;
+	int q = 0;
+	int len;
+	const char* lvl = KERN_INFO;
+
+	ath10k_dbg(ar, ATH10K_DBG_WMI, "wmi event csi mesg len %d\n",
+		   skb->len);
+
+	ibuf = (__le32*)(skb->data);
+	len = skb->len / 4;
+
+	dev_printk(lvl, ar->dev, "ath10k_pci ATH10K_CSI_BUFFER:\n");
+	while (q < len) {
+		if (q + 8 <= len) {
+			printk("%sath10k: [%04d]: %08X %08X %08X %08X %08X %08X %08X %08X\n",
+			       lvl, q,
+			       ibuf[q], ibuf[q+1], ibuf[q+2], ibuf[q+3],
+			       ibuf[q+4], ibuf[q+5], ibuf[q+6], ibuf[q+7]);
+			q += 8;
+		}
+		else if (q + 7 <= len) {
+			printk("%sath10k: [%04d]: %08X %08X %08X %08X %08X %08X %08X\n",
+			       lvl, q,
+			       ibuf[q], ibuf[q+1], ibuf[q+2], ibuf[q+3],
+			       ibuf[q+4], ibuf[q+5], ibuf[q+6]);
+			q += 7;
+		}
+		else if (q + 6 <= len) {
+			printk("%sath10k: [%04d]: %08X %08X %08X %08X %08X %08X\n",
+			       lvl, q,
+			       ibuf[q], ibuf[q+1], ibuf[q+2], ibuf[q+3],
+			       ibuf[q+4], ibuf[q+5]);
+			q += 6;
+		}
+		else if (q + 5 <= len) {
+			printk("%sath10k: [%04d]: %08X %08X %08X %08X %08X\n",
+			       lvl, q,
+			       ibuf[q], ibuf[q+1], ibuf[q+2], ibuf[q+3],
+			       ibuf[q+4]);
+			q += 5;
+		}
+		else if (q + 4 <= len) {
+			printk("%sath10k: [%04d]: %08X %08X %08X %08X\n",
+			       lvl, q,
+			       ibuf[q], ibuf[q+1], ibuf[q+2], ibuf[q+3]);
+			q += 4;
+		}
+		else if (q + 3 <= len) {
+			printk("%sath10k: [%04d]: %08X %08X %08X\n",
+			       lvl, q,
+			       ibuf[q], ibuf[q+1], ibuf[q+2]);
+			q += 3;
+		}
+		else if (q + 2 <= len) {
+			printk("%sath10k: [%04d]: %08X %08X\n",
+			       lvl, q,
+			       ibuf[q], ibuf[q+1]);
+			q += 2;
+		}
+		else if (q + 1 <= len) {
+			printk("%sath10k: [%04d]: %08X\n",
+			       lvl, q,
+			       ibuf[q]);
+			q += 1;
+		}
+		else {
+			break;
+		}
+	}/* while */
+
+	dev_printk(lvl, ar->dev, "ATH10K_END\n");
+	return 0;
+}
+
 void ath10k_wmi_pull_pdev_stats_base(const struct wmi_pdev_stats_base *src,
 				     struct ath10k_fw_stats_pdev *dst)
 {
@@ -6483,6 +6559,9 @@ static void ath10k_wmi_10_4_op_rx(struct ath10k *ar, struct sk_buff *skb)
 		break;
 	case WMI_10_4_PEER_STA_PS_STATECHG_EVENTID:
 		ath10k_wmi_event_peer_sta_ps_state_chg(ar, skb);
+		break;
+	case WMI_10_4_CSI_MESG_EVENTID:
+		ath10k_wmi_event_csi_mesg(ar, skb);
 		break;
 	default:
 		ath10k_warn(ar, "Unknown eventid: %d\n", id);
