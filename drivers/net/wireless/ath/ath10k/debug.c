@@ -303,7 +303,7 @@ static ssize_t ath10k_read_fwinfo(struct file *file,
 		break;
 	}
 
-	len += snprintf(buf + len, buf_len - len, "board:   %s\n",
+	len += snprintf(buf + len, buf_len - len, "board:     %s\n",
 			ar->normal_mode_fw.fw_file.fw_board_name);
 
 	ret_cnt = simple_read_from_buffer(user_buf, count, ppos, buf, len);
