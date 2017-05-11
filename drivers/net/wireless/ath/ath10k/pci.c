@@ -1460,7 +1460,7 @@ static void ath10k_pci_dump_bss_ram(struct ath10k *ar,
 
 	lockdep_assert_held(&ar->data_lock);
 
-	if (!ar->running_fw->fw_file.ram_bss_addr)
+	if (!(ar->running_fw && ar->running_fw->fw_file.ram_bss_addr))
 		return;
 
 	if (!ar->running_fw->fw_file.ram_bss_len)
@@ -1485,7 +1485,7 @@ static void ath10k_pci_dump_bss_rom(struct ath10k *ar,
 
 	lockdep_assert_held(&ar->data_lock);
 
-	if (!ar->running_fw->fw_file.rom_bss_addr)
+	if (!(ar->running_fw && ar->running_fw->fw_file.rom_bss_addr))
 		return;
 
 	if (!ar->running_fw->fw_file.rom_bss_len)

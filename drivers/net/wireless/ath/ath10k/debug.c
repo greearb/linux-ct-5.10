@@ -90,7 +90,7 @@ void ath10k_debug_print_board_info(struct ath10k *ar)
 	if (!IS_ERR_OR_NULL(board))
 		crc = crc32_le(0, board->data, board->size);
 	else
-		crc = 0;
+		crc = 0xdeadbeef;
 
 	ath10k_info(ar, "board_file api %d bmi_id %s crc32 %08x",
 		    ar->bd_api,
