@@ -6176,7 +6176,7 @@ static int ath10k_add_interface(struct ieee80211_hw *hw,
 
 	ret = ath10k_mac_set_pdev_kickout(ar);
 	if (ret)
-		return ret;
+		goto err_peer_delete;
 
 	if (arvif->vdev_type == WMI_VDEV_TYPE_AP) {
 		ret = ath10k_mac_set_kickout(arvif);
