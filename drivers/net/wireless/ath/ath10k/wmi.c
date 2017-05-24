@@ -7133,13 +7133,11 @@ static struct sk_buff *ath10k_wmi_10_4_op_gen_init(struct ath10k *ar)
 		 */
 		config.num_peer_keys = __cpu_to_le32(3);
 
-#if 0
 		if (ar->num_ratectrl_objs) {
 			ath10k_info(ar, "using %d firmware rate-ctrl objects\n",
 				    ar->num_ratectrl_objs);
 			config.tx_chain_mask |= __cpu_to_le32(ar->num_ratectrl_objs << 24);
 		}
-#endif
 	}
 	config.num_msdu_desc = __cpu_to_le32(ar->htt.max_num_pending_tx);
 	ath10k_warn(ar, "msdu-desc: %d  skid: %d\n",
