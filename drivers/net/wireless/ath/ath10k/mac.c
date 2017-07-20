@@ -5917,6 +5917,8 @@ static int ath10k_mac_set_txbf_conf(struct ath10k_vif *arvif)
 		value |= (WMI_VDEV_PARAM_TXBF_MU_TX_BFEE |
 			  WMI_VDEV_PARAM_TXBF_SU_TX_BFEE);
 
+	ath10k_dbg(ar, ATH10K_DBG_MAC, "mac set txbf conf, value: 0x%x\n",
+		   value);
 	return ath10k_wmi_vdev_set_param(ar, arvif->vdev_id,
 					 ar->wmi.vdev_param->txbf, value);
 }

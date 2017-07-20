@@ -3010,6 +3010,19 @@ int ath10k_wmi_event_csi_mesg(struct ath10k *ar, struct sk_buff *skb)
 	return 0;
 }
 
+int ath10k_wmi_event_txbf_cv_mesg(struct ath10k *ar, struct sk_buff *skb)
+{
+	struct wmi_txbf_cv_event *ev;
+
+	trace_ath10k_wmi_dbglog(ar, skb->data, skb->len);
+	ev = (struct wmi_txbf_cv_event *)skb->data;
+
+	ath10k_warn(ar, /*ATH10K_DBG_WMI,*/ "wmi event txbf_cv mesg len %d,  vdev: %d peer: %pM cv-idx: 0x%x type: %d mu-mimo: %d Nc: %d BW: %d Nr: %d cv_size: %d state: %d\n",
+		   skb->len, ev->vdev_id, ev->peer_macaddr.addr, ev->cv_idx, ev->cv_type, ev->mu_mimo,
+		   ev->Nc, ev->BW, ev->Nr, ev->cv_size, ev->state);
+	return 0;
+}
+
 void ath10k_wmi_pull_pdev_stats_base(const struct wmi_pdev_stats_base *src,
 				     struct ath10k_fw_stats_pdev *dst)
 {
@@ -5839,6 +5852,15 @@ static void ath10k_wmi_event_service_ready_work(struct work_struct *work)
 			num_units = ar->max_num_vdevs + 1;
 		}
 
+		/* NOTE:  For 10.4 firmware, req-id appears to be this (grep MEM_REQ_ID in firmware src):
+		   1:  rate-ctrl
+		   2:  txbf-cv-pool0  (log-size 8)
+		   3:  txbf-cv-pool1  (log-size 10)
+		   4:  txbf-cv-pool2  (log-size 12)
+		   5:  peer-cache
+		   6:  scan-channel CAL data
+		   7:  home-channel CAL data
+		*/
 		ath10k_dbg(ar, ATH10K_DBG_WMI,
 			   "wmi mem_req_id %d num_units %d num_unit_info %d unit size %d actual units %d\n",
 			   req_id,
@@ -6564,6 +6586,8 @@ static void ath10k_wmi_10_4_op_rx(struct ath10k *ar, struct sk_buff *skb)
 		break;
 	case WMI_10_4_TDLS_PEER_EVENTID:
 		ath10k_wmi_handle_tdls_peer_event(ar, skb);
+	case WMI_10_4_TXBF_CV_MESG_EVENTID:
+		ath10k_wmi_event_txbf_cv_mesg(ar, skb);
 		break;
 	case WMI_10_4_PDEV_TPC_TABLE_EVENTID:
 		ath10k_wmi_event_tpc_final_table(ar, skb);
