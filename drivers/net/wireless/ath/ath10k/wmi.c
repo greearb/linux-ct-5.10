@@ -3017,9 +3017,15 @@ int ath10k_wmi_event_txbf_cv_mesg(struct ath10k *ar, struct sk_buff *skb)
 	trace_ath10k_wmi_dbglog(ar, skb->data, skb->len);
 	ev = (struct wmi_txbf_cv_event *)skb->data;
 
-	ath10k_warn(ar, /*ATH10K_DBG_WMI,*/ "wmi event txbf_cv mesg len %d,  vdev: %d peer: %pM cv-idx: 0x%x type: %d mu-mimo: %d Nc: %d BW: %d Nr: %d cv_size: %d state: %d\n",
-		   skb->len, ev->vdev_id, ev->peer_macaddr.addr, ev->cv_idx, ev->cv_type, ev->mu_mimo,
-		   ev->Nc, ev->BW, ev->Nr, ev->cv_size, ev->state);
+	/* NOTE:  cv-pool-idx is zero-based and is specific to the txbf logic.  In current
+	 * 10.4 firmware, this will translate to memory pool 1 since the ratectrl logic grabs the first
+	 * pool-id.
+	 */
+	ath10k_warn(ar, /*ATH10K_DBG_WMI,*/ "wmi event txbf_cv mesg len %d,  vdev: %d peer: %pM cv-pool-idx: %d cv-record-size: %d cv-record-idx: %d type: %d mu-mimo: %d Nc: %d BW: %d Nr: %d cv_size: %d state: %d\n",
+		    skb->len, ev->vdev_id, ev->peer_macaddr.addr, ev->pool_idx,
+		    ev->cv_record_size, ev->cv_record_idx, ev->cv_type,
+		    ev->mu_mimo, ev->Nc, ev->BW, ev->Nr, ev->cv_size,
+		    ev->state);
 	return 0;
 }
 

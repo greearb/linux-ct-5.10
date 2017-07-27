@@ -421,19 +421,6 @@ struct ath10k_tpc_stats_final {
 	struct ath10k_tpc_table_final tpc_table_final[WMI_TPC_FLAG];
 };
 
-struct ath10k_txbf_cv_event {
-    u16 peer_id;
-    u16 cv_idx;
-    u32 cv_type:1;
-    u32 mu_mimo:1;
-    u32 Nc:2;
-    u32 BW:2;
-    u32 Nr:3;
-    u32 cv_size:12;
-    u32 state:2;
-    u32 reserved:9;
-};
-
 struct ath10k_dfs_stats {
 	u32 phy_errors;
 	u32 pulses_total;

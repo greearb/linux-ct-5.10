@@ -6798,13 +6798,16 @@ struct wmi_txbf_cv_event {
 	struct wmi_mac_addr peer_macaddr;
 	u16 vdev_id;
 	u16 cv_size;
-	u16 cv_idx; /* pool-idx-mask: 0xF000, mem-id-mask: 0x0FFF */
+	u16 cv_record_idx;
+	u16 cv_record_size;
+	u8 pool_idx;
 	u8 cv_type;
 	u8 mu_mimo;
 	u8 Nc;
 	u8 BW;
 	u8 Nr;
 	u8 state;
+	u8 unused;
 } __packed;
 
 #define WMI_CHAN_INFO_FLAG_COMPLETE BIT(0)
