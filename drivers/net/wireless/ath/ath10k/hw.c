@@ -584,7 +584,7 @@ void ath10k_hw_fill_survey_time(struct ath10k *ar, struct survey_info *survey,
 	survey->time_busy = CCNT_TO_MSEC(ar, rcc);
 }
 
-/* The firmware does not support setting the coverage class. Instead this
+/* The stock firmware does not support setting the coverage class. Instead this
  * function monitors and modifies the corresponding MAC registers.
  */
 static void ath10k_hw_qca988x_set_coverage_class(struct ath10k *ar,
@@ -694,6 +694,22 @@ static void ath10k_hw_qca988x_set_coverage_class(struct ath10k *ar,
 	ath10k_hif_write32(ar,
 			   WLAN_MAC_BASE_ADDRESS + WAVE1_PCU_ACK_CTS_TIMEOUT,
 			   timeout_reg);
+
+	if (test_bit(ATH10K_FW_FEATURE_SET_SPECIAL_CT,
+		     ar->running_fw->fw_file.fw_features)) {
+		/* CT firmware can set and make this value stick w/out all the hackery,
+		 * but go ahead and use this logic to calculate the appropriate values.
+		 * We should then short-circuit this logic earlier in this method because
+		 * the values in the firmware will already match expected values.
+		 * --Ben
+		 */
+		ar->eeprom_overrides.reg_ack_cts = timeout_reg;
+		ar->eeprom_overrides.reg_ifs_slot = slottime_reg;
+
+		ath10k_wmi_pdev_set_special(ar, SET_SPECIAL_ID_ACK_CTS, ar->eeprom_overrides.reg_ack_cts);
+		ath10k_wmi_pdev_set_special(ar, SET_SPECIAL_ID_SLOT, ar->eeprom_overrides.reg_ifs_slot);
+		ar->eeprom_overrides.coverage_already_set = true;
+	}
 
 	/* Ensure we have a debug level of WARN set for the case that the
 	 * coverage class is larger than 0. This is important as we need to

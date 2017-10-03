@@ -2672,7 +2672,13 @@ static ssize_t ath10k_write_ct_special(struct file *file,
 	val = tmp & 0xFFFFFFFF;
 
 	mutex_lock(&ar->conf_mutex);
-	if (id == SET_SPECIAL_ID_THRESH62_EXT) {
+	if (id == SET_SPECIAL_ID_ACK_CTS) {
+		ar->eeprom_overrides.reg_ack_cts = val;
+	}
+	else if (id == SET_SPECIAL_ID_SLOT) {
+		ar->eeprom_overrides.reg_ifs_slot = val;
+	}
+	else if (id == SET_SPECIAL_ID_THRESH62_EXT) {
 		ar->eeprom_overrides.thresh62_ext = val;
 	}
 	else if (id == SET_SPECIAL_ID_NOISE_FLR_THRESH) {
