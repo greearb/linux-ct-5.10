@@ -8,7 +8,7 @@
 
 #include "core.h"
 
-#define ATH10K_FW_CRASH_DUMP_VERSION 1
+#define ATH10K_FW_CRASH_DUMP_VERSION 2 /* upstream stole some bits I was using, or will soon. --Ben */
 
 /**
  * enum ath10k_fw_crash_dump_type - types of data in the dump file
