@@ -2481,7 +2481,7 @@ static int ath10k_core_pre_cal_config(struct ath10k *ar)
 
 	ret = ath10k_download_and_run_otp(ar);
 	if (ret) {
-		ath10k_err(ar, "failed to run otp: %d\n", ret);
+		ath10k_err(ar, "failed to run otp: %d (pre-cal-config)\n", ret);
 		return ret;
 	}
 
@@ -2535,7 +2535,7 @@ static int ath10k_download_cal_data(struct ath10k *ar)
 
 	ret = ath10k_download_and_run_otp(ar);
 	if (ret) {
-		ath10k_err(ar, "failed to run otp: %d\n", ret);
+		ath10k_err(ar, "failed to run otp: %d (downoad-cal-data)\n", ret);
 		return ret;
 	}
 
