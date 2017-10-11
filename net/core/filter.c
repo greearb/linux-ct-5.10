@@ -928,6 +928,8 @@ static int check_load_and_stores(const struct sock_filter *filter, int flen)
 		case BPF_LD | BPF_MEM:
 		case BPF_LDX | BPF_MEM:
 			if (!(memvalid & (1 << filter[pc].k))) {
+				pr_err("bpf mem-invalid: pc: %d  code: 0x%x k: %d  memvalid: 0x%x\n",
+				       pc, filter[pc].code, filter[pc].k, memvalid);
 				ret = -EINVAL;
 				goto error;
 			}
@@ -1059,37 +1061,47 @@ static int bpf_check_classic(const struct sock_filter *filter,
 		const struct sock_filter *ftest = &filter[pc];
 
 		/* May we actually operate on this code? */
-		if (!chk_code_allowed(ftest->code))
+		if (!chk_code_allowed(ftest->code)) {
+			pr_err("bpf code-not-allowed: pc: %d  code: 0x%x\n", pc, ftest->code);
 			return -EINVAL;
+		}
 
 		/* Some instructions need special checks */
 		switch (ftest->code) {
 		case BPF_ALU | BPF_DIV | BPF_K:
 		case BPF_ALU | BPF_MOD | BPF_K:
 			/* Check for division by zero */
-			if (ftest->k == 0)
+			if (ftest->k == 0) {
+				pr_err("bpf div-by-zero: pc: %d  code: 0x%x\n", pc, ftest->code);
 				return -EINVAL;
+			}
 			break;
 		case BPF_ALU | BPF_LSH | BPF_K:
 		case BPF_ALU | BPF_RSH | BPF_K:
-			if (ftest->k >= 32)
+			if (ftest->k >= 32) {
+				pr_err("bpf k >= 0: pc: %d  code: 0x%x\n", pc, ftest->code);
 				return -EINVAL;
+			}
 			break;
 		case BPF_LD | BPF_MEM:
 		case BPF_LDX | BPF_MEM:
 		case BPF_ST:
 		case BPF_STX:
 			/* Check for invalid memory addresses */
-			if (ftest->k >= BPF_MEMWORDS)
+			if (ftest->k >= BPF_MEMWORDS) {
+				pr_err("bpf invalid mem address: pc: %d  code: 0x%x\n", pc, ftest->code);
 				return -EINVAL;
+			}
 			break;
 		case BPF_JMP | BPF_JA:
 			/* Note, the large ftest->k might cause loops.
 			 * Compare this with conditional jumps below,
 			 * where offsets are limited. --ANK (981016)
 			 */
-			if (ftest->k >= (unsigned int)(flen - pc - 1))
+			if (ftest->k >= (unsigned int)(flen - pc - 1)) {
+				pr_err("bpf loop-check failed: pc: %d  code: 0x%x k: %d\n", pc, ftest->code, ftest->k);
 				return -EINVAL;
+			}
 			break;
 		case BPF_JMP | BPF_JEQ | BPF_K:
 		case BPF_JMP | BPF_JEQ | BPF_X:
@@ -1101,8 +1113,11 @@ static int bpf_check_classic(const struct sock_filter *filter,
 		case BPF_JMP | BPF_JSET | BPF_X:
 			/* Both conditionals must be safe */
 			if (pc + ftest->jt + 1 >= flen ||
-			    pc + ftest->jf + 1 >= flen)
+			    pc + ftest->jf + 1 >= flen) {
+				pr_err("bpf jump-check failed: pc: %d  code: 0x%x jf: %d flen: %d\n",
+				       pc, ftest->code, ftest->jf, flen);
 				return -EINVAL;
+			}
 			break;
 		case BPF_LD | BPF_W | BPF_ABS:
 		case BPF_LD | BPF_H | BPF_ABS:
@@ -1111,8 +1126,10 @@ static int bpf_check_classic(const struct sock_filter *filter,
 			if (bpf_anc_helper(ftest) & BPF_ANC)
 				anc_found = true;
 			/* Ancillary operation unknown or unsupported */
-			if (anc_found == false && ftest->k >= SKF_AD_OFF)
+			if (anc_found == false && ftest->k >= SKF_AD_OFF) {
+				pr_err("bpf ancillary op unknown: pc: %d  code: 0x%x k: %d\n", pc, ftest->code, ftest->k);
 				return -EINVAL;
+			}
 		}
 	}
 
@@ -1122,6 +1139,8 @@ static int bpf_check_classic(const struct sock_filter *filter,
 	case BPF_RET | BPF_A:
 		return check_load_and_stores(filter, flen);
 	}
+
+	pr_err("bpf last instruction is not RET: pc: %d  code: 0x%x\n", flen - 1, filter[flen - 1].code);
 
 	return -EINVAL;
 }
@@ -1316,6 +1335,7 @@ static struct bpf_prog *bpf_prepare_filter(struct bpf_prog *fp,
 	err = bpf_check_classic(fp->insns, fp->len);
 	if (err) {
 		__bpf_prog_release(fp);
+		pr_err("bpf-check-classic failed.\n");
 		return ERR_PTR(err);
 	}
 
@@ -1326,6 +1346,7 @@ static struct bpf_prog *bpf_prepare_filter(struct bpf_prog *fp,
 		err = trans(fp->insns, fp->len);
 		if (err) {
 			__bpf_prog_release(fp);
+			pr_err("bpf trans failed.\n");
 			return ERR_PTR(err);
 		}
 	}
@@ -1338,8 +1359,11 @@ static struct bpf_prog *bpf_prepare_filter(struct bpf_prog *fp,
 	/* JIT compiler couldn't process this filter, so do the
 	 * internal BPF translation for the optimized interpreter.
 	 */
-	if (!fp->jited)
+	if (!fp->jited) {
 		fp = bpf_migrate_filter(fp);
+		if (IS_ERR(fp))
+			pr_err("bpf-migrate-filter had error.\n");
+	}
 
 	return fp;
 }
@@ -1360,12 +1384,16 @@ int bpf_prog_create(struct bpf_prog **pfp, struct sock_fprog_kern *fprog)
 	struct bpf_prog *fp;
 
 	/* Make sure new filter is there and in the right amounts. */
-	if (!bpf_check_basics_ok(fprog->filter, fprog->len))
+	if (!bpf_check_basics_ok(fprog->filter, fprog->len)) {
+		pr_err("bpf-check-basics failed\n");
 		return -EINVAL;
+	}
 
 	fp = bpf_prog_alloc(bpf_prog_size(fprog->len), 0);
-	if (!fp)
+	if (!fp) {
+		pr_err("bpf-prog-alloc failed, len: %d\n", fprog->len);
 		return -ENOMEM;
+	}
 
 	memcpy(fp->insns, fprog->filter, fsize);
 
@@ -1380,8 +1408,10 @@ int bpf_prog_create(struct bpf_prog **pfp, struct sock_fprog_kern *fprog)
 	 * memory in case something goes wrong.
 	 */
 	fp = bpf_prepare_filter(fp, NULL);
-	if (IS_ERR(fp))
+	if (IS_ERR(fp)) {
+		pr_err("bpf-prepare-filter failed: %d\n", (int)(PTR_ERR(fp)));
 		return PTR_ERR(fp);
+	}
 
 	*pfp = fp;
 	return 0;
