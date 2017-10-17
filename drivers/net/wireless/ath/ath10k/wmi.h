@@ -7222,6 +7222,9 @@ struct wmi_pdev_set_special_cmd {
 /* Requires specially compiled firmware (-T option) to have any useful effect. */
 #define SET_SPECIAL_ID_TX_DBG         0x99 /* 0x1 == enable, 0x2 == pkt-dbg, 0x0 == disable (default). */
 
+/* Requires specially compiled firmware (-T option) to have any useful effect. */
+#define SET_SPECIAL_ID_TX_DBG         0x99 /* 0x1 == enable, 0x2 == pkt-dbg, 0x0 == disable (default). */
+
 #define CT_CCA_TYPE_MIN0 0
 #define CT_CCA_TYPE_MIN1 1
 #define CT_CCA_TYPE_MIN2 2
