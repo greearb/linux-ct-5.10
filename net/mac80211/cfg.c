@@ -392,8 +392,10 @@ static int ieee80211_add_key(struct wiphy *wiphy, struct net_device *dev,
 	struct ieee80211_key *key;
 	int err;
 
-	if (!ieee80211_sdata_running(sdata))
+	if (!ieee80211_sdata_running(sdata)) {
+		sdata_info(sdata, "add-key failed, sdata is not running.\n");
 		return -ENETDOWN;
+	}
 
 	if (pairwise && params->mode == NL80211_KEY_SET_TX)
 		return ieee80211_set_tx(sdata, mac_addr, key_idx);
@@ -403,8 +405,10 @@ static int ieee80211_add_key(struct wiphy *wiphy, struct net_device *dev,
 	case WLAN_CIPHER_SUITE_WEP40:
 	case WLAN_CIPHER_SUITE_TKIP:
 	case WLAN_CIPHER_SUITE_WEP104:
-		if (WARN_ON_ONCE(fips_enabled))
+		if (WARN_ON_ONCE(fips_enabled)) {
+			sdata_info(sdata, "add-key failed, wep/tkip, wep failed.\n");
 			return -EINVAL;
+		}
 	case WLAN_CIPHER_SUITE_CCMP:
 	case WLAN_CIPHER_SUITE_CCMP_256:
 	case WLAN_CIPHER_SUITE_AES_CMAC:
@@ -422,8 +426,10 @@ static int ieee80211_add_key(struct wiphy *wiphy, struct net_device *dev,
 	key = ieee80211_key_alloc(params->cipher, key_idx, params->key_len,
 				  params->key, params->seq_len, params->seq,
 				  cs);
-	if (IS_ERR(key))
+	if (IS_ERR(key)) {
+		sdata_info(sdata, "add-key failed, key-alloc failed: %ld\n", PTR_ERR(key));
 		return PTR_ERR(key);
+	}
 
 	if (pairwise)
 		key->conf.flags |= IEEE80211_KEY_FLAG_PAIRWISE;
@@ -447,6 +453,9 @@ static int ieee80211_add_key(struct wiphy *wiphy, struct net_device *dev,
 		 */
 		if (!sta || !test_sta_flag(sta, WLAN_STA_ASSOC)) {
 			ieee80211_key_free_unused(key);
+			sdata_info(sdata, "add-key failed, FT key-set called before association completed?  Supplicant can retry, sta: %p  assoc: %d...\n",
+				   sta, sta ? test_sta_flag(sta, WLAN_STA_ASSOC) : -1);
+
 			err = -ENOENT;
 			goto out_unlock;
 		}

@@ -6621,6 +6621,7 @@ static void ath10k_wmi_10_4_op_rx(struct ath10k *ar, struct sk_buff *skb)
 		break;
 	case WMI_10_4_TDLS_PEER_EVENTID:
 		ath10k_wmi_handle_tdls_peer_event(ar, skb);
+		break;
 	case WMI_10_4_TXBF_CV_MESG_EVENTID:
 		ath10k_wmi_event_txbf_cv_mesg(ar, skb);
 		break;
