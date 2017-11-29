@@ -1946,7 +1946,6 @@ static void ath10k_wmi_op_ep_tx_credits(struct ath10k *ar)
 int ath10k_wmi_cmd_send(struct ath10k *ar, struct sk_buff *skb, u32 cmd_id)
 {
 	int ret = -EOPNOTSUPP;
-	int retry = 1000;
 
 	might_sleep();
 
@@ -1961,19 +1960,7 @@ int ath10k_wmi_cmd_send(struct ath10k *ar, struct sk_buff *skb, u32 cmd_id)
 		/* try to send pending beacons first. they take priority */
 		ath10k_wmi_tx_beacons_nowait(ar);
 
-		while (--retry) {
-			ret = ath10k_wmi_cmd_send_nowait(ar, skb, cmd_id);
-			if ((ret == -ENOBUFS) &&
-			    !test_bit(ATH10K_FLAG_CRASH_FLUSH, &ar->dev_flags)) {
-				/* CE transport logic is full, maybe we cannot reap entries fast
-				 * enough?
-				 */
-				ath10k_err(ar, "CE transport is full, sleeping for 1ms\n");
-				msleep(1);
-				continue;
-			}
-			break;
-		}
+		ret = ath10k_wmi_cmd_send_nowait(ar, skb, cmd_id);
 
 		if (ret && test_bit(ATH10K_FLAG_CRASH_FLUSH, &ar->dev_flags))
 			ret = -ESHUTDOWN;
