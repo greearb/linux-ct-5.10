@@ -7884,6 +7884,12 @@ ath10k_wmi_op_gen_peer_delete(struct ath10k *ar, u32 vdev_id,
 	cmd->vdev_id = __cpu_to_le32(vdev_id);
 	ether_addr_copy(cmd->peer_macaddr.addr, peer_addr);
 
+	/* Steal a high bit.  Stock firmware should ignore it,
+	 * CT 10.1 (at least) firmware built after Nov 29 will
+	 * pay attention and flush if requested.
+	 */
+	cmd->peer_macaddr.word1 |= __cpu_to_le32(0x80000000);
+
 	ath10k_dbg(ar, ATH10K_DBG_WMI,
 		   "wmi peer delete vdev_id %d peer_addr %pM\n",
 		   vdev_id, peer_addr);
