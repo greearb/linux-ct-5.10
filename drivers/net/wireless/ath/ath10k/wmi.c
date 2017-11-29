@@ -1946,6 +1946,7 @@ static void ath10k_wmi_op_ep_tx_credits(struct ath10k *ar)
 int ath10k_wmi_cmd_send(struct ath10k *ar, struct sk_buff *skb, u32 cmd_id)
 {
 	int ret = -EOPNOTSUPP;
+	int loops = 0;
 
 	might_sleep();
 
@@ -1957,8 +1958,12 @@ int ath10k_wmi_cmd_send(struct ath10k *ar, struct sk_buff *skb, u32 cmd_id)
 	}
 
 	wait_event_timeout(ar->wmi.tx_credits_wq, ({
-		/* try to send pending beacons first. they take priority */
-		ath10k_wmi_tx_beacons_nowait(ar);
+		if (loops++ == 0) {
+			/* try to send pending beacons first. they take priority.  But, only
+			 * the first time through this loop. --Ben
+			 */
+			ath10k_wmi_tx_beacons_nowait(ar);
+		}
 
 		ret = ath10k_wmi_cmd_send_nowait(ar, skb, cmd_id);
 
