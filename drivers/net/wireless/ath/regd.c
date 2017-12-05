@@ -477,12 +477,20 @@ static int __ath_reg_dyn_country(struct wiphy *wiphy,
 	u16 country_code;
 
 	if (request->initiator == NL80211_REGDOM_SET_BY_COUNTRY_IE &&
-	    !ath_is_world_regd(reg))
+	    !ath_is_world_regd(reg)) {
+		printk(KERN_DBG_LVL "ath: __ath-reg-dyn-country, not-world-reg, EINVAL.\n");
 		return -EINVAL;
+	}
 
 	country_code = ath_regd_find_country_by_name(request->alpha2);
-	if (country_code == (u16) -1)
+	if (country_code == (u16) -1) {
+		printk(KERN_DBG_LVL "ath: __ath-reg-dyn-country, country-code is invalid: 0x%x\n", country_code);
 		return -EINVAL;
+	}
+	else {
+		/*printk(KERN_DBG_LVL "ath: __ath-reg-dyn-country, found country-code: %d  by-name: %c:%c\n",
+		  country_code, request->alpha2[0], request->alpha2[1]);*/
+	}
 
 	reg->current_rd = COUNTRY_ERD_FLAG;
 	reg->current_rd |= country_code;
@@ -501,8 +509,7 @@ static void ath_reg_dyn_country(struct wiphy *wiphy,
 	if (__ath_reg_dyn_country(wiphy, reg, request))
 		return;
 
-	printk(KERN_DBG_LVL "ath: regdomain 0x%0x "
-			  "dynamically updated by %s\n",
+	printk(KERN_DBG_LVL "ath: regdomain 0x%0x dynamically updated by %s\n",
 	       reg->current_rd,
 	       reg_initiator_name(request->initiator));
 }
@@ -513,6 +520,10 @@ void ath_reg_notifier_apply(struct wiphy *wiphy,
 {
 	struct ath_common *common = container_of(reg, struct ath_common,
 						 regulatory);
+
+	/*printk(KERN_DBG_LVL "ath: reg-notifier-apply, current-rd: 0x%0x, reg-addr: %p  request: %p initiator: %d\n",
+	  reg->current_rd, reg, request, request ? request->initiator : -1);*/
+
 	/* We always apply this */
 	ath_reg_apply_radar_flags(wiphy, reg);
 
@@ -692,7 +703,7 @@ static int __ath_regd_init(struct ath_regulatory *reg)
 
 	ath_regd_sanitize(reg);
 
-	printk(KERN_DBG_LVL "ath: EEPROM regdomain: 0x%0x\n", reg->current_rd);
+	printk(KERN_DBG_LVL "ath: EEPROM regdomain: 0x%0x, reg-addr: %p\n", reg->current_rd, reg);
 
 	if (!ath_regd_is_eeprom_valid(reg)) {
 		pr_err("Invalid EEPROM contents\n");
