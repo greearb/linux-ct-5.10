@@ -2436,6 +2436,8 @@ static void wiphy_update_regulatory(struct wiphy *wiphy,
 	struct regulatory_request *lr = get_last_request();
 
 	if (ignore_reg_update(wiphy, initiator)) {
+		pr_info("update-regulatory, ignore-reg-update is set, initiator: %d  flags: 0x%x\n",
+			initiator, wiphy->regulatory_flags);
 		/*
 		 * Regulatory updates set by CORE are ignored for custom
 		 * regulatory cards. Let us notify the changes to the driver,
