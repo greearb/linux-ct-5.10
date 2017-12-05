@@ -5793,15 +5793,14 @@ static void ath10k_wmi_event_service_ready_work(struct work_struct *work)
 
 	if ((ar->eeprom_regdom != -1) &&
 	    (ar->eeprom_regdom != ar->ath_common.regulatory.current_rd)) {
-		static int do_once = 1;
-		if (do_once) {
-			ath10k_err(ar, "DANGER! You're overriding EEPROM-defined regulatory domain,"
-				   "\nfrom: 0x%x to 0x%x\n",
+		if (!ar->eeprom_regdom_warned) {
+			ath10k_err(ar, "DANGER! You're overriding EEPROM-defined regulatory domain\n");
+			ath10k_err(ar, "from: 0x%x to 0x%x (svc-ready-work)\n",
 				   ar->ath_common.regulatory.current_rd, ar->eeprom_regdom);
 			ath10k_err(ar, "Your card was not certified to operate in the domain you chose.\n");
 			ath10k_err(ar, "This might result in a violation of your local regulatory rules.\n");
 			ath10k_err(ar, "Do not ever do this unless you really know what you are doing!\n");
-			do_once = 0;
+			ar->eeprom_regdom_warned = 1;
 		}
 		ar->ath_common.regulatory.current_rd = ar->eeprom_regdom | COUNTRY_ERD_FLAG;
 	}
