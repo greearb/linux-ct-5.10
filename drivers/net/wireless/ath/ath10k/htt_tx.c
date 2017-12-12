@@ -1554,6 +1554,11 @@ static int ath10k_htt_tx_32(struct ath10k_htt *htt,
 	 */
 	flags1 |= HTT_DATA_TX_DESC_FLAGS1_POSTPONED;
 
+	if (unlikely(info->flags & IEEE80211_TX_CTL_NO_ACK)) {
+		pr_err("Setting no-ack-ct flag\n");
+		flags1 |= HTT_DATA_TX_DESC_FLAGS1_NO_ACK_CT;
+	}
+
 	txbuf->cmd_hdr.msg_type = HTT_H2T_MSG_TYPE_TX_FRM;
 	txbuf->cmd_tx.flags0 = flags0;
 	txbuf->cmd_tx.flags1 = __cpu_to_le16(flags1);
