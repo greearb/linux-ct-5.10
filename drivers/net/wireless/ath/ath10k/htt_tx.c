@@ -1435,6 +1435,39 @@ static int ath10k_htt_tx_32(struct ath10k_htt *htt,
 	u32 txbuf_paddr;
 	struct htt_msdu_ext_desc *ext_desc = NULL;
 	struct htt_msdu_ext_desc *ext_desc_t = NULL;
+	u32 peer_id = HTT_INVALID_PEERID;
+
+	if (unlikely(info->flags & IEEE80211_TX_CTL_TX_OFFCHAN))
+		freq = ar->scan.roc_freq;
+
+	if (unlikely(info->control.flags & IEEE80211_TX_CTRL_RATE_INJECT)) {
+		if (test_bit(ATH10K_FW_FEATURE_HAS_TX_RC_CT,
+			     ar->running_fw->fw_file.fw_features)) {
+			enum nl80211_band band = info->band;
+			const struct ieee80211_supported_band *sband;
+			u8 rix;
+			u32 rate_code;
+
+			sband = ar->hw->wiphy->bands[band];
+
+			rix = info->control.rates[0].idx;
+			/* TODO-BEN:  Only valid for legacy rates.  Need more work to handl HT & VHT */
+			rate_code = ath10k_convert_hw_rate_to_rc(sband->bitrates[rix].hw_value,
+								 sband->bitrates[rix].bitrate);
+			peer_id = 0x8000; /* this == htt-invalid-peerid in this firmware, gives us
+					   * 7 more bits to play with.
+					   */
+			peer_id |= ((rate_code << 16) & 0xFF0000);
+			peer_id |= (((u32)(info->control.rates[0].count) << 24) & 0xF000000);
+			/* ath10k_err(ar, "msdu: %p  info: %p peer_id: 0x%x  rates.idx: %d  rate_code: 0x%x  hw-value: %d  bitrate: %d count: %d \n",
+			       msdu, info, peer_id, rix, rate_code, sband->bitrates[rix].hw_value,
+			       sband->bitrates[rix].bitrate, (u32)(info->control.rates[0].count));*/
+		}
+	}
+
+	if (unlikely(info->flags & IEEE80211_TX_CTL_NO_ACK)) {
+		flags1 |= HTT_DATA_TX_DESC_FLAGS1_NO_ACK_CT;
+	}
 
 	res = ath10k_htt_tx_alloc_msdu_id(htt, msdu);
 	if (res < 0)
@@ -1460,6 +1493,7 @@ static int ath10k_htt_tx_32(struct ath10k_htt *htt,
 		skb_put(msdu, IEEE80211_CCMP_MIC_LEN);
 	}
 
+	/* NOTE:  This writes over info->control.rates[0], at least. */
 	skb_cb->paddr = dma_map_single(dev, msdu->data, msdu->len,
 				       DMA_TO_DEVICE);
 	res = dma_mapping_error(dev, skb_cb->paddr);
@@ -1467,9 +1501,6 @@ static int ath10k_htt_tx_32(struct ath10k_htt *htt,
 		res = -EIO;
 		goto err_free_msdu_id;
 	}
-
-	if (unlikely(info->flags & IEEE80211_TX_CTL_TX_OFFCHAN))
-		freq = ar->scan.roc_freq;
 
 	switch (txmode) {
 	case ATH10K_HW_TXRX_RAW:
@@ -1554,11 +1585,6 @@ static int ath10k_htt_tx_32(struct ath10k_htt *htt,
 	 */
 	flags1 |= HTT_DATA_TX_DESC_FLAGS1_POSTPONED;
 
-	if (unlikely(info->flags & IEEE80211_TX_CTL_NO_ACK)) {
-		pr_err("Setting no-ack-ct flag\n");
-		flags1 |= HTT_DATA_TX_DESC_FLAGS1_NO_ACK_CT;
-	}
-
 	txbuf->cmd_hdr.msg_type = HTT_H2T_MSG_TYPE_TX_FRM;
 	txbuf->cmd_tx.flags0 = flags0;
 	txbuf->cmd_tx.flags1 = __cpu_to_le16(flags1);
@@ -1571,8 +1597,7 @@ static int ath10k_htt_tx_32(struct ath10k_htt *htt,
 		txbuf->cmd_tx.offchan_tx.freq =
 				__cpu_to_le16(freq);
 	} else {
-		txbuf->cmd_tx.peerid =
-				__cpu_to_le32(HTT_INVALID_PEERID);
+		txbuf->cmd_tx.peerid = __cpu_to_le32(peer_id);
 	}
 
 	skb_len = msdu->len;

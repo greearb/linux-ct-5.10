@@ -3496,7 +3496,7 @@ static int ath10k_new_peer_tid_config(struct ath10k *ar,
 /* Convert hw_rate from ratectrl to 'rate-code' that firmware
  * can understand.
  */
-static u8 ath10k_convert_hw_rate_to_rc(u8 hw_rate, int bitrate)
+u8 ath10k_convert_hw_rate_to_rc(u8 hw_rate, int bitrate)
 {
 	int preamble;
 	if (ath10k_mac_bitrate_is_cck(bitrate))
