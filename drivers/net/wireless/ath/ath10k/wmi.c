@@ -4255,9 +4255,9 @@ static void ath10k_dfs_radar_report(struct ath10k *ar,
 		   MS(reg1, RADAR_REPORT_REG1_PULSE_AGC_MB_GAIN),
 		   MS(reg1, RADAR_REPORT_REG1_PULSE_SUBCHAN_MASK));
 	ath10k_dbg(ar, ATH10K_DBG_REGULATORY,
-		   "wmi phyerr radar report pulse_tsf_offset 0x%X pulse_dur: %d\n",
+		   "wmi phyerr radar report pulse_tsf_offset 0x%X pulse_dur: %d dfs-detector: %p\n",
 		   MS(reg1, RADAR_REPORT_REG1_PULSE_TSF_OFFSET),
-		   MS(reg1, RADAR_REPORT_REG1_PULSE_DUR));
+		   MS(reg1, RADAR_REPORT_REG1_PULSE_DUR), ar->dfs_detector);
 
 	if (!ar->dfs_detector)
 		return;
@@ -4296,8 +4296,8 @@ static void ath10k_dfs_radar_report(struct ath10k *ar,
 	pe.rssi = rssi;
 	pe.chirp = (MS(reg0, RADAR_REPORT_REG0_PULSE_IS_CHIRP) != 0);
 	ath10k_dbg(ar, ATH10K_DBG_REGULATORY,
-		   "dfs add pulse freq: %d, width: %d, rssi %d, tsf: %llX\n",
-		   pe.freq, pe.width, pe.rssi, pe.ts);
+		   "dfs add pulse freq: %d, width: %d, rssi %d, tsf: %llX chirp: %d\n",
+		   pe.freq, pe.width, pe.rssi, pe.ts, pe.chirp);
 
 	ATH10K_DFS_STAT_INC(ar, pulses_detected);
 
