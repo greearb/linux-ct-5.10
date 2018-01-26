@@ -1075,6 +1075,7 @@ int ath_rx_tasklet(struct ath_softc *sc, int flush, bool hp)
 	dma_addr_t new_buf_addr;
 	unsigned int budget = 512;
 	struct ieee80211_hdr *hdr;
+	unsigned long expires_jiffies = jiffies + 5;
 
 	if (edma)
 		dma_type = DMA_BIDIRECTIONAL;
@@ -1231,6 +1232,9 @@ requeue:
 		}
 
 		if (!budget--)
+			break;
+
+		if (time_is_before_jiffies(expires_jiffies))
 			break;
 	} while (1);
 
