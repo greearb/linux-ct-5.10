@@ -128,8 +128,9 @@ void ath9k_wake_tx_queue(struct ieee80211_hw *hw, struct ieee80211_txq *queue)
 	struct ath_atx_tid *tid = (struct ath_atx_tid *) queue->drv_priv;
 	struct ath_txq *txq = tid->txq;
 
-	ath_dbg(common, QUEUE, "Waking TX queue: %pM (%d)\n",
-		queue->sta ? queue->sta->addr : queue->vif->addr,
+	ath_dbg(common, QUEUE,
+		"Waking TX queue: sta-addr %pM vif: %pM (tid %d)\n",
+		queue->sta ? queue->sta->addr : NULL, queue->vif->addr,
 		tid->tidno);
 
 	ath_txq_lock(sc, txq);

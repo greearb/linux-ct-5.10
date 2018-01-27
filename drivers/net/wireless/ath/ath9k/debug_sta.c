@@ -48,9 +48,10 @@ static ssize_t read_file_node_aggr(struct file *file, char __user *user_buf,
 			 an->mpdudensity);
 
 	len += scnprintf(buf + len, size - len,
-			 "\n%3s%11s%10s%10s%10s%10s%9s%6s%8s\n",
+			 "\n%3s%11s%10s%10s%10s%10s%9s%6s%9s\n",
 			 "TID", "SEQ_START", "SEQ_NEXT", "BAW_SIZE",
-			 "BAW_HEAD", "BAW_TAIL", "BAR_IDX", "SCHED", "PAUSED");
+			 "BAW_HEAD", "BAW_TAIL", "BAR_IDX", "SCHED",
+			 "HAS-QUED");
 
 	for (tidno = 0; tidno < IEEE80211_NUM_TIDS; tidno++) {
 		tid = ath_node_to_tid(an, tidno);
@@ -58,7 +59,7 @@ static ssize_t read_file_node_aggr(struct file *file, char __user *user_buf,
 		ath_txq_lock(sc, txq);
 		if (tid->active) {
 			len += scnprintf(buf + len, size - len,
-					 "%3d%11d%10d%10d%10d%10d%9d%6d\n",
+					 "%3d%11d%10d%10d%10d%10d%9d%6d%9d\n",
 					 tid->tidno,
 					 tid->seq_start,
 					 tid->seq_next,
@@ -66,7 +67,8 @@ static ssize_t read_file_node_aggr(struct file *file, char __user *user_buf,
 					 tid->baw_head,
 					 tid->baw_tail,
 					 tid->bar_index,
-					 !list_empty(&tid->list));
+					 !list_empty(&tid->list),
+					 tid->has_queued);
 		}
 		ath_txq_unlock(sc, txq);
 	}
