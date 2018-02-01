@@ -1792,6 +1792,9 @@ ieee80211_rx_h_sta_process(struct ieee80211_rx_data *rx)
 					-signal);
 		}
 	}
+	/*pr_err("%s: sta-process, signal: %d(%d)  chains: 0x%x  chain[0]: %d  chain[1]: %d  chan[2]: %d  skb: %p  skb-len: %d\n",
+	       rx->sdata->name, status->signal, sta->rx_stats.last_signal,
+	       status->chains, status->chain_signal[0], status->chain_signal[1], status->chain_signal[2], skb, skb->len);*/
 
 	if (ieee80211_is_s1g_beacon(hdr->frame_control))
 		return RX_CONTINUE;
