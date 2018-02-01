@@ -1183,6 +1183,8 @@ static void ath10k_htt_rx_h_signal(struct ath10k *ar,
 	/* FIXME: Get real NF */
 	status->signal = ATH10K_DEFAULT_NOISE_FLOOR +
 			 rxd->ppdu_start.rssi_comb;
+	/* ath10k_warn(ar, "rx-h-sig, signal: %d  chains: 0x%x  chain[0]: %d  chain[1]: %d  chan[2]: %d\n",
+                       status->signal, status->chains, status->chain_signal[0], status->chain_signal[1], status->chain_signal[2]); */
 	status->flag &= ~RX_FLAG_NO_SIGNAL_VAL;
 }
 

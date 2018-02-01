@@ -2524,6 +2524,8 @@ struct wmi_resource_config {
 	 * that do not need WoW.
 	 */
 	#define ATH10k_DISABLE_WOW        0x40000
+	/* Ask CT firmware to send back per-chain management frame RSSI info */
+	#define ATH10k_MGT_CHAIN_RSSI_OK  0x80000
 	__le32 rx_decap_mode;
 
 	/* what is the maximum number of scan requests that can be queued */
