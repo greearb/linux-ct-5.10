@@ -2341,12 +2341,13 @@ static int ath10k_wmi_op_pull_mgmt_rx_ev(struct ath10k *ar, struct sk_buff *skb,
 					 struct wmi_mgmt_rx_ev_arg *arg)
 {
 	struct wmi_mgmt_rx_event_v1 *ev_v1;
-	struct wmi_mgmt_rx_event_v2 *ev_v2;
+	struct wmi_mgmt_rx_event_v2 *ev_v2 = NULL;
 	struct wmi_mgmt_rx_hdr_v1 *ev_hdr;
 	struct wmi_mgmt_rx_ext_info *ext_info;
 	size_t pull_len;
 	u32 msdu_len;
 	u32 len;
+	int i;
 
 	if (test_bit(ATH10K_FW_FEATURE_EXT_WMI_MGMT_RX,
 		     ar->running_fw->fw_file.fw_features)) {
@@ -2369,6 +2370,9 @@ static int ath10k_wmi_op_pull_mgmt_rx_ev(struct ath10k *ar, struct sk_buff *skb,
 	arg->snr = ev_hdr->snr;
 	arg->phy_mode = ev_hdr->phy_mode;
 	arg->rate = ev_hdr->rate;
+	if (ev_v2)
+		for (i = 0; i<4; i++)
+			arg->rssi_ctl[i] = ev_v2->hdr.rssi_ctl[i];
 
 	msdu_len = __le32_to_cpu(arg->buf_len);
 	if (skb->len < msdu_len)
@@ -2398,6 +2402,7 @@ static int ath10k_wmi_10_4_op_pull_mgmt_rx_ev(struct ath10k *ar,
 	u32 msdu_len;
 	struct wmi_mgmt_rx_ext_info *ext_info;
 	u32 len;
+	int i;
 
 	ev = (struct wmi_10_4_mgmt_rx_event *)skb->data;
 	ev_hdr = &ev->hdr;
@@ -2413,6 +2418,8 @@ static int ath10k_wmi_10_4_op_pull_mgmt_rx_ev(struct ath10k *ar,
 	arg->snr = ev_hdr->snr;
 	arg->phy_mode = ev_hdr->phy_mode;
 	arg->rate = ev_hdr->rate;
+	for (i = 0; i<4; i++)
+		arg->rssi_ctl[i] = ev_hdr->rssi_ctl[i];
 
 	msdu_len = __le32_to_cpu(arg->buf_len);
 	if (skb->len < msdu_len)
@@ -2673,8 +2680,11 @@ int ath10k_wmi_event_mgmt_rx(struct ath10k *ar, struct sk_buff *skb)
 		   fc & IEEE80211_FCTL_FTYPE, fc & IEEE80211_FCTL_STYPE);
 
 	ath10k_dbg(ar, ATH10K_DBG_MGMT,
-		   "event mgmt rx freq %d band %d snr %d, rate_idx %d\n",
+		   "event mgmt rx freq %d band %d snr %d chains: 0x%x(%d %d %d %d), rate_idx %d\n",
 		   status->freq, status->band, status->signal,
+		   status->chains,
+		   status->chain_signal[0], status->chain_signal[1],
+		   status->chain_signal[2], status->chain_signal[3],
 		   status->rate_idx);
 
 	ieee80211_rx_ni(ar->hw, skb);
