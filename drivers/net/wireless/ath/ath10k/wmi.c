@@ -2082,6 +2082,19 @@ static void ath10k_wmi_event_scan_started(struct ath10k *ar)
 	}
 }
 
+void ath10k_wmi_stop_scan_work(struct work_struct *work)
+{
+	struct ath10k *ar = container_of(work, struct ath10k,
+					 stop_scan_work);
+	/* Kick firmware to get us back in sync */
+	struct wmi_stop_scan_arg arg = {
+		.req_id = 1, /* FIXME */
+		.req_type = WMI_SCAN_STOP_ONE,
+		.u.scan_id = ATH10K_SCAN_ID,
+	};
+	ath10k_wmi_stop_scan(ar, &arg);
+}
+
 static void ath10k_wmi_event_scan_start_failed(struct ath10k *ar,
 					       enum wmi_scan_completion_reason reason)
 {
@@ -2098,13 +2111,10 @@ static void ath10k_wmi_event_scan_start_failed(struct ath10k *ar,
 	case ATH10K_SCAN_STARTING:
 		complete(&ar->scan.started);
 		if (reason == WMI_SCAN_REASON_BUSY) {
-			/* Kick firmware to get us back in sync */
-			struct wmi_stop_scan_arg arg = {
-				.req_id = 1, /* FIXME */
-				.req_type = WMI_SCAN_STOP_ONE,
-				.u.scan_id = ATH10K_SCAN_ID,
-			};
-			ath10k_wmi_stop_scan(ar, &arg);
+			/* Cannot make WMI calls directly here, we are under data_lock and at
+			 * least sometimes in IRQ context.
+			 */
+			queue_work(ar->workqueue, &ar->stop_scan_work);
 		}
 		__ath10k_scan_finish(ar);
 		break;

@@ -7813,6 +7813,7 @@ int ath10k_wmi_barrier(struct ath10k *ar);
 void ath10k_wmi_tpc_config_get_rate_code(u8 *rate_code, u16 *pream_table,
 					 u32 num_tx_chain);
 void ath10k_wmi_event_tpc_final_table(struct ath10k *ar, struct sk_buff *skb);
+void ath10k_wmi_stop_scan_work(struct work_struct *work);
 
 #ifdef CONFIG_ATH10K_DEBUGFS
 /* TODO:  Should really enable this all the time, not just when DEBUGFS is enabled. --Ben */
