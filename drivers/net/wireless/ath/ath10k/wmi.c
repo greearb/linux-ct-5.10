@@ -2092,7 +2092,15 @@ void ath10k_wmi_stop_scan_work(struct work_struct *work)
 		.req_type = WMI_SCAN_STOP_ONE,
 		.u.scan_id = ATH10K_SCAN_ID,
 	};
-	ath10k_wmi_stop_scan(ar, &arg);
+	int ret;
+
+	ath10k_warn(ar, "calling wmi-stop-scan from wmi-stop-scan-work\n");
+
+	mutex_lock(&ar->conf_mutex);
+	ret = ath10k_wmi_stop_scan(ar, &arg);
+	if (ret)
+		ath10k_warn(ar, "stop-scan-work: failed to stop wmi scan: %d\n", ret);
+	mutex_unlock(&ar->conf_mutex);
 }
 
 static void ath10k_wmi_event_scan_start_failed(struct ath10k *ar,
@@ -2110,13 +2118,14 @@ static void ath10k_wmi_event_scan_start_failed(struct ath10k *ar,
 		break;
 	case ATH10K_SCAN_STARTING:
 		complete(&ar->scan.started);
+		__ath10k_scan_finish(ar);
 		if (reason == WMI_SCAN_REASON_BUSY) {
 			/* Cannot make WMI calls directly here, we are under data_lock and at
 			 * least sometimes in IRQ context.
 			 */
+			ath10k_warn(ar, "received scan start failed event in scan-starting state, will request stop-scan-work\n");
 			queue_work(ar->workqueue, &ar->stop_scan_work);
 		}
-		__ath10k_scan_finish(ar);
 		break;
 	}
 }
