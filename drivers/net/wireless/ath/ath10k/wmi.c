@@ -8461,7 +8461,7 @@ ath10k_wmi_op_gen_pdev_set_wmm(struct ath10k *ar,
 }
 
 static struct sk_buff *
-ath10k_wmi_op_gen_request_stats(struct ath10k *ar, u32 stats_mask)
+ath10k_wmi_op_gen_request_stats(struct ath10k *ar, u32 stats_mask, u32 specifier)
 {
 	struct wmi_request_stats_cmd *cmd;
 	struct sk_buff *skb;
@@ -8472,6 +8472,7 @@ ath10k_wmi_op_gen_request_stats(struct ath10k *ar, u32 stats_mask)
 
 	cmd = (struct wmi_request_stats_cmd *)skb->data;
 	cmd->stats_id = __cpu_to_le32(stats_mask);
+	cmd->vdev_id = __cpu_to_le32(specifier);
 
 	ath10k_dbg(ar, ATH10K_DBG_WMI, "wmi request stats 0x%08x\n",
 		   stats_mask);
