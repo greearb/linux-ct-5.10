@@ -1903,6 +1903,10 @@ static const char ath10k_gstrings_stats[][ETH_GSTRING_LEN] = {
 	"tx_bytes_to_fw", /* sent to firmware, counts all failures */
 	"rx_pkts_nic", /* From firmware...maybe should be from driver for symmetry? */
 	"rx_bytes_nic", /* from driver, firmware does not keep this stat. */
+	"rx_drop_unchain_oom", /* Dropped due to OOM pressure in unchain_msdu path */
+	"rx_drop_decap_non_raw_chained",
+	"rx_drop_no_freq",
+	"rx_drop_cac_running",
 	"d_noise_floor",
 	"d_cycle_count", /* this is duty cycle counter, basically channel-time. 88MHz clock */
 	"d_tx_cycle_count", /* tx cycle count */
@@ -2022,6 +2026,10 @@ void ath10k_debug_get_et_stats(struct ieee80211_hw *hw,
 	data[i++] = ar->debug.tx_bytes;
 	data[i++] = pdev_stats->htt_mpdus;
 	data[i++] = ar->debug.rx_bytes;
+	data[i++] = ar->debug.rx_drop_unchain_oom;
+	data[i++] = ar->debug.rx_drop_decap_non_raw_chained;
+	data[i++] = ar->debug.rx_drop_no_freq;
+	data[i++] = ar->debug.rx_drop_cac_running;
 	data[i++] = pdev_stats->ch_noise_floor;
 	data[i++] = pdev_stats->cycle_count;
 	data[i++] = pdev_stats->tx_frame_count;

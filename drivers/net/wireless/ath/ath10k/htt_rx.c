@@ -2054,7 +2054,7 @@ static void ath10k_htt_rx_h_enqueue(struct ath10k *ar,
 	}
 }
 
-static int ath10k_unchain_msdu(struct sk_buff_head *amsdu,
+static int ath10k_unchain_msdu(struct ath10k* ar, struct sk_buff_head *amsdu,
 			       unsigned long *unchain_cnt)
 {
 	struct sk_buff *skb, *first;
@@ -2078,10 +2078,10 @@ static int ath10k_unchain_msdu(struct sk_buff_head *amsdu,
 	space = total_len - skb_tailroom(first);
 	if ((space > 0) &&
 	    (pskb_expand_head(first, 0, space, GFP_ATOMIC) < 0)) {
-		/* TODO:  bump some rx-oom error stat */
 		/* put it back together so we can free the
 		 * whole list at once.
 		 */
+		ar->debug.rx_drop_unchain_oom++;
 		__skb_queue_head(amsdu, first);
 		return -1;
 	}
@@ -2124,11 +2124,12 @@ static void ath10k_htt_rx_h_unchain(struct ath10k *ar,
 	if (decap != RX_MSDU_DECAP_RAW ||
 	    skb_queue_len(amsdu) != 1 + rxd->frag_info.ring2_more_count) {
 		*drop_cnt += skb_queue_len(amsdu);
+		ar->debug.rx_drop_decap_non_raw_chained++;
 		__skb_queue_purge(amsdu);
 		return;
 	}
 
-	ath10k_unchain_msdu(amsdu, unchain_cnt);
+	ath10k_unchain_msdu(ar, amsdu, unchain_cnt);
 }
 
 static bool ath10k_htt_rx_validate_amsdu(struct ath10k *ar,
@@ -2189,11 +2190,13 @@ static bool ath10k_htt_rx_amsdu_allowed(struct ath10k *ar,
 {
 	if (!rx_status->freq) {
 		ath10k_dbg(ar, ATH10K_DBG_HTT, "no channel configured; ignoring frame(s)!\n");
+		ar->debug.rx_drop_no_freq++;
 		return false;
 	}
 
 	if (test_bit(ATH10K_CAC_RUNNING, &ar->dev_flags)) {
 		ath10k_dbg(ar, ATH10K_DBG_HTT, "htt rx cac running\n");
+		ar->debug.rx_drop_cac_running++;
 		return false;
 	}
 
