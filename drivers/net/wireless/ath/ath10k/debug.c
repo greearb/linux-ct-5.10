@@ -827,6 +827,7 @@ static ssize_t ath10k_read_rx_reorder_stats(struct file *file, char __user *user
 	PRINT_MY_STATS(rx_mpdu_tid_err);
 	PRINT_MY_STATS(rx_ba_statemachine_err);
 	PRINT_MY_STATS(rx_drop_replay);
+	PRINT_MY_STATS(rx_non_data_drop_no_bufs);
 
 	if (len > buf_len)
 		len = buf_len;

@@ -4781,6 +4781,10 @@ struct ath10k_rx_reorder_stats {
 	u32 rx_mpdu_tid_err;
 	u32 rx_ba_statemachine_err;
 	u32 rx_drop_replay;
+
+	u32 rx_non_data_drop_no_bufs; /* We had no htt buffer space to send non-data
+				       * packet descriptors, so frames were dropped.  Stock
+				       * FW just asserts in this case, btw. */
 };
 
 struct wlan_inst_rssi_args {
