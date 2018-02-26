@@ -73,7 +73,7 @@
 
 #define ATH9K_RSSI_BAD			-128
 
-#define ATH9K_MAX_NUM_CHANNELS	57
+#define ATH9K_MAX_NUM_CHANNELS	59
 
 /* Register read/write primitives */
 #define REG_WRITE(_ah, _reg, _val) \
