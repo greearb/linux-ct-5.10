@@ -3727,6 +3727,8 @@ enum ieee80211_reconfig_type {
  *
  * @get_et_stats:  Ethtool API to get a set of u64 stats.
  *
+ * @get_et_stats2:  Ethtool API to get a set of u64 stats, with level specified.
+ *
  * @get_et_strings:  Ethtool API to get a set of strings to describe stats
  *	and perhaps other supported types of ethtool data-sets.
  *
@@ -4088,6 +4090,10 @@ struct ieee80211_ops {
 	void	(*get_et_stats)(struct ieee80211_hw *hw,
 				struct ieee80211_vif *vif,
 				struct ethtool_stats *stats, u64 *data);
+#define MAC80211_HAS_ET_STATS2 /* Make it easier for backporting drivers. */
+	void	(*get_et_stats2)(struct ieee80211_hw *hw,
+				 struct ieee80211_vif *vif,
+				 struct ethtool_stats *stats, u64 *data, u32 level);
 	void	(*get_et_strings)(struct ieee80211_hw *hw,
 				  struct ieee80211_vif *vif,
 				  u32 sset, u8 *data);

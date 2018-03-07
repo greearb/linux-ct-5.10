@@ -326,6 +326,14 @@ struct ethtool_pause_stats {
  * @get_ethtool_stats: Return extended statistics about the device.
  *	This is only useful if the device maintains statistics not
  *	included in &struct rtnl_link_stats64.
+ * @get_ethtool_stats2: Return extended statistics about the device.
+ *	This is only useful if the device maintains statistics not
+ *	included in &struct rtnl_link_stats64.
+ *      Takes a 'level' argument:  0 means all (same as get_ethtool_stats),
+ *      otherwise 1 is less than 10 (driver specific).
+ *      Same number of stats will be returned, but some of them might
+ *      not be as accurate/refreshed.  This is to allow not querying
+ *      firmware or other expensive-to-read stats, for instance.
  * @begin: Function to be called before any other operation.  Returns a
  *	negative error code or zero.
  * @complete: Function to be called after any other operation except
@@ -453,6 +461,8 @@ struct ethtool_ops {
 	int	(*set_phys_id)(struct net_device *, enum ethtool_phys_id_state);
 	void	(*get_ethtool_stats)(struct net_device *,
 				     struct ethtool_stats *, u64 *);
+	void	(*get_ethtool_stats2)(struct net_device *,
+				      struct ethtool_stats *, u64 *, u32 level);
 	int	(*begin)(struct net_device *);
 	void	(*complete)(struct net_device *);
 	u32	(*get_priv_flags)(struct net_device *);

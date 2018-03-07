@@ -2021,9 +2021,9 @@ int ath10k_debug_get_et_sset_count(struct ieee80211_hw *hw,
 	return 0;
 }
 
-void ath10k_debug_get_et_stats(struct ieee80211_hw *hw,
-			       struct ieee80211_vif *vif,
-			       struct ethtool_stats *stats, u64 *data)
+void ath10k_debug_get_et_stats2(struct ieee80211_hw *hw,
+				struct ieee80211_vif *vif,
+				struct ethtool_stats *stats, u64 *data, u32 level)
 {
 	struct ath10k *ar = hw->priv;
 	static const struct ath10k_fw_stats_pdev zero_stats = {};
@@ -2032,6 +2032,9 @@ void ath10k_debug_get_et_stats(struct ieee80211_hw *hw,
 	u64 d_flags = 0;
 
 	mutex_lock(&ar->conf_mutex);
+
+	if (level && level < 5)
+		goto skip_query_fw_stats;
 
 	if (ar->state == ATH10K_STATE_ON) {
 		ath10k_refresh_target_regs(ar); /* Request some CT FW stats. */
@@ -2044,6 +2047,7 @@ void ath10k_debug_get_et_stats(struct ieee80211_hw *hw,
 		}
 	}
 
+skip_query_fw_stats:
 	pdev_stats = list_first_entry_or_null(&ar->debug.fw_stats.pdevs,
 					      struct ath10k_fw_stats_pdev,
 					      list);
@@ -2129,6 +2133,14 @@ void ath10k_debug_get_et_stats(struct ieee80211_hw *hw,
 
 	WARN_ON(i != ATH10K_SSTATS_LEN);
 }
+
+void ath10k_debug_get_et_stats(struct ieee80211_hw *hw,
+                              struct ieee80211_vif *vif,
+                              struct ethtool_stats *stats, u64 *data)
+{
+       ath10k_debug_get_et_stats2(hw, vif, stats, data, 0);
+}
+
 
 static const struct file_operations fops_fw_dbglog = {
 	.read = ath10k_read_fw_dbglog,

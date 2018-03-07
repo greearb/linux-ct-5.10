@@ -1926,6 +1926,54 @@ static int ethtool_get_stats(struct net_device *dev, void __user *useraddr)
 	return ret;
 }
 
+static int ethtool_get_stats2(struct net_device *dev, void __user *useraddr)
+{
+	struct ethtool_stats stats;
+	const struct ethtool_ops *ops = dev->ethtool_ops;
+	u64 *data;
+	int ret, n_stats;
+	u32 stats_level = 0;
+
+	if (!ops->get_ethtool_stats2 || !ops->get_sset_count)
+		return -EOPNOTSUPP;
+
+	n_stats = ops->get_sset_count(dev, ETH_SS_STATS);
+	if (n_stats < 0)
+		return n_stats;
+	if (n_stats > S32_MAX / sizeof(u64))
+		return -ENOMEM;
+	WARN_ON_ONCE(!n_stats);
+	if (copy_from_user(&stats, useraddr, sizeof(stats)))
+		return -EFAULT;
+
+	/* User can specify the level of stats to query.  How the
+	 * level value is used is up to the driver, but in general,
+	 * 0 means 'all', 1 means least, and higher means more.
+	 * The idea is that some stats may be expensive to query, so user
+	 * space could just ask for the cheap ones...
+	 */
+	stats_level = stats.n_stats;
+
+	stats.n_stats = n_stats;
+	data = vzalloc(n_stats * sizeof(u64));
+	if (n_stats && !data)
+		return -ENOMEM;
+
+	ops->get_ethtool_stats2(dev, &stats, data, stats_level);
+
+	ret = -EFAULT;
+	if (copy_to_user(useraddr, &stats, sizeof(stats)))
+		goto out;
+	useraddr += sizeof(stats);
+	if (n_stats && copy_to_user(useraddr, data, n_stats * sizeof(u64)))
+		goto out;
+	ret = 0;
+
+ out:
+	vfree(data);
+	return ret;
+}
+
 static int ethtool_get_phy_stats(struct net_device *dev, void __user *useraddr)
 {
 	const struct ethtool_phy_ops *phy_ops = ethtool_phy_ops;
@@ -2595,6 +2643,7 @@ int dev_ethtool(struct net *net, struct ifreq *ifr)
 	case ETHTOOL_GSSET_INFO:
 	case ETHTOOL_GSTRINGS:
 	case ETHTOOL_GSTATS:
+	case ETHTOOL_GSTATS2:
 	case ETHTOOL_GPHYSTATS:
 	case ETHTOOL_GTSO:
 	case ETHTOOL_GPERMADDR:
@@ -2707,6 +2756,9 @@ int dev_ethtool(struct net *net, struct ifreq *ifr)
 		break;
 	case ETHTOOL_GSTATS:
 		rc = ethtool_get_stats(dev, useraddr);
+		break;
+	case ETHTOOL_GSTATS2:
+		rc = ethtool_get_stats2(dev, useraddr);
 		break;
 	case ETHTOOL_GPERMADDR:
 		rc = ethtool_get_perm_addr(dev, useraddr);

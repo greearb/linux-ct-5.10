@@ -58,10 +58,15 @@ static inline void drv_get_et_strings(struct ieee80211_sub_if_data *sdata,
 
 static inline void drv_get_et_stats(struct ieee80211_sub_if_data *sdata,
 				    struct ethtool_stats *stats,
-				    u64 *data)
+				    u64 *data, u32 level)
 {
 	struct ieee80211_local *local = sdata->local;
-	if (local->ops->get_et_stats) {
+	if (local->ops->get_et_stats2) {
+		trace_drv_get_et_stats(local);
+		local->ops->get_et_stats2(&local->hw, &sdata->vif, stats, data, level);
+		trace_drv_return_void(local);
+	}
+	else if (local->ops->get_et_stats) {
 		trace_drv_get_et_stats(local);
 		local->ops->get_et_stats(&local->hw, &sdata->vif, stats, data);
 		trace_drv_return_void(local);

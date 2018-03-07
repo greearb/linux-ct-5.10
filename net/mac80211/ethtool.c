@@ -80,9 +80,9 @@ static int ieee80211_get_sset_count(struct net_device *dev, int sset)
 	return rv;
 }
 
-static void ieee80211_get_stats(struct net_device *dev,
-				struct ethtool_stats *stats,
-				u64 *data)
+static void ieee80211_get_stats2(struct net_device *dev,
+				 struct ethtool_stats *stats,
+				 u64 *data, u32 level)
 {
 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
 	struct ieee80211_chanctx_conf *chanctx_conf;
@@ -259,7 +259,14 @@ do_survey:
 	if (WARN_ON(i != STA_STATS_LEN))
 		return;
 
-	drv_get_et_stats(sdata, stats, &(data[STA_STATS_LEN]));
+	drv_get_et_stats(sdata, stats, &(data[STA_STATS_LEN]), level);
+}
+
+static void ieee80211_get_stats(struct net_device *dev,
+				struct ethtool_stats *stats,
+				u64 *data)
+{
+	ieee80211_get_stats2(dev, stats, data, 0);
 }
 
 static void ieee80211_get_strings(struct net_device *dev, u32 sset, u8 *data)
@@ -298,5 +305,6 @@ const struct ethtool_ops ieee80211_ethtool_ops = {
 	.set_ringparam = ieee80211_set_ringparam,
 	.get_strings = ieee80211_get_strings,
 	.get_ethtool_stats = ieee80211_get_stats,
+	.get_ethtool_stats2 = ieee80211_get_stats2,
 	.get_sset_count = ieee80211_get_sset_count,
 };
