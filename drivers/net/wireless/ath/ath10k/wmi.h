@@ -4673,9 +4673,10 @@ struct wmi_pdev_stats_peer {
 #define SW_LONG_RETRIES      21 /* DATA packet retries */
 #define SW_SHORT_RETRIES     22 /* RTS packet retries */
 #define ADC_TEMP             23 /* ADC Temperature readings. */
+#define NF_CHAINS            24 /* noise floor for chains */
 
 
-#define DBG_REG_DUMP_COUNT       24 /* max number of registers we know about. */
+#define DBG_REG_DUMP_COUNT       25 /* max number of registers we know about. */
 
 struct ath10k_reg_dump_pair {
 	__le32 reg_id;

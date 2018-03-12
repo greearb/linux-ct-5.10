@@ -518,6 +518,9 @@ void ath10k_debug_fw_stats_process(struct ath10k *ar, struct sk_buff *skb)
 			case ADC_TEMP:
 				sptr->adc_temp = __le32_to_cpu(regdump->regpair[i].reg_val);
 				break;
+			case NF_CHAINS:
+				sptr->nfcal = __le32_to_cpu(regdump->regpair[i].reg_val);
+				break;
 			default: {
 				/* Foward-compat logic */
 				int max_supported = DBG_REG_DUMP_COUNT + ARRAY_SIZE(sptr->extra_regs);
@@ -928,6 +931,14 @@ static ssize_t ath10k_read_fw_regs(struct file *file, char __user *user_buf,
 			 "MAC-PCU-RXFILTER", fw_regs->pcu_rxfilter);
 	len += scnprintf(buf + len, buf_len - len, "%30s 0x%08x\n",
 			 "SW-RXFILTER", fw_regs->sw_rxfilter);
+	len += scnprintf(buf + len, buf_len - len, "%30s 0x%08x\n",
+			 "SHORT-RETRIES", fw_regs->short_retries);
+	len += scnprintf(buf + len, buf_len - len, "%30s 0x%08x\n",
+			 "LONG-RETRIES", fw_regs->long_retries);
+	len += scnprintf(buf + len, buf_len - len, "%30s 0x%08x\n",
+			 "ADC-TEMP", fw_regs->adc_temp);
+	len += scnprintf(buf + len, buf_len - len, "%30s 0x%08x\n",
+			 "NFCAL-PER-CHAIN", fw_regs->nfcal);
 
 	for (i = 0; i<fw_regs->extras_count; i++) {
 		len += scnprintf(buf + len, buf_len - len, "%26s%04d 0x%08x\n",

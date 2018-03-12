@@ -381,6 +381,8 @@ struct ath10k_fw_stats {
 		       * Value of 0x78 for 2,3 means not-read/not-active,
 		       * and 0x7B for 0,1 mean means the same.
 		       */
+	u32 nfcal; /* per-chain noise-floor calibration, signed 8 bit nums
+		    * packed into u32 */
 	u32 extra_regs[20]; /* for forward-compat */
 };
 
