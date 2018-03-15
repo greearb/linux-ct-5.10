@@ -7724,8 +7724,13 @@ int ath10k_wmi_request_nop(struct ath10k *ar)
 	cmd = (struct wmi_request_nop_cmd *)skb->data;
 	cmd->nop_id = __cpu_to_le32(ar->debug.nop_id++);
 
-	ath10k_dbg(ar, ATH10K_DBG_WMI, "wmi request nop (id %d)\n",
-		   ar->debug.nop_id - 1);
+	/* This is fairly verbose in the logs when WMI debugging is enabled,
+	 * so only print this out every 100 times. --Ben
+	 */
+	if ((ar->debug.nop_id % 100) == 0)
+		ath10k_dbg(ar, ATH10K_DBG_WMI, "wmi request nop (id %d)\n",
+			   ar->debug.nop_id - 1);
+
 	return ath10k_wmi_cmd_send(ar, skb, WMI_NOP);
 }
 #endif
@@ -8361,7 +8366,12 @@ ath10k_wmi_10_1_op_gen_pdev_get_temperature(struct ath10k *ar)
 	if (!skb)
 		return ERR_PTR(-ENOMEM);
 
-	ath10k_dbg(ar, ATH10K_DBG_WMI, "wmi pdev get temperature\n");
+	/* This can be fairly verbose in the logs when WMI debugging is enabled,
+	 * so only print this out every 100 times. --Ben
+	 */
+	if ((ar->wmi_get_temp_count++ % 100) == 0)
+		ath10k_dbg(ar, ATH10K_DBG_WMI, "wmi pdev get temperature (count: %d)\n",
+			   ar->wmi_get_temp_count);
 	return skb;
 }
 
@@ -8374,7 +8384,12 @@ ath10k_wmi_10_2_op_gen_pdev_get_temperature(struct ath10k *ar)
 	if (!skb)
 		return ERR_PTR(-ENOMEM);
 
-	ath10k_dbg(ar, ATH10K_DBG_WMI, "wmi pdev get temperature\n");
+	/* This can be fairly verbose in the logs when WMI debugging is enabled,
+	 * so only print this out every 100 times. --Ben
+	 */
+	if ((ar->wmi_get_temp_count++ % 100) == 0)
+		ath10k_dbg(ar, ATH10K_DBG_WMI, "wmi pdev get temperature (count: %d)\n",
+			   ar->wmi_get_temp_count);
 	return skb;
 }
 
