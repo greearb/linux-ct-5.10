@@ -2957,8 +2957,15 @@ int ath10k_wmi_event_debug_mesg(struct ath10k *ar, struct sk_buff *skb)
 				      (skb->len - 4)/sizeof(__le32));
 	spin_unlock_bh(&ar->data_lock);
 
-	if (ath10k_debug_mask & ATH10K_DBG_NO_DBGLOG)
+	if (ath10k_debug_mask & ATH10K_DBG_NO_DBGLOG) {
+		static bool done_once = false;
+		if (!done_once) {
+			ath10k_info(ar, "NOTE:  Firmware DBGLOG output disabled in debug_mask: 0x%x\n",
+				    ath10k_debug_mask);
+			done_once = true;
+		}
 		return 0;
+	}
 
 	if (ev->dropped_count)
 		ath10k_warn(ar, "WARNING: Dropped dbglog buffers: %d\n", __le32_to_cpu(ev->dropped_count));
