@@ -9246,6 +9246,33 @@ ath10k_wmi_10_2_4_op_gen_bb_timing(struct ath10k *ar,
 	return skb;
 }
 
+int ath10k_wmi_pdev_set_special(struct ath10k *ar, u32 id, u32 val)
+{
+	struct wmi_pdev_set_special_cmd *cmd;
+	struct sk_buff *skb;
+
+	if (!test_bit(ATH10K_FW_FEATURE_WMI_10X_CT,
+		      ar->running_fw->fw_file.fw_features)) {
+		ath10k_warn(ar, "Only CT firmware supports this method of setting thresh62_ext.\n");
+		return -ENOTSUPP;
+	}
+
+	skb = ath10k_wmi_alloc_skb(ar, sizeof(*cmd));
+	if (!skb)
+		return -ENOMEM;
+
+	cmd = (struct wmi_pdev_set_special_cmd *)skb->data;
+	memset(cmd, 0, sizeof(*cmd));
+
+	cmd->id = __cpu_to_le32(id);
+	cmd->val = __cpu_to_le32(val);
+
+	ath10k_dbg(ar, ATH10K_DBG_WMI,
+		   "wmi pdev set special id:%d val: %d\n",
+		   id, val);
+	return ath10k_wmi_cmd_send(ar, skb, WMI_PDEV_SET_SPECIAL_CMDID);
+}
+
 static const struct wmi_ops wmi_ops = {
 	.rx = ath10k_wmi_op_rx,
 	.map_svc = wmi_main_svc_map,

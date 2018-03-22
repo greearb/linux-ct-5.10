@@ -1569,8 +1569,8 @@ static int ath10k_htt_tx_32(struct ath10k_htt *htt,
 	trace_ath10k_htt_tx(ar, msdu_id, msdu->len, vdev_id, tid);
 	ath10k_dbg(ar, ATH10K_DBG_HTT,
 		   "htt tx flags0 %hhu flags1 %hu len %d id %hu frags_paddr %pad, msdu_paddr %pad vdev %hhu tid %hhu freq %hu\n",
-		   flags0, flags1, skb_len, msdu_id, frags_paddr,
-		   skb_cb->paddr, vdev_id, tid, freq);
+		   flags0, flags1, skb_len, msdu_id, &frags_paddr,
+		   &skb_cb->paddr, vdev_id, tid, freq);
 	ath10k_dbg_dump(ar, ATH10K_DBG_HTT_DUMP, NULL, "htt tx msdu: ",
 			msdu->data, skb_len);
 	trace_ath10k_tx_hdr(ar, msdu->data, msdu->len);

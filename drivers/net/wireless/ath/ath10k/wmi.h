@@ -1476,6 +1476,7 @@ enum wmi_10x_cmd_id {
 	WMI_10X_GPIO_CONFIG_CMDID,
 	WMI_10X_GPIO_OUTPUT_CMDID,
 
+	WMI_PDEV_SET_SPECIAL_CMDID = WMI_10X_END_CMDID - 101, /* CT only:  special hack (cts/slot/cifs/ack timers, etc) */
 	WMI_NOP = WMI_10X_END_CMDID - 100, /* CT only:  wmi transport keep-alive, basically */
 
 	WMI_10X_PDEV_UTF_CMDID = WMI_10X_END_CMDID - 1,
@@ -7030,6 +7031,75 @@ struct wmi_pdev_bss_chan_info_event {
 	__le64 cycle_rx_bss;
 	__le32 reserved;
 } __packed;
+
+/* CT firmware only, and only builds after June 26, 2015 */
+struct wmi_pdev_set_special_cmd {
+#define SET_SPECIAL_ID_ACK_CTS 0 /* set ack-cts-timeout register */
+#define SET_SPECIAL_ID_SLOT    1 /* set slot-duration register */
+#define SET_SPECIAL_ID_SIFS    2 /* set sifs-duration register */
+#define SET_SPECIAL_ID_THRESH62_EXT 3 /* set PHY_BB_EXT_CHAN_PWR_THR_1_THRESH62_EXT register field...
+				       * increasing this to 42 helps at least
+				       * one customer pass regulatory testing, for instance.  This is
+				       * same register/field as: PHY_BB_EXT_CHAN_PWR_THR_1_THR_CCA_EXT40
+				       * this is an 8-bit value.
+				       */
+#define SET_SPECIAL_ID_NOISE_FLR_THRESH 4 /* Set some CCA related values in the eeprom struct.  Over-rides existing values.
+					   * BE CAREFUL!  This could put your system out of spec.  It can also put it in
+					   * spec when the eeprom values are dodgy.
+                                           * See debug.c, ath10k_read_ct_special for details.
+                                           */
+#define SET_SPECIAL_ID_IBSS_AMSDU_OK    5 /* As far as I can tell, AR988X hardware is incapable of properly doing
+					   * IBSS  AMSDU frames.  It zeros out the BSSID, which causes the receiving
+					   * stack (Linux, at least) to drop the frame because of bssid-mismatch.
+					   * But, maybe someone has a received that can handle this one way or another
+					   * and wants the additional speed given by AMSDU.  So, use this setting to
+					   * allow AMSDU with IBSS:  val of 1 enables, val of 0 disables.
+					   */
+#define SET_SPECIAL_ID_MAX_TXPOWER      6 /* Set the maximum allowed tx-power.  This over-rules any other
+                                           * power settings.
+                                           */
+#define SET_SPECIAL_ID_RC_MAX_PER_THR   7 /* Set the 'g_rc_rate_max_per_thr' value.  Default is 50.  Higher may make
+                                           * the rate-ctrl logic work better in crouded RF environments.  Tune with
+                                           * care.  I'm not sure than anything above 100 is meaningful.
+                                           */
+#define SET_SPECIAL_ID_STA_TXBW_MASK    8 /* Set the bandwidths that station vdevs can transmit on:
+					   * 0:  all, 0x1: 20Mhz, 0x2 40Mhz, 0x4 80Mhz
+                                           */
+#define SET_SPECIAL_ID_PDEV_XRETRY_TH   9 /* Set the threshold for resetting phy due to failed retries, U16 */
+#define SET_SPECIAL_ID_RIFS_ENABLE    0xA /* Enable(1)/disable(0) RIFS.  Disabled by default. */
+#define SET_SPECIAL_ID_WMI_WD         0xB /* Set the watchdog trigger count, 0 means disable */
+#define SET_SPECIAL_ID_PSHACK         0xC /* flag 0x1:  ignore PS sleep message from STA
+                                           * flag 0x2:  mark mcast as 'data-is-buffered' regardless.
+                                           */
+#define SET_SPECIAL_ID_CSI            0xD /* 0 == disable, else enable reporting CSI data.  10.4 FW only at this time. */
+#define SET_SPECIAL_ID_BW_DISABLE_MASK 0xE /* 0x1 == disable 20Mhz, 0x2 == 40Mhz, 0x4 == 80Mhz, 0x8 == 160Mhz.  0x0 == default */
+#define SET_SPECIAL_ID_TXBF_CV_MSG     0xF /* 0x1 == enable, 0x0 == disable (default). */
+#define SET_SPECIAL_ID_RX_ALL_MGT     0x10 /* Pass all possible mgt frames up to the host
+                                            * 0x1 == enable, 0x0 == disable (default)
+                                            */
+#define SET_SPECIAL_ID_TX_HANG_COLD_RESET     0x11 /* Allow cold-reset in tx-hang recover code. */
+#define SET_SPECIAL_ID_DISABLE_IBSS_CCA       0x12 /* Disable special HWSCH CCA settings for IBSS. */
+#define SET_SPECIAL_ID_PEER_CT_ANTMASK        0x13 /* Set the 'ct' peer antenna mask. Value encodes the peer-id
+						    * (see 'peers' debugfs for peer id listing)
+						    * val = peer_id << 16 | ant-mask-value
+						    */
+
+/* Requires specially compiled firmware (-T option) to have any useful effect. */
+#define SET_SPECIAL_ID_TX_DBG         0x99 /* 0x1 == enable, 0x2 == pkt-dbg, 0x0 == disable (default). */
+
+#define CT_CCA_TYPE_MIN0 0
+#define CT_CCA_TYPE_MIN1 1
+#define CT_CCA_TYPE_MIN2 2
+#define CT_CCA_TYPE_NOISE_FLOOR 3
+#define CT_CCA_TYPE_EN_MINCCAPWR 4
+#define CT_CCA_TYPE_MAX 4 /* change as more types are added */
+
+    __le32 id;
+    __le32 val;
+    __le32 extra1;
+    __le32 extra2;
+};
+int ath10k_wmi_pdev_set_special(struct ath10k *ar, u32 id, u32 val);
 
 /* WOW structures */
 enum wmi_wow_wakeup_event {
