@@ -2121,6 +2121,12 @@ skip:
 			if (fn == w->root)
 				return 0;
 			pn = rcu_dereference_protected(fn->parent, 1);
+			if (WARN_ON_ONCE(!pn)) {
+				pr_err("FWS-U, w: %p  fn: %p  pn: %p\n",
+				       w, fn, pn);
+				/* Attempt to work around crash that has been here forever. --Ben */
+				return 0;
+			}
 			left = rcu_dereference_protected(pn->left, 1);
 			right = rcu_dereference_protected(pn->right, 1);
 			w->node = pn;
