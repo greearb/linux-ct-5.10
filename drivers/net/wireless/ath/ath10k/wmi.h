@@ -4983,6 +4983,12 @@ struct wmi_10x_peer_stats {
 	__le32 peer_rx_rate;
 } __packed;
 
+struct wmi_10x_peer_stats_ct_ext {
+	struct wmi_peer_stats old;
+	__le32 peer_rx_rate;
+	__le32 rx_duration;
+} __packed;
+
 struct wmi_10_2_peer_stats {
 	struct wmi_peer_stats old;
 	__le32 peer_rx_rate;
