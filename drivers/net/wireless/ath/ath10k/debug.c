@@ -321,6 +321,52 @@ static const struct file_operations fops_fwinfo_services = {
 	.llseek = default_llseek,
 };
 
+static ssize_t ath10k_read_peers(struct file *file,
+				 char __user *user_buf,
+				 size_t count, loff_t *ppos)
+{
+	struct ath10k *ar = file->private_data;
+	char *buf;
+	unsigned int len = 0, buf_len = 10000;
+	ssize_t ret_cnt;
+	struct ath10k_peer *peer;
+	int q;
+
+	buf = kzalloc(buf_len, GFP_KERNEL);
+	if (!buf)
+		return -ENOMEM;
+
+	mutex_lock(&ar->conf_mutex);
+	spin_lock_bh(&ar->data_lock);
+
+	list_for_each_entry(peer, &ar->peers, list) {
+		len += snprintf(buf + len, buf_len - len, "%pM  vdev-id: %d  peer-ids:",
+				peer->addr, peer->vdev_id);
+		for (q = 0; q<ATH10K_MAX_NUM_PEER_IDS; q++) {
+			if (test_bit(q, peer->peer_ids)) {
+				len += snprintf(buf + len, buf_len - len, " %d", q);
+			}
+		}
+		len += snprintf(buf + len, buf_len - len, "\n");
+	}
+
+	spin_unlock_bh(&ar->data_lock);
+
+	ret_cnt = simple_read_from_buffer(user_buf, count, ppos, buf, len);
+
+	mutex_unlock(&ar->conf_mutex);
+
+	kfree(buf);
+	return ret_cnt;
+}
+
+static const struct file_operations fops_peers = {
+	.read = ath10k_read_peers,
+	.open = simple_open,
+	.owner = THIS_MODULE,
+	.llseek = default_llseek,
+};
+
 static void ath10k_fw_stats_pdevs_free(struct list_head *head)
 {
 	struct ath10k_fw_stats_pdev *i, *tmp;
@@ -3881,6 +3927,8 @@ int ath10k_debug_register(struct ath10k *ar)
 		debugfs_create_file("btcoex", 0644, ar->debug.debugfs_phy, ar,
 				    &fops_btcoex);
 
+	debugfs_create_file("peers", 0400, ar->debug.debugfs_phy, ar,
+			    &fops_peers);
 	if (test_bit(WMI_SERVICE_PEER_STATS, ar->wmi.svc_map)) {
 		debugfs_create_file("peer_stats", 0644, ar->debug.debugfs_phy, ar,
 				    &fops_peer_stats);
