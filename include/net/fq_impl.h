@@ -70,6 +70,11 @@ static struct sk_buff *fq_tin_dequeue(struct fq *fq,
 	lockdep_assert_held(&fq->lock);
 
 begin:
+	if (WARN_ON_ONCE(((unsigned long)(fq)) < 4000))
+		return NULL;
+	if (WARN_ON_ONCE(((unsigned long)(tin)) < 4000))
+		return NULL;
+
 	head = &tin->new_flows;
 	if (list_empty(head)) {
 		head = &tin->old_flows;
@@ -78,6 +83,9 @@ begin:
 	}
 
 	flow = list_first_entry(head, struct fq_flow, flowchain);
+
+	if (WARN_ON_ONCE(((unsigned long)(flow)) < 4000))
+		return NULL;
 
 	if (flow->deficit <= 0) {
 		flow->deficit += fq->quantum;
