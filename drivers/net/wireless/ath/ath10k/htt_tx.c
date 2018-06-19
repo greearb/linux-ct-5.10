@@ -1437,6 +1437,18 @@ static int ath10k_htt_tx_32(struct ath10k_htt *htt,
 	struct htt_msdu_ext_desc *ext_desc_t = NULL;
 	u32 peer_id = HTT_INVALID_PEERID;
 
+	if (ar->state != ATH10K_STATE_ON) {
+		static bool done_once = 0;
+		if (!done_once) {
+			done_once = true;
+			ath10k_err(ar, "Invalid state: %d in ath10k_htt_tx_32, warning will not be repeated.\n",
+				   ar->state);
+			WARN_ON(1);
+		}
+		res = -ENODEV;
+		goto err;
+	}
+
 	if (unlikely(info->flags & IEEE80211_TX_CTL_TX_OFFCHAN))
 		freq = ar->scan.roc_freq;
 
@@ -1672,6 +1684,18 @@ static int ath10k_htt_tx_64(struct ath10k_htt *htt,
 	dma_addr_t txbuf_paddr;
 	struct htt_msdu_ext_desc_64 *ext_desc = NULL;
 	struct htt_msdu_ext_desc_64 *ext_desc_t = NULL;
+
+	if (ar->state != ATH10K_STATE_ON) {
+		static bool done_once = 0;
+		if (!done_once) {
+			done_once = true;
+			ath10k_err(ar, "Invalid state: %d in ath10k_htt_tx_64, warning will not be repeated.\n",
+				   ar->state);
+			WARN_ON(1);
+		}
+		res = -ENODEV;
+		goto err;
+	}
 
 	res = ath10k_htt_tx_alloc_msdu_id(htt, msdu);
 	if (res < 0)
