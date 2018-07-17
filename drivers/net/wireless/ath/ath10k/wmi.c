@@ -893,7 +893,7 @@ static struct wmi_vdev_param_map wmi_10x_vdev_param_map = {
 	.tx_encap_type = WMI_VDEV_PARAM_UNSUPPORTED,
 	.ap_detect_out_of_sync_sleeping_sta_time_secs =
 		WMI_10X_VDEV_PARAM_AP_DETECT_OUT_OF_SYNC_SLEEPING_STA_TIME_SECS,
-	.rc_num_retries = WMI_VDEV_PARAM_UNSUPPORTED,
+	.rc_num_retries = WMI_10X_VDEV_PARAM_RC_NUM_RETRIES,
 	.cabq_maxdur = WMI_VDEV_PARAM_UNSUPPORTED,
 	.mfptest_set = WMI_VDEV_PARAM_UNSUPPORTED,
 	.rts_fixed_rate = WMI_VDEV_PARAM_UNSUPPORTED,
