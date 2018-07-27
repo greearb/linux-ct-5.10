@@ -5835,6 +5835,18 @@ static int ath10k_config_retry_limit(struct ath10k *ar, int limit)
 
 	lockdep_assert_held(&ar->conf_mutex);
 
+	if (limit > 2 && !(test_bit(ATH10K_FW_FEATURE_RETRY_GT2_CT,
+				    ar->running_fw->fw_file.fw_features))) {
+		/* Stock wave-1 firmware (at least) will crash if there are > 2
+		 * retries made, due to coding issues related to rate-ctrl
+		 * logic in the firmware.  So, we can only enable this feature
+		 * if firmware specifically tells us the feature is supported.
+		 */
+		ath10k_warn(ar, "Firmware lacks feature flag indicating a retry limit of > 2 is OK, requested limit: %d\n",
+			    limit);
+		return -EINVAL;
+	}
+
 	list_for_each_entry(arvif, &ar->arvifs, list) {
 		ret = ath10k_mac_vif_config_retry_limit(arvif, limit);
 		if (ret) {
