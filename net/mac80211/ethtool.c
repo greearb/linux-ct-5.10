@@ -305,6 +305,8 @@ const struct ethtool_ops ieee80211_ethtool_ops = {
 	.set_ringparam = ieee80211_set_ringparam,
 	.get_strings = ieee80211_get_strings,
 	.get_ethtool_stats = ieee80211_get_stats,
+#ifdef HAS_ETHTOOL_STATS2 /* Make backporting easier */
 	.get_ethtool_stats2 = ieee80211_get_stats2,
+#endif
 	.get_sset_count = ieee80211_get_sset_count,
 };
