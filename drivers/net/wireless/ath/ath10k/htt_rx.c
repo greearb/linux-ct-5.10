@@ -292,17 +292,25 @@ void ath10k_htt_rx_free(struct ath10k_htt *htt)
 	ath10k_htt_rx_ring_free(htt);
 	spin_unlock_bh(&htt->rx_ring.lock);
 
-	dma_free_coherent(htt->ar->dev,
-			  ath10k_htt_get_rx_ring_size(htt),
-			  ath10k_htt_get_vaddr_ring(htt),
-			  htt->rx_ring.base_paddr);
+	if (htt->rx_ring.base_paddr) {
+		dma_free_coherent(htt->ar->dev,
+				  ath10k_htt_get_rx_ring_size(htt),
+				  ath10k_htt_get_vaddr_ring(htt),
+				  htt->rx_ring.base_paddr);
+		htt->rx_ring.base_paddr = 0;
+	}
 
-	dma_free_coherent(htt->ar->dev,
-			  sizeof(*htt->rx_ring.alloc_idx.vaddr),
-			  htt->rx_ring.alloc_idx.vaddr,
-			  htt->rx_ring.alloc_idx.paddr);
+	if (htt->rx_ring.alloc_idx.paddr) {
+		dma_free_coherent(htt->ar->dev,
+				  sizeof(*htt->rx_ring.alloc_idx.vaddr),
+				  htt->rx_ring.alloc_idx.vaddr,
+				  htt->rx_ring.alloc_idx.paddr);
+		htt->rx_ring.alloc_idx.paddr = 0;
+	}
 
 	kfree(htt->rx_ring.netbufs_ring);
+	htt->rx_ring.netbufs_ring = NULL;
+	htt->rx_ring.size = 0;
 }
 
 static inline struct sk_buff *ath10k_htt_rx_netbuf_pop(struct ath10k_htt *htt)
