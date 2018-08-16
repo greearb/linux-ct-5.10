@@ -1378,6 +1378,12 @@ start_again:
 				ar->fwcfg.flags |= ATH10K_FWCFG_NOHWCRYPT;
 			}
 		}
+		else if (strcasecmp(filename, "ct_sta_mode") == 0) {
+			if (kstrtol(val, 0, &t) == 0) {
+				ar->fwcfg.ct_sta_mode = t;
+				ar->fwcfg.flags |= ATH10K_FWCFG_CT_STA;
+			}
+		}
 		else if (strcasecmp(filename, "nobeamform_mu") == 0) {
 			if (kstrtol(val, 0, &t) == 0) {
 				ar->fwcfg.nobeamform_mu = t;
@@ -3006,6 +3012,7 @@ static int ath10k_core_init_firmware_features(struct ath10k *ar)
 	else
 		ar->max_num_peers = max_num_peers;
 
+	ar->request_ct_sta = ath10k_modparam_ct_sta;
 	ar->request_nohwcrypt = ath10k_modparam_nohwcrypt;
 	ar->request_nobeamform_mu = ath10k_modparam_nobeamform_mu;
 	ar->request_nobeamform_su = ath10k_modparam_nobeamform_su;
@@ -3021,6 +3028,8 @@ static int ath10k_core_init_firmware_features(struct ath10k *ar)
 		ar->max_num_stations = ar->fwcfg.stations;
 	if (ar->fwcfg.flags & ATH10K_FWCFG_NOHWCRYPT)
 		ar->request_nohwcrypt = ar->fwcfg.nohwcrypt;
+	if (ar->fwcfg.flags & ATH10K_FWCFG_CT_STA)
+		ar->request_ct_sta = ar->fwcfg.ct_sta_mode;
 	if (ar->fwcfg.flags & ATH10K_FWCFG_NOBEAMFORM_MU)
 		ar->request_nobeamform_mu = ar->fwcfg.nobeamform_mu;
 	if (ar->fwcfg.flags & ATH10K_FWCFG_NOBEAMFORM_SU)
