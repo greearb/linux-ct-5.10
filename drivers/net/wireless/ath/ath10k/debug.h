@@ -310,6 +310,7 @@ do {								\
 		__ath10k_dbg(ar, dbg_mask, fmt, ##__VA_ARGS__); \
 } while (0)
 
+int ath10k_debug_fw_stats_request(struct ath10k *ar);
 int ath10k_refresh_peer_stats(struct ath10k *ar);
 void ath10k_dbg_print_fw_dbg_buffer(struct ath10k *ar, __le32 *buffer,
 				    int len, const char* lvl);
