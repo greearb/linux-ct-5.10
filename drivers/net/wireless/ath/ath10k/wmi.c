@@ -1675,6 +1675,7 @@ static const struct wmi_peer_flags_map wmi_10x_peer_flags_map = {
 	.spatial_mux = WMI_10X_PEER_SPATIAL_MUX,
 	.vht = WMI_10X_PEER_VHT,
 	.bw80 = WMI_10X_PEER_80MHZ,
+	.pmf = WMI_10X_PEER_PMF, /* CT only */
 	.bw160 = WMI_10X_PEER_160MHZ,
 };
 
