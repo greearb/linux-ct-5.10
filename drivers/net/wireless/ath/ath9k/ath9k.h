@@ -689,7 +689,7 @@ void ath9k_set_txpower(struct ath_softc *sc, struct ieee80211_vif *vif);
  * number of beacon intervals, the game's up.
  */
 #define BSTUCK_THRESH           	9
-#define	ATH_BCBUF               	8
+#define	ATH_BCBUF               	32
 #define ATH_DEFAULT_BINTVAL     	100 /* TU */
 #define ATH_DEFAULT_BMISS_LIMIT 	10
 
