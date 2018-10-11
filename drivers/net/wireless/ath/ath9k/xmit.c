@@ -2352,9 +2352,10 @@ out:
 }
 
 void ath_tx_cabq(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
-		 struct sk_buff *skb)
+		 const int slotwidth)
 {
 	struct ath_softc *sc = hw->priv;
+	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
 	struct ath_tx_control txctl = {
 		.txq = sc->beacon.cabq
 	};
@@ -2364,13 +2365,55 @@ void ath_tx_cabq(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 	LIST_HEAD(bf_q);
 	int duration = 0;
 	int max_duration;
+	int slot, firstslot;
+	int skippedSlots = 0;
+	struct sk_buff *skb;
+	struct ath_buf *lastbf[ATH_BCBUF] = {};
+	struct ath_frame_info *fi;
 
 	max_duration =
 		sc->cur_chan->beacon.beacon_interval * 1000 *
+		slotwidth *
 		sc->cur_chan->beacon.dtim_period / ATH_BCBUF;
 
-	do {
-		struct ath_frame_info *fi = get_frame_info(skb);
+	skb = ieee80211_get_buffered_bc(hw, vif);
+	if (skb) {
+		((struct ath_vif *) vif->drv_priv)->multicastWakeup = 1;
+	}
+
+	/* loop through all slots again and again until either max_duration is reached or all slots have no more packets */
+	firstslot = ((struct ath_vif *) vif->drv_priv)->av_bslot;
+	for (slot = firstslot; skippedSlots < ATH_BCBUF;
+	     slot = ((slot >= ATH_BCBUF - 1) ? 0 : (slot + 1))) {
+		if (slot == firstslot)
+			/* when all ATH_BCBUF many slots are empty, skippedSlots will reach ATH_BCBUF before slot=firstslot is reached again */
+			skippedSlots = 0;
+
+		vif = sc->beacon.bslot[slot];
+		if (!vif || !(((struct ath_vif *) vif->drv_priv)->multicastWakeup)) {
+			/* there is no vif for this slot or this bss is not woken up */
+			skippedSlots++;
+			continue;
+		};
+
+		if (!skb) /* keep first skb */
+			skb = ieee80211_get_buffered_bc(hw, vif);
+
+		if (!skb) {
+			/* this slot has no more entries */
+			if (lastbf[slot]) {
+				ath9k_set_moredata(sc, lastbf[slot], false);
+				lastbf[slot] = NULL;
+			}
+			((struct ath_vif *) vif->drv_priv)->multicastWakeup = 0;
+			skippedSlots++;
+			continue;
+		} else {
+			skippedSlots = 0;
+		}
+
+		ath_dbg(common, XMIT, "TX see skb in %s:%d for slot %d skb: %p\n", __func__, __LINE__, slot, skb);
+		fi = get_frame_info(skb);
 
 		if (ath_tx_prepare(hw, skb, &txctl))
 			break;
@@ -2378,6 +2421,8 @@ void ath_tx_cabq(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 		bf = ath_tx_setup_buffer(sc, txctl.txq, NULL, skb);
 		if (!bf)
 			break;
+
+		lastbf[slot] = bf; // this entry will not be freed until header is unset
 
 		bf->bf_lastbf = bf;
 		ath_set_rates(vif, NULL, bf);
@@ -2391,19 +2436,25 @@ void ath_tx_cabq(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 		skb = NULL;
 
 		if (duration > max_duration)
+		{
+			ath_dbg(common, XMIT, "TX max_duration %d < duration %d reached\n", max_duration, duration);
 			break;
-
-		skb = ieee80211_get_buffered_bc(hw, vif);
-	} while(skb);
+		} else {
+			ath_dbg(common, XMIT, "TX duration %d < max_duration %d reached\n", duration, max_duration);
+		}
+	};
 
 	if (skb)
+	{
+		ath_dbg(common, XMIT, "TX drop skb in %s:%d: skb: %p\n", __func__, __LINE__, skb);
 		ieee80211_free_txskb(hw, skb);
+		skb = NULL;
+	}
 
 	if (list_empty(&bf_q))
 		return;
 
-	bf = list_last_entry(&bf_q, struct ath_buf, list);
-	ath9k_set_moredata(sc, bf, false);
+	/* do not unset moredata as it will be unset only iff there are not more packets for that bss */
 
 	bf = list_first_entry(&bf_q, struct ath_buf, list);
 	ath_txq_lock(sc, txctl.txq);
@@ -2427,7 +2478,7 @@ static void ath_tx_complete(struct ath_softc *sc, struct sk_buff *skb,
 	int padpos, padsize;
 	unsigned long flags;
 
-	ath_dbg(common, XMIT, "TX complete: skb: %p\n", skb);
+	ath_dbg(common, XMIT, "TX complete: skb: %p error:%d\n", skb, !!(tx_flags & ATH_TX_ERROR));
 
 	if (sc->sc_ah->caldata)
 		set_bit(PAPRD_PACKET_SENT, &sc->sc_ah->caldata->cal_flags);

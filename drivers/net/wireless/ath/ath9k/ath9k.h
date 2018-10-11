@@ -599,7 +599,7 @@ void ath_assign_seq(struct ath_common *common, struct sk_buff *skb);
 int ath_tx_start(struct ieee80211_hw *hw, struct sk_buff *skb,
 		 struct ath_tx_control *txctl);
 void ath_tx_cabq(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
-		 struct sk_buff *skb);
+		 const int slotwidth);
 void ath_tx_tasklet(struct ath_softc *sc);
 void ath_tx_edma_tasklet(struct ath_softc *sc);
 int ath_tx_aggr_start(struct ath_softc *sc, struct ieee80211_sta *sta,
@@ -635,6 +635,7 @@ struct ath_vif {
 	struct ieee80211_vif *vif;
 	struct ath_node mcast_node;
 	int av_bslot;
+	bool multicastWakeup;
 	__le64 tsf_adjust; /* TSF adjustment for staggered beacons */
 	struct ath_buf *av_bcbuf;
 	struct ath_chanctx *chanctx;
