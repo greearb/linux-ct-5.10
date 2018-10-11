@@ -186,18 +186,48 @@ void ath9k_beacon_assign_slot(struct ath_softc *sc, struct ieee80211_vif *vif)
 {
 	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
 	struct ath_vif *avp = (void *)vif->drv_priv;
-	int slot;
+
+	int slot, i;
+	int curstart = 0; /* last item in use before free area */
+	int curwidth = 0; /* number of free items following curstart item */
+	int maxstart = 0;
+	int maxwidth = 0;
 
 	avp->multicastWakeup = 0;
 	avp->av_bcbuf = list_first_entry(&sc->beacon.bbuf, struct ath_buf, list);
 	list_del(&avp->av_bcbuf->list);
 
-	for (slot = 0; slot < ATH_BCBUF; slot++) {
-		if (sc->beacon.bslot[slot] == NULL) {
-			avp->av_bslot = slot;
-			break;
+	/* iterate two times over all slots and find maximum length empty area */
+	for (i = 0; i < 2; i++) {
+		for (slot = 0; slot < ATH_BCBUF; slot++) {
+			if (sc->beacon.bslot[slot] == NULL)
+				curwidth++;
+			else {
+				curstart = slot;
+				curwidth = 0;
+			}
+
+			if (curwidth > maxwidth) {
+				maxstart = curstart;
+				maxwidth = curwidth;
+			}
 		}
 	}
+
+	BUG_ON(maxwidth == 0);
+	if (maxwidth >= ATH_BCBUF) {
+		/* all slots are empty */
+		slot = 0;
+	} else {
+		/* use middle slot, round up */
+		/* given maxwidth > 0 --> maxwidth > 0 */
+		/* given maxwidth < n --> maxwidth <= n/2 < n for n > 0 */
+		maxwidth = (maxwidth + 1) / 2;
+		slot = (maxstart + maxwidth) % ATH_BCBUF;
+	}
+	BUG_ON(sc->beacon.bslot[slot] != NULL);
+
+	avp->av_bslot = slot;
 
 	sc->beacon.bslot[avp->av_bslot] = vif;
 
