@@ -1272,8 +1272,13 @@ static int ath9k_add_interface(struct ieee80211_hw *hw,
 	if (vif->type == NL80211_IFTYPE_STATION && ath9k_is_chanctx_enabled())
 		vif->driver_flags |= IEEE80211_VIF_GET_NOA_UPDATE;
 
-	if (ath9k_uses_beacons(vif->type))
-		ath9k_beacon_assign_slot(sc, vif);
+	if (ath9k_uses_beacons(vif->type)) {
+		if (!ath9k_beacon_assign_slot(sc, vif)) {
+			sc->cur_chan->nvifs--;
+			mutex_unlock(&sc->mutex);
+			return -EOPNOTSUPP;
+		}
+	}
 
 	avp->vif = vif;
 	if (!ath9k_is_chanctx_enabled()) {

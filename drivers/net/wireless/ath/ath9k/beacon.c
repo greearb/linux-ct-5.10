@@ -182,7 +182,7 @@ static struct ath_buf *ath9k_beacon_generate(struct ieee80211_hw *hw,
 	return bf;
 }
 
-void ath9k_beacon_assign_slot(struct ath_softc *sc, struct ieee80211_vif *vif)
+bool ath9k_beacon_assign_slot(struct ath_softc *sc, struct ieee80211_vif *vif)
 {
 	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
 	struct ath_vif *avp = (void *)vif->drv_priv;
@@ -192,6 +192,7 @@ void ath9k_beacon_assign_slot(struct ath_softc *sc, struct ieee80211_vif *vif)
 	int curwidth = 0; /* number of free items following curstart item */
 	int maxstart = 0;
 	int maxwidth = 0;
+	int old_maxw;
 
 	avp->multicastWakeup = 0;
 	avp->av_bcbuf = list_first_entry(&sc->beacon.bbuf, struct ath_buf, list);
@@ -214,6 +215,7 @@ void ath9k_beacon_assign_slot(struct ath_softc *sc, struct ieee80211_vif *vif)
 		}
 	}
 
+	old_maxw = maxwidth;
 	BUG_ON(maxwidth == 0);
 	if (maxwidth >= ATH_BCBUF) {
 		/* all slots are empty */
@@ -225,7 +227,16 @@ void ath9k_beacon_assign_slot(struct ath_softc *sc, struct ieee80211_vif *vif)
 		maxwidth = (maxwidth + 1) / 2;
 		slot = (maxstart + maxwidth) % ATH_BCBUF;
 	}
-	BUG_ON(sc->beacon.bslot[slot] != NULL);
+	if (sc->beacon.bslot[slot] != NULL) {
+		/* This should not happen, log to figure out why. */
+		ath_err(common, "beacon slot is null, slot: %d  maxwith: %d  old_maxw: %d ATH_BCBUF: %d max-start: %d\n",
+			slot, maxwidth, old_maxw, ATH_BCBUF, maxstart);
+		for (slot = 0; slot < ATH_BCBUF; slot++) {
+			ath_err(common, "slot[%d] == %p\n",
+				slot, sc->beacon.bslot[slot]);
+		}
+		return false;
+	}
 
 	avp->av_bslot = slot;
 
@@ -233,6 +244,7 @@ void ath9k_beacon_assign_slot(struct ath_softc *sc, struct ieee80211_vif *vif)
 
 	ath_dbg(common, CONFIG, "Added interface at beacon slot: %d\n",
 		avp->av_bslot);
+	return true;
 }
 
 void ath9k_beacon_remove_slot(struct ath_softc *sc, struct ieee80211_vif *vif)

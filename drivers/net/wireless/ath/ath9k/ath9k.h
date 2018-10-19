@@ -720,7 +720,7 @@ struct ath_beacon {
 void ath9k_beacon_tasklet(struct tasklet_struct *t);
 void ath9k_beacon_config(struct ath_softc *sc, struct ieee80211_vif *main_vif,
 			 bool beacons);
-void ath9k_beacon_assign_slot(struct ath_softc *sc, struct ieee80211_vif *vif);
+bool ath9k_beacon_assign_slot(struct ath_softc *sc, struct ieee80211_vif *vif);
 void ath9k_beacon_remove_slot(struct ath_softc *sc, struct ieee80211_vif *vif);
 void ath9k_beacon_ensure_primary_slot(struct ath_softc *sc);
 void ath9k_set_beacon(struct ath_softc *sc);
