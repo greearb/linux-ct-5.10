@@ -196,6 +196,8 @@ bool ath9k_beacon_assign_slot(struct ath_softc *sc, struct ieee80211_vif *vif)
 
 	avp->multicastWakeup = 0;
 	avp->av_bcbuf = list_first_entry(&sc->beacon.bbuf, struct ath_buf, list);
+	if (WARN_ON_ONCE(!avp->av_bcbuf))
+		return false;
 	list_del(&avp->av_bcbuf->list);
 
 	/* iterate two times over all slots and find maximum length empty area */
@@ -216,10 +218,15 @@ bool ath9k_beacon_assign_slot(struct ath_softc *sc, struct ieee80211_vif *vif)
 	}
 
 	old_maxw = maxwidth;
-	BUG_ON(maxwidth == 0);
 	if (maxwidth >= ATH_BCBUF) {
 		/* all slots are empty */
 		slot = 0;
+	} else if (maxwidth == 1) {
+		/* First empty one */
+		for (slot = 0; slot < ATH_BCBUF; slot++) {
+			if (sc->beacon.bslot[slot] == NULL)
+				break;
+		}
 	} else {
 		/* use middle slot, round up */
 		/* given maxwidth > 0 --> maxwidth > 0 */
@@ -227,15 +234,20 @@ bool ath9k_beacon_assign_slot(struct ath_softc *sc, struct ieee80211_vif *vif)
 		maxwidth = (maxwidth + 1) / 2;
 		slot = (maxstart + maxwidth) % ATH_BCBUF;
 	}
+
+	/* Check if all slots are full? */
+	if (WARN_ON_ONCE(slot == ATH_BCBUF))
+		goto free_bbuf;
+
 	if (sc->beacon.bslot[slot] != NULL) {
 		/* This should not happen, log to figure out why. */
-		ath_err(common, "beacon slot is null, slot: %d  maxwith: %d  old_maxw: %d ATH_BCBUF: %d max-start: %d\n",
+		ath_err(common, "beacon slot is NOT null, slot: %d  maxwith: %d  old_maxw: %d ATH_BCBUF: %d max-start: %d\n",
 			slot, maxwidth, old_maxw, ATH_BCBUF, maxstart);
 		for (slot = 0; slot < ATH_BCBUF; slot++) {
 			ath_err(common, "slot[%d] == %p\n",
 				slot, sc->beacon.bslot[slot]);
 		}
-		return false;
+		goto free_bbuf;
 	}
 
 	avp->av_bslot = slot;
@@ -245,6 +257,10 @@ bool ath9k_beacon_assign_slot(struct ath_softc *sc, struct ieee80211_vif *vif)
 	ath_dbg(common, CONFIG, "Added interface at beacon slot: %d\n",
 		avp->av_bslot);
 	return true;
+
+free_bbuf:
+	list_add_tail(&avp->av_bcbuf->list, &sc->beacon.bbuf);
+	return false;
 }
 
 void ath9k_beacon_remove_slot(struct ath_softc *sc, struct ieee80211_vif *vif)
