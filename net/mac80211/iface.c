@@ -354,6 +354,9 @@ static int ieee80211_check_concurrent_iface(struct ieee80211_sub_if_data *sdata,
 	mutex_lock(&local->chanctx_mtx);
 	ret = ieee80211_check_combinations(sdata, NULL, 0, 0);
 	mutex_unlock(&local->chanctx_mtx);
+	if (ret)
+		sdata_info(sdata, "check-concurrent-iface:  check-combinations failed: %d\n", ret);
+
 	return ret;
 }
 

@@ -1795,7 +1795,7 @@ int ieee80211_ibss_join(struct ieee80211_sub_if_data *sdata,
 					   radar_detect_width);
 	mutex_unlock(&local->chanctx_mtx);
 	if (ret < 0) {
-		sdata_info(sdata, "ibss-join:  Failed iface combination check.\n");
+		sdata_info(sdata, "ibss-join:  Failed iface combination check: %d\n", ret);
 		return ret;
 	}
 
