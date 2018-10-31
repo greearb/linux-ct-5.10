@@ -507,7 +507,7 @@ static void __ieee80211_wake_queue(struct ieee80211_hw *hw, int queue,
 
 	trace_wake_queue(local, queue, reason);
 
-	if (WARN_ON(queue >= hw->queues)) {
+	if (WARN_ON_ONCE(queue >= hw->queues)) {
 		pr_err("wake-queue, queue: %d > hw->queues: %d\n",
 		       queue, hw->queues);
 		return;
