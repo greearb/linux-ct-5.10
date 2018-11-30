@@ -3907,7 +3907,7 @@ int ath10k_debug_register(struct ath10k *ar)
 		debugfs_create_file("dfs_simulate_radar", 0200, ar->debug.debugfs_phy,
 				    ar, &fops_simulate_radar);
 
-		debugfs_create_bool("dfs_block_radar_events", 0200,
+		debugfs_create_bool("dfs_block_radar_events", 0644,
 				    ar->debug.debugfs_phy,
 				    &ar->dfs_block_radar_events);
 
