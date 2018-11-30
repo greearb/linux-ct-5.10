@@ -46,6 +46,7 @@ struct ath_dfs_pool_stats {
  * @width: pulse duration in us
  * @rssi: rssi of radar event
  * @chirp: chirp detected in pulse
+ * @msg: Debug/detect message that caller may be interested in seeing.
  */
 struct pulse_event {
 	u64 ts;
@@ -53,6 +54,8 @@ struct pulse_event {
 	u8 width;
 	u8 rssi;
 	bool chirp;
+#define ATH_HAVE_PULSE_EVENT_MSG
+	char msg[120];
 };
 
 /**
