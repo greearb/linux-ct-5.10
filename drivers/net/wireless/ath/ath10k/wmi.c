@@ -4343,6 +4343,8 @@ static void ath10k_dfs_radar_report(struct ath10k *ar,
 	u8 rssi, width;
 	struct ath10k_radar_found_info *radar_info;
 
+	pe.msg[0] = 0;
+
 	reg0 = __le32_to_cpu(rr->reg0);
 	reg1 = __le32_to_cpu(rr->reg1);
 
@@ -4445,6 +4447,16 @@ static void ath10k_dfs_radar_report(struct ath10k *ar,
 	}
 
 radar_detected:
+
+#ifdef ATH_HAVE_PULSE_EVENT_MSG /* so we can compile out-of-tree easier */
+	if (pe.msg[0]) {
+		strncpy(ar->debug.dfs_last_msg, pe.msg,
+			sizeof(ar->debug.dfs_last_msg));
+		/* ensure null term */
+		ar->debug.dfs_last_msg[sizeof(ar->debug.dfs_last_msg) - 1] = 0;
+	}
+#endif
+
 	ath10k_radar_detected(ar);
 }
 

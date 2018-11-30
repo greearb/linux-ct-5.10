@@ -796,6 +796,7 @@ struct ath10k_debug {
 	u64 tx_noack_bytes;
 	u64 tx_discard_bytes;
 	u64 tx_bytes; /* counter, total sent to firmware */
+	char dfs_last_msg[120];
 };
 
 enum ath10k_state {

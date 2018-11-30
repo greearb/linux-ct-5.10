@@ -2810,6 +2810,9 @@ static ssize_t ath10k_read_dfs_stats(struct file *file, char __user *user_buf,
 	ATH10K_DFS_POOL_STAT("Seqs. alloc error", pseq_alloc_error);
 	ATH10K_DFS_POOL_STAT("Seqs. in use", pseq_used);
 
+	len += scnprintf(buf + len, size - len, "Last-DFS-Msg: %s\n",
+			 ar->debug.dfs_last_msg);
+
 exit:
 	if (len > size)
 		len = size;
