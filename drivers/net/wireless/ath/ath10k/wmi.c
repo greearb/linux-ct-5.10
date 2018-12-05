@@ -7363,6 +7363,11 @@ static struct sk_buff *ath10k_wmi_10_4_op_gen_init(struct ath10k *ar)
 			 */
 			config.qwrap_config = __cpu_to_le32(1 << 16 | TARGET_10_4_QWRAP_CONFIG);
 		}
+
+		if (test_bit(ATH10K_FW_FEATURE_TXRATE2_CT,
+			     ar->running_fw->fw_file.fw_features))
+			config.rx_decap_mode |= __cpu_to_le32(ATH10k_USE_TXCOMPL_TXRATE2);
+
 		/* Disable WoW in firmware, could make this module option perhaps? */
 		config.rx_decap_mode |= __cpu_to_le32(ATH10k_DISABLE_WOW);
 
