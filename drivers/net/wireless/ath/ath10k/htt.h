@@ -2116,7 +2116,8 @@ struct ath10k_htt_tx_ops {
 	int (*htt_send_frag_desc_bank_cfg)(struct ath10k_htt *htt);
 	int (*htt_alloc_frag_desc)(struct ath10k_htt *htt);
 	void (*htt_free_frag_desc)(struct ath10k_htt *htt);
-	int (*htt_tx)(struct ath10k_htt *htt, enum ath10k_hw_txrx_mode txmode,
+	int (*htt_tx)(struct ath10k_htt *htt, struct ieee80211_vif *vif,
+		      enum ath10k_hw_txrx_mode txmode,
 		      struct sk_buff *msdu);
 	int (*htt_alloc_txbuff)(struct ath10k_htt *htt);
 	void (*htt_free_txbuff)(struct ath10k_htt *htt);
@@ -2157,10 +2158,11 @@ static inline void ath10k_htt_free_frag_desc(struct ath10k_htt *htt)
 }
 
 static inline int ath10k_htt_tx(struct ath10k_htt *htt,
+				struct ieee80211_vif *vif,
 				enum ath10k_hw_txrx_mode txmode,
 				struct sk_buff *msdu)
 {
-	return htt->tx_ops->htt_tx(htt, txmode, msdu);
+	return htt->tx_ops->htt_tx(htt, vif, txmode, msdu);
 }
 
 static inline void ath10k_htt_flush_tx(struct ath10k_htt *htt)

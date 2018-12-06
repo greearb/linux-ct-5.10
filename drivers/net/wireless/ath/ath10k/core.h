@@ -663,6 +663,17 @@ struct ath10k_vif {
 	int txpower;
 	bool ftm_responder;
 
+	/* TX Rate overrides, CT FW only at this time, and only wave-2 has full support */
+	bool txo_active;
+	u8 txo_tpc;
+	u8 txo_mcs;
+	u8 txo_nss;
+	u8 txo_pream;
+	u8 txo_retries;
+	u8 txo_dynbw;
+	u8 txo_bw;
+	u8 txo_rix; /* wave-1 only */
+
 	/* Firmware allows configuring rate of each of these traffic types.
 	 * 0xFF will mean value has not been set by user, and in that case,
 	 * we will auto-adjust the rates based on the legacy rate mask.
