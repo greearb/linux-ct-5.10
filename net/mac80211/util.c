@@ -4576,7 +4576,7 @@ int ieee80211_check_combinations(struct ieee80211_sub_if_data *sdata,
 		return 0;
 
 	ret = cfg80211_check_combinations(local->hw.wiphy, &params);
-	if (!ret)
+	if (ret < 0)
 		sdata_info(sdata, "ieee80211_check_combinations:  cfg80211-check-combinations failed: %d\n", ret);
 	return ret;
 }
