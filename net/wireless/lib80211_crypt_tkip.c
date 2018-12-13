@@ -596,11 +596,16 @@ static int lib80211_michael_mic_verify(struct sk_buff *skb, int keyidx,
 		return -1;
 	if (memcmp(mic, skb->data + skb->len - 8, 8) != 0) {
 		struct ieee80211_hdr *hdr;
+		u8* smic = skb->data + skb->len - 8;
 		hdr = (struct ieee80211_hdr *)skb->data;
-		printk(KERN_DEBUG "%s: Michael MIC verification failed for "
-		       "MSDU from %pM keyidx=%d\n",
-		       skb->dev ? skb->dev->name : "N/A", hdr->addr2,
-		       keyidx);
+		pr_info("%s: Michael MIC verification failed for "
+			"MSDU from %pM keyidx=%d "
+			"calc-mic: %02hx:%02hx:%02hx:%02hx:%02hx:%02hx:%02hx:%02hx "
+			"skb-skb:  %02hx:%02hx:%02hx:%02hx:%02hx:%02hx:%02hx:%02hx\n",
+			skb->dev ? skb->dev->name : "N/A", hdr->addr2,
+			keyidx,
+			mic[0], mic[1], mic[2], mic[3], mic[4], mic[5], mic[6], mic[7],
+			smic[0], smic[1], smic[2], smic[3], smic[4], smic[5], smic[6], smic[7]);
 		if (skb->dev)
 			lib80211_michael_mic_failure(skb->dev, hdr, keyidx);
 		tkey->dot11RSNAStatsTKIPLocalMICFailures++;

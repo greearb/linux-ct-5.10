@@ -116,8 +116,10 @@ ieee80211_rx_h_michael_mic_verify(struct ieee80211_rx_data *rx)
 	 * MIC failure report.
 	 */
 	if (status->flag & (RX_FLAG_MMIC_STRIPPED | RX_FLAG_IV_STRIPPED)) {
-		if (status->flag & RX_FLAG_MMIC_ERROR)
+		if (status->flag & RX_FLAG_MMIC_ERROR) {
+			sdata_info(rx->sdata, "Michael-MIC failure: MMIC or IV stripped, MMIC_ERROR asserted.\n");
 			goto mic_fail_no_key;
+		}
 
 		if (!(status->flag & RX_FLAG_IV_STRIPPED) && rx->key &&
 		    rx->key->conf.cipher == WLAN_CIPHER_SUITE_TKIP)
@@ -145,8 +147,10 @@ ieee80211_rx_h_michael_mic_verify(struct ieee80211_rx_data *rx)
 		return RX_DROP_UNUSABLE;
 	}
 
-	if (status->flag & RX_FLAG_MMIC_ERROR)
+	if (status->flag & RX_FLAG_MMIC_ERROR) {
+		sdata_info(rx->sdata, "Michael-MIC failure: MMIC_ERROR asserted.\n");
 		goto mic_fail;
+	}
 
 	hdrlen = ieee80211_hdrlen(hdr->frame_control);
 	if (skb->len < hdrlen + MICHAEL_MIC_LEN)
@@ -160,8 +164,18 @@ ieee80211_rx_h_michael_mic_verify(struct ieee80211_rx_data *rx)
 	data_len = skb->len - hdrlen - MICHAEL_MIC_LEN;
 	key = &rx->key->conf.key[NL80211_TKIP_DATA_OFFSET_RX_MIC_KEY];
 	michael_mic(key, hdr, data, data_len, mic);
-	if (crypto_memneq(mic, data + data_len, MICHAEL_MIC_LEN))
+	if (crypto_memneq(mic, data + data_len, MICHAEL_MIC_LEN)) {
+		u8 *smic = data + data_len;
+		sdata_info(rx->sdata, "Michael-MIC failure: mic comparison failed,"
+			   "calc-mic: %02hx:%02hx:%02hx:%02hx:%02hx:%02hx:%02hx:%02hx "
+			   "skb-mic:  %02hx:%02hx:%02hx:%02hx:%02hx:%02hx:%02hx:%02hx\n",
+			   mic[0], mic[1], mic[2], mic[3], mic[4], mic[5], mic[6], mic[7],
+			   smic[0], smic[1], smic[2], smic[3], smic[4], smic[5], smic[6], smic[7]);
+		sdata_info(rx->sdata, "MIC failure pkt: addr1: %pM  addr2: %pM, skb-len: %d\n",
+			   hdr->addr1, hdr->addr2, skb->len);
+
 		goto mic_fail;
+	}
 
 	/* remove Michael MIC from payload */
 	skb_trim(skb, skb->len - MICHAEL_MIC_LEN);
