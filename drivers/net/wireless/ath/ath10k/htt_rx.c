@@ -3472,6 +3472,13 @@ static void ath10k_htt_rx_tx_fetch_ind(struct ath10k *ar, struct sk_buff *skb)
 
 	rcu_read_lock();
 
+	/* Wave-2 firmware that I saw uses a u8 to store the num-records in the handler
+	 * code, so if driver sends > 256, driver and firmware will be out of sync.  I am
+	 * fixing this in my firmware, but WARN here so we can know if other firmware would
+	 * ever see this problem.
+	 */
+	WARN_ON_ONCE(num_records > 256);
+
 	for (i = 0; i < num_records; i++) {
 		record = &resp->tx_fetch_ind.records[i];
 		peer_id = MS(le16_to_cpu(record->info),
