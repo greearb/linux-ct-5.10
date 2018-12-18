@@ -3865,7 +3865,14 @@ ath10k_update_per_peer_tx_stats(struct ath10k *ar,
 		return;
 
 	if (txrate.flags == WMI_RATE_PREAMBLE_VHT && txrate.mcs > 9) {
-		ath10k_warn(ar, "Invalid VHT mcs %hhd peer stats",  txrate.mcs);
+		static bool done_once = 0;
+		if (!done_once) {
+			ath10k_warn(ar, "Invalid VHT mcs %hhd peer stats",  txrate.mcs);
+			done_once = true;
+		}
+		else {
+			ath10k_dbg(ar, ATH10K_DBG_HTT, "Invalid VHT mcs %hhd peer stats",  txrate.mcs);
+		}
 		return;
 	}
 
@@ -3992,8 +3999,17 @@ static void ath10k_htt_fetch_peer_stats(struct ath10k *ar,
 	spin_lock_bh(&ar->data_lock);
 	peer = ath10k_peer_find_by_id(ar, peer_id);
 	if (!peer || !peer->sta) {
-		ath10k_warn(ar, "Invalid peer id %d or peer stats buffer, peer: %p  sta: %p\n",
-			    peer_id, peer, peer ? peer->sta : NULL);
+		static bool done_once = false;
+		if (!done_once) {
+			ath10k_warn(ar, "Invalid peer id %d or peer stats buffer, peer: %p  sta: %p\n",
+				    peer_id, peer, peer ? peer->sta : NULL);
+			done_once = true;
+		}
+		else {
+			ath10k_dbg(ar, ATH10K_DBG_HTT,
+				   "Invalid peer id %d or peer stats buffer, peer: %p  sta: %p\n",
+				   peer_id, peer, peer ? peer->sta : NULL);
+		}
 		goto out;
 	}
 
