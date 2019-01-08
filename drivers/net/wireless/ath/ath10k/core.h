@@ -666,6 +666,7 @@ struct ath10k_vif {
 	/* TX Rate overrides, CT FW only at this time, and only wave-2 has full support */
 	bool txo_active;
 	u8 txo_tpc;
+	u8 txo_sgi;
 	u8 txo_mcs;
 	u8 txo_nss;
 	u8 txo_pream;
