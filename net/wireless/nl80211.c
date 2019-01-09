@@ -5230,8 +5230,10 @@ static int nl80211_start_ap(struct sk_buff *skb, struct genl_info *info)
 		return -EINVAL;
 
 	err = nl80211_parse_beacon(rdev, info->attrs, &params.beacon);
-	if (err)
+	if (err) {
+		pr_err("start-ap, parse-beacon failed: %d\n", err);
 		return err;
+	}
 
 	params.beacon_interval =
 		nla_get_u32(info->attrs[NL80211_ATTR_BEACON_INTERVAL]);
@@ -5363,14 +5365,14 @@ static int nl80211_start_ap(struct sk_buff *skb, struct genl_info *info)
 
 	params.pbss = nla_get_flag(info->attrs[NL80211_ATTR_PBSS]);
 	if (params.pbss && !rdev->wiphy.bands[NL80211_BAND_60GHZ]) {
-		pr_err("parse-chandef:  chandef is not valid\n");
+		pr_err("start-ap:  pbss and not 50Ghz\n");
 		return -EOPNOTSUPP;
 	}
 
 	if (info->attrs[NL80211_ATTR_ACL_POLICY]) {
 		params.acl = parse_acl_data(&rdev->wiphy, info);
 		if (IS_ERR(params.acl)) {
-			pr_err("parse-chandef: chandef is not usable.\n");
+			pr_err("start-apf: acl invalid.\n");
 			return PTR_ERR(params.acl);
 		}
 	}
