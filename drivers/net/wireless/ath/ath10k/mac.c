@@ -8660,8 +8660,8 @@ static void ath10k_flush(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
         /* If we are CT firmware, ask it to flush all tids on all peers on
          * all vdevs.  Normal firmware will just crash if you do this.
          */
-        if (0 /* test_bit(ATH10K_FW_FEATURE_FLUSH_ALL_CT,
-		   ar->running_fw->fw_file.fw_features)*/) {
+        if (test_bit(ATH10K_FW_FEATURE_FLUSH_ALL_CT,
+		     ar->running_fw->fw_file.fw_features)) {
                 ath10k_wmi_peer_flush(ar, vid, peer_addr, 0xFFFFFFFF);
                 /* I am not sure the wave-2 push-tx logic works right with
                  * flushing, so just bail out after making the proper
