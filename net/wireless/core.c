@@ -619,10 +619,11 @@ static int wiphy_verify_combinations(struct wiphy *wiphy)
 			 * some drivers support that, possibly only with fixed
 			 * beacon intervals for IBSS.
 			 */
-			if (WARN_ON(types & BIT(NL80211_IFTYPE_ADHOC) &&
-				    c->beacon_int_min_gcd)) {
-				return -EINVAL;
-			}
+			// Give users more rope. -Ben
+			//if (WARN_ON(types & BIT(NL80211_IFTYPE_ADHOC) &&
+			//	    c->beacon_int_min_gcd)) {
+			//	return -EINVAL;
+			//}
 
 			cnt += c->limits[j].max;
 			/*
