@@ -515,6 +515,7 @@ static void ieee80211_do_stop(struct ieee80211_sub_if_data *sdata,
 
 	cancel_work_sync(&sdata->csa_finalize_work);
 
+	sdata_info(sdata, "do_stop, canceling dfs-cac-timer-work.\n");
 	cancel_delayed_work_sync(&sdata->dfs_cac_timer_work);
 
 	if (sdata->wdev.cac_started) {
