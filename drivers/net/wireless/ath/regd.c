@@ -651,9 +651,10 @@ ath_regd_init_wiphy(struct ath_regulatory *reg,
 					 struct regulatory_request *request))
 {
 	const struct ieee80211_regdomain *regd;
+	bool apply_rd = true;
 
 	wiphy->reg_notifier = reg_notifier;
-	wiphy->regulatory_flags |= REGULATORY_STRICT_REG |
+	wiphy->regulatory_flags |= /* REGULATORY_STRICT_REG | This makes us reboot to change country code! --Ben */
 				   REGULATORY_CUSTOM_REG;
 
 	if (ath_is_world_regd(reg)) {
@@ -670,9 +671,25 @@ ath_regd_init_wiphy(struct ath_regulatory *reg,
 		 * cfg80211's but we enable passive scanning.
 		 */
 		regd = ath_default_world_regdomain();
+		if (!((strncmp(reg->alpha2, "99", 2) == 0) ||
+		      (strncmp(reg->alpha2, "00", 2) == 0))) {
+			apply_rd = false;
+			pr_info("ath:  Not applying default regdom, alpha2: %c%c\n",
+				reg->alpha2[0], reg->alpha2[1]);
+			wiphy->regulatory_flags &= ~REGULATORY_CUSTOM_REG;
+		}
 	}
 
-	wiphy_apply_custom_regulatory(wiphy, regd);
+	// If we set US regulatory domain in the driver, then it no longer matches world-regd, which
+	// means we get the default very limitted regdom.  The comment above says 'in absence of CRDA',
+	// but it seems that really it is the intersection of CRDA and world regdom.
+	// So, if country code is specified, and we end up with default regdb, just don't apply it.
+	// --Ben
+	if (apply_rd) {
+		pr_info("ath:  Applying custom regulatory.\n");
+		wiphy_apply_custom_regulatory(wiphy, regd);
+	}
+
 	ath_reg_apply_radar_flags(wiphy, reg);
 	ath_reg_apply_world_flags(wiphy, NL80211_REGDOM_SET_BY_DRIVER, reg);
 	return 0;
