@@ -550,15 +550,15 @@ static int call_crda(const char *alpha2)
 		 alpha2[0], alpha2[1]);
 
 	if (reg_crda_timeouts > REG_MAX_CRDA_TIMEOUTS) {
-		pr_debug("Exceeded CRDA call max attempts. Not calling CRDA\n");
+		pr_info("Exceeded CRDA call max attempts. Not calling CRDA\n");
 		return -EINVAL;
 	}
 
 	if (!is_world_regdom((char *) alpha2))
-		pr_debug("Calling CRDA for country: %c%c\n",
+		pr_info("Calling CRDA for country: %c%c\n",
 			 alpha2[0], alpha2[1]);
 	else
-		pr_debug("Calling CRDA to update world regulatory domain\n");
+		pr_info("Calling CRDA to update world regulatory domain\n");
 
 	ret = kobject_uevent_env(&reg_pdev->dev.kobj, KOBJ_CHANGE, env);
 	if (ret)
@@ -1999,13 +1999,13 @@ disable_chan:
 		if (lr->initiator == NL80211_REGDOM_SET_BY_DRIVER &&
 		    request_wiphy && request_wiphy == wiphy &&
 		    request_wiphy->regulatory_flags & REGULATORY_STRICT_REG) {
-			pr_debug("Disabling freq %d.%03d MHz for good\n",
-				 chan->center_freq, chan->freq_offset);
+			pr_info("wiphy %pM: Disabling freq %d.%03d MHz for good (strict-REG)\n",
+				wiphy->perm_addr, chan->center_freq, chan->freq_offset);
 			chan->orig_flags |= IEEE80211_CHAN_DISABLED;
 			chan->flags = chan->orig_flags;
 		} else {
-			pr_debug("Disabling freq %d.%03d MHz\n",
-				 chan->center_freq, chan->freq_offset);
+			pr_info("wiphy %pM: Disabling freq %d.%03d MHz\n",
+				wiphy->perm_addr, chan->center_freq, chan->freq_offset);
 			chan->flags |= IEEE80211_CHAN_DISABLED;
 		}
 		return;
@@ -2503,8 +2503,8 @@ static void handle_channel_custom(struct wiphy *wiphy,
 	}
 
 	if (IS_ERR_OR_NULL(reg_rule)) {
-		pr_debug("Disabling freq %d.%03d MHz as custom regd has no rule that fits it\n",
-			 chan->center_freq, chan->freq_offset);
+		pr_info("%pM: Disabling freq %d.%03d MHz as custom regd has no rule that fits it\n",
+			wiphy->perm_addr, chan->center_freq, chan->freq_offset);
 		if (wiphy->regulatory_flags & REGULATORY_WIPHY_SELF_MANAGED) {
 			chan->flags |= IEEE80211_CHAN_DISABLED;
 		} else {
