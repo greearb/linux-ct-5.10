@@ -11071,8 +11071,7 @@ int ath10k_mac_register(struct ath10k *ar)
 			ATH_ASSIGN_CONST_U16(ar->if_comb[0].limits[0].max, ar->max_num_vdevs);
 			ar->if_comb[0].max_interfaces = ar->max_num_vdevs;
 
-			if (ar->if_comb[0].limits[1].max > ar->max_num_vdevs)
-				ATH_ASSIGN_CONST_U16(ar->if_comb[0].limits[1].max, ar->max_num_vdevs);
+			ATH_ASSIGN_CONST_U16(ar->if_comb[0].limits[1].max, min(ar->max_num_vdevs, 24)); /* vap limits */
 
 			ar->hw->wiphy->interface_modes |= BIT(NL80211_IFTYPE_ADHOC);
 
