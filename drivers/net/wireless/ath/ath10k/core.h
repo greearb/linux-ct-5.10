@@ -611,6 +611,7 @@ enum ath10k_beacon_state {
 
 struct ath10k_vif {
 	struct list_head list;
+	struct completion beacon_tx_done;
 
 	u32 vdev_id;
 	u16 peer_id;

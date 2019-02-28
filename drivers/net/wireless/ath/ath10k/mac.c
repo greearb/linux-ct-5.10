@@ -6043,6 +6043,10 @@ static int ath10k_add_interface(struct ieee80211_hw *hw,
 	arvif->ar = ar;
 	arvif->vif = vif;
 
+	init_completion(&arvif->beacon_tx_done);
+	/* start completed since we have not sent any beacons yet */
+	complete(&arvif->beacon_tx_done);
+
 	INIT_LIST_HEAD(&arvif->list);
 	INIT_WORK(&arvif->ap_csa_work, ath10k_mac_vif_ap_csa_work);
 	INIT_DELAYED_WORK(&arvif->connection_loss_work,
@@ -6404,6 +6408,16 @@ static void ath10k_remove_interface(struct ieee80211_hw *hw,
 	if (ret)
 		ath10k_warn(ar, "failed to stop spectral for vdev %i: %d\n",
 			    arvif->vdev_id, ret);
+
+	if (test_bit(ATH10K_FW_FEATURE_BEACON_TX_CB_CT,
+		      ar->running_fw->fw_file.fw_features)) {
+		int time_left;
+
+		time_left = wait_for_completion_timeout(&arvif->beacon_tx_done, (3 * HZ));
+		if (!time_left)
+			ath10k_warn(ar, "WARNING: failed to wait for beacon tx callback for vdev %i: %d\n",
+				    arvif->vdev_id, ret);
+	}
 
 	ar->free_vdev_map |= 1LL << arvif->vdev_id;
 	spin_lock_bh(&ar->data_lock);
