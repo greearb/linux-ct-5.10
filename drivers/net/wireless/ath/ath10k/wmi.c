@@ -6779,6 +6779,9 @@ static void ath10k_wmi_10_4_op_rx(struct ath10k *ar, struct sk_buff *skb)
 	case WMI_10_4_TXBF_CV_MESG_EVENTID:
 		ath10k_wmi_event_txbf_cv_mesg(ar, skb);
 		break;
+	case WMI_10_4_BEACON_TX_EVENTID: /* Feb 28, 2019 CT firmware supports this */
+		ath10k_wmi_event_beacon_tx(ar, skb);
+		break;
 	case WMI_10_4_PDEV_TPC_TABLE_EVENTID:
 		ath10k_wmi_event_tpc_final_table(ar, skb);
 		break;
