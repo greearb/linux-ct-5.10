@@ -62,8 +62,14 @@ static void ath10k_set_tx_rate_status(struct ath10k *ar,
 		ch = ar->rx_channel;
 
 	if (tx_done->mpdus_failed) {
-		/* Maybe there is a better way to report this tried vs failed stat up the stack? */
-		rate->count = tx_done->mpdus_failed + 1;
+		if (tx_done->status == HTT_TX_COMPL_STATE_ACK) {
+			/* We failed some, but then succeeded (+1) */
+			rate->count = tx_done->mpdus_failed + 1;
+		}
+		else {
+			/* We failed all of them */
+			rate->count = tx_done->mpdus_failed;
+		}
 	}
 	else {
 		rate->count = 1;
