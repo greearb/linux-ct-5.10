@@ -1523,6 +1523,7 @@ enum wmi_10x_cmd_id {
 	WMI_10X_SET_CCA_PARAMS_CMDID,
 	WMI_10X_PDEV_BSS_CHAN_INFO_REQUEST,
 
+	WMI_PDEV_CONSUME_BLOCK_ACK_CMDID_CT = WMI_10X_END_CMDID - 102, /* CT Specific Command ID */
 	WMI_PDEV_SET_SPECIAL_CMDID = WMI_10X_END_CMDID - 101, /* CT only:  special hack (cts/slot/cifs/ack timers, etc) */
 	WMI_NOP = WMI_10X_END_CMDID - 100, /* CT only:  wmi transport keep-alive, basically */
 

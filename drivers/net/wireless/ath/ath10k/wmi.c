@@ -306,6 +306,7 @@ static struct wmi_cmd_map wmi_10x_cmd_map = {
 	.sta_keepalive_cmd = WMI_CMD_UNSUPPORTED,
 	.echo_cmdid = WMI_10X_ECHO_CMDID,
 	.pdev_utf_cmdid = WMI_10X_PDEV_UTF_CMDID,
+	.pdev_consume_block_ack_cmdid = WMI_PDEV_CONSUME_BLOCK_ACK_CMDID_CT,
 	.dbglog_cfg_cmdid = WMI_10X_DBGLOG_CFG_CMDID,
 	.pdev_qvit_cmdid = WMI_10X_PDEV_QVIT_CMDID,
 	.pdev_ftm_intg_cmdid = WMI_CMD_UNSUPPORTED,
