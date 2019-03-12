@@ -1407,6 +1407,11 @@ static void ieee80211_iface_work(struct work_struct *work)
 		if (ieee80211_is_action(mgmt->frame_control) &&
 		    mgmt->u.action.category == WLAN_CATEGORY_BACK) {
 			int len = skb->len;
+			int barv = drv_consume_block_ack(local, sdata, skb);
+
+			/*pr_err("called drv_consume_blockack, rv: %d\n", barv);*/
+			if (barv == 0)
+				goto done_skb_free;
 
 			mutex_lock(&local->sta_mtx);
 			sta = sta_info_get_bss(sdata, mgmt->sa);
@@ -1511,6 +1516,8 @@ static void ieee80211_iface_work(struct work_struct *work)
 			WARN(1, "frame for unexpected interface type");
 			break;
 		}
+
+	done_skb_free:
 
 		kfree_skb(skb);
 	}

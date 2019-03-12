@@ -130,6 +130,9 @@ static inline void drv_set_wakeup(struct ieee80211_local *local,
 }
 #endif
 
+int drv_consume_block_ack(struct ieee80211_local *local,
+			  struct ieee80211_sub_if_data *sdata, struct sk_buff *skb);
+
 int drv_add_interface(struct ieee80211_local *local,
 		      struct ieee80211_sub_if_data *sdata);
 

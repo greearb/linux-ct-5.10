@@ -3881,6 +3881,14 @@ enum ieee80211_reconfig_type {
  * @set_tid_config: Apply TID specific configurations. This callback may sleep.
  * @reset_tid_config: Reset TID specific configuration for the peer.
  *	This callback may sleep.
+ * @consume_block_ack: Offer block-ack management frames back to driver to see
+ *      if it wishes to consume it.  This can be useful for when firmware wants
+ *      to handle block-ack logic itself, but PMF is used and the firmware
+ *      cannot actually decode the block-ack frames itself.  So, firmware can
+ *      pass the encoded block-ack up the stack, and receive it through this
+ *      callback.  If return value is zero, the mac80211 stack will not further
+ *      process the skb.  skb will be freed by calling code, so driver must
+ *      make a copy of anything it needs in the skb before returning.
  * @update_vif_offload: Update virtual interface offload flags
  *	This callback may sleep.
  * @sta_set_4addr: Called to notify the driver when a station starts/stops using
@@ -4183,6 +4191,8 @@ struct ieee80211_ops {
 	void (*del_nan_func)(struct ieee80211_hw *hw,
 			    struct ieee80211_vif *vif,
 			    u8 instance_id);
+	int (*consume_block_ack)(struct ieee80211_hw *hw,
+				 struct ieee80211_vif *vif, struct sk_buff* skb);
 	bool (*can_aggregate_in_amsdu)(struct ieee80211_hw *hw,
 				       struct sk_buff *head,
 				       struct sk_buff *skb);
