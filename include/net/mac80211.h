@@ -4191,6 +4191,7 @@ struct ieee80211_ops {
 	void (*del_nan_func)(struct ieee80211_hw *hw,
 			    struct ieee80211_vif *vif,
 			    u8 instance_id);
+#define HAS_CONSUME_BLOCK_ACK
 	int (*consume_block_ack)(struct ieee80211_hw *hw,
 				 struct ieee80211_vif *vif, struct sk_buff* skb);
 	bool (*can_aggregate_in_amsdu)(struct ieee80211_hw *hw,
