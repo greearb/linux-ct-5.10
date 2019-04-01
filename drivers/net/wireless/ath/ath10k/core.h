@@ -209,6 +209,10 @@ struct ath10k_wmi {
 	u32 num_mem_chunks;
 	u32 rx_decap_mode;
 	struct ath10k_mem_chunk mem_chunks[WMI_MAX_MEM_REQS];
+
+	int gen_buf_len; /* so far */
+	u8 gen_buffer[2048]; /* Not clear what is true max size */
+	struct wmi_generic_buffer_event last_generic_event;
 };
 
 struct ath10k_fw_stats_peer {
@@ -810,6 +814,12 @@ struct ath10k_debug {
 	u64 tx_discard_bytes;
 	u64 tx_bytes; /* counter, total sent to firmware */
 	char dfs_last_msg[120];
+
+	int ratepwr_tbl_len;
+	struct qc988xxEepromRateTbl ratepwr_tbl;
+	struct completion ratepwr_tbl_complete;
+
+	struct qca9880_power_ctrl powerctl_tbl;
 };
 
 enum ath10k_state {
