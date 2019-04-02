@@ -10203,6 +10203,7 @@ static const struct wmi_ops wmi_10_1_ops = {
 	 * in the first place.
 	 */
 	.gen_pdev_bss_chan_info_req = ath10k_wmi_10_2_op_gen_pdev_bss_chan_info,
+	.gen_pdev_get_tpc_config = ath10k_wmi_10_2_4_op_gen_pdev_get_tpc_config,
 };
 
 static const struct wmi_ops wmi_10_2_ops = {
