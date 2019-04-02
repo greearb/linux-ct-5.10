@@ -2785,13 +2785,13 @@ static void ath10k_tpc_stats_print(struct ath10k_tpc_stats *tpc_stats,
 {
 	int i;
 	size_t buf_len;
-	static const char table_str[][5] = { "CDD",
+	static const char table_str[][5] = { " CDD",
 					     "STBC",
 					     "TXBF" };
-	static const char pream_str[][6] = { "CCK",
-					     "OFDM",
-					     "HT20",
-					     "HT40",
+	static const char pream_str[][6] = { "  CCK",
+					     " OFDM",
+					     " HT20",
+					     " HT40",
 					     "VHT20",
 					     "VHT40",
 					     "VHT80",
@@ -2799,12 +2799,12 @@ static void ath10k_tpc_stats_print(struct ath10k_tpc_stats *tpc_stats,
 
 	buf_len = ATH10K_TPC_CONFIG_BUF_SIZE;
 	*len += scnprintf(buf + *len, buf_len - *len,
-			  "********************************\n");
+			  "*****************************************************\n");
 	*len += scnprintf(buf + *len, buf_len - *len,
 			  "******************* %s POWER TABLE ****************\n",
 			  table_str[j]);
 	*len += scnprintf(buf + *len, buf_len - *len,
-			  "********************************\n");
+			  "*****************************************************\n");
 	*len += scnprintf(buf + *len, buf_len - *len,
 			  "No.  Preamble Rate_code ");
 
@@ -2816,14 +2816,13 @@ static void ath10k_tpc_stats_print(struct ath10k_tpc_stats *tpc_stats,
 
 	for (i = 0; i < tpc_stats->rate_max; i++) {
 		*len += scnprintf(buf + *len, buf_len - *len,
-				  "%8d %s 0x%2x %s\n", i,
+				  "%3d     %s   0x%2x %s\n", i,
 				  pream_str[tpc_stats->tpc_table[j].pream_idx[i]],
 				  tpc_stats->tpc_table[j].rate_code[i],
 				  tpc_stats->tpc_table[j].tpc_value[i]);
 	}
 
-	*len += scnprintf(buf + *len, buf_len - *len,
-			  "***********************************\n");
+	*len += scnprintf(buf + *len, buf_len - *len, "\n\n");
 }
 
 static void ath10k_tpc_stats_fill(struct ath10k *ar,
