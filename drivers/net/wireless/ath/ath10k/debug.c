@@ -431,6 +431,18 @@ void ath10k_debug_fw_ratepwr_table_process(struct ath10k *ar, struct sk_buff *sk
 	complete(&ar->debug.ratepwr_tbl_complete);
 }
 
+void ath10k_debug_fw_powerctl_table_process(struct ath10k *ar, struct sk_buff *skb)
+{
+	size_t sz = skb->len;
+	if (sz != sizeof(struct qca9880_power_ctrl)) {
+		ath10k_info(ar, "Invalid powerctl table results length, expected: %d  got: %d\n",
+			    (int)(sizeof(struct qca9880_power_ctrl)), (int)sz);
+		sz = min(sz, sizeof(struct qca9880_power_ctrl));
+	}
+	memcpy(ar->debug.powerctl_tbl.data, skb->data, sz);
+	complete(&ar->debug.powerctl_tbl_complete);
+}
+
 void ath10k_debug_fw_stats_process(struct ath10k *ar, struct sk_buff *skb)
 {
 	struct ath10k_fw_stats stats = {};
@@ -2234,6 +2246,67 @@ static ssize_t ath10k_read_ratepwr(struct file *file,
 
 static const struct file_operations fops_ratepwr_table = {
 	.read = ath10k_read_ratepwr,
+	.open = simple_open,
+	.owner = THIS_MODULE,
+	.llseek = default_llseek,
+};
+
+static ssize_t ath10k_read_powerctl(struct file *file,
+				    char __user *user_buf,
+				    size_t count, loff_t *ppos)
+{
+	struct ath10k *ar = file->private_data;
+	int size = 8000;
+	u8 *buf = kzalloc(size, GFP_KERNEL);
+	int retval = 0, len = 0;
+	int mx = sizeof(ar->debug.powerctl_tbl.data) / 4;
+	int i;
+
+	if (buf == NULL)
+		return -ENOMEM;
+
+	/* TODO:  Locking? */
+
+	if (ar->state == ATH10K_STATE_ON) {
+		unsigned long time_left;
+		int ret;
+
+		reinit_completion(&ar->debug.powerctl_tbl_complete);
+
+		ret = ath10k_wmi_request_powerctl_tbl(ar);
+		if (ret) {
+			ath10k_warn(ar, "could not request powerctl table: ret %d\n",
+				    ret);
+			time_left = 1;
+		}
+		else {
+			time_left = wait_for_completion_timeout(&ar->debug.powerctl_tbl_complete, 1*HZ);
+		}
+
+		/* ath10k_warn(ar, "Requested powerctl (type 0x%x ret %d specifier %d jiffies: %lu  time-left: %lu)\n",
+		   type, ret, specifier, jiffies, time_left);*/
+
+		if (time_left == 0)
+			ath10k_warn(ar, "Timeout requesting powerctl table.\n");
+	}
+
+	len += scnprintf(buf + len, size - len, "PowerCtl table, length: %d\n",
+			 ar->debug.powerctl_tbl_len);
+	for (i = 0; i<mx; i++) {
+		len += scnprintf(buf + len, size - len, "%08x ", ar->debug.powerctl_tbl.data[i]);
+		if (((i + 1) % 8) == 0)
+			buf[len - 1] = '\n';
+	}
+	buf[len - 1] = '\n';
+
+	retval = simple_read_from_buffer(user_buf, count, ppos, buf, len);
+	kfree(buf);
+
+	return retval;
+}
+
+static const struct file_operations fops_powerctl_table = {
+	.read = ath10k_read_powerctl,
 	.open = simple_open,
 	.owner = THIS_MODULE,
 	.llseek = default_llseek,
@@ -4081,6 +4154,7 @@ int ath10k_debug_register(struct ath10k *ar)
 	init_completion(&ar->debug.tpc_complete);
 	init_completion(&ar->debug.fw_stats_complete);
 	init_completion(&ar->debug.ratepwr_tbl_complete);
+	init_completion(&ar->debug.powerctl_tbl_complete);
 
 	debugfs_create_file("fw_stats", 0400, ar->debug.debugfs_phy, ar,
 			    &fops_fw_stats);
@@ -4166,6 +4240,9 @@ int ath10k_debug_register(struct ath10k *ar)
 	if (test_bit(WMI_SERVICE_THERM_THROT, ar->wmi.svc_map))
 		debugfs_create_file("quiet_period", 0644, ar->debug.debugfs_phy, ar,
 				    &fops_quiet_period);
+
+	debugfs_create_file("powerctl_table", 0600, ar->debug.debugfs_phy, ar,
+			    &fops_powerctl_table);
 
 	debugfs_create_file("ratepwr_table", 0600, ar->debug.debugfs_phy, ar,
 			    &fops_ratepwr_table);

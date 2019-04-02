@@ -6219,6 +6219,19 @@ static void ath10k_wmi_process_generic_buffer(struct ath10k* ar, const struct wm
 		}
 		break;
 #endif
+	case WMI_BUFFER_TYPE_CTL_TABLE:
+#ifdef CONFIG_ATH10K_DEBUGFS
+		if (len > sizeof(ar->debug.powerctl_tbl)) {
+			ath10k_err(ar, "wmi-generic, len: %u > powerctl-table length: %d\n",
+				   len, (int)(sizeof(ar->debug.powerctl_tbl)));
+		}
+		else {
+			memcpy(&ar->debug.powerctl_tbl, buf, len);
+			ar->debug.powerctl_tbl_len = len;
+			complete(&ar->debug.powerctl_tbl_complete);
+		}
+		break;
+#endif
 	default:
 		ath10k_dbg(ar, ATH10K_DBG_WMI,
 			   "wmi generic event type: %d is not currently handled.\n",
@@ -6998,6 +7011,22 @@ int ath10k_wmi_request_ratepwr_tbl(struct ath10k *ar)
 	cmd = (struct qca9880_pdev_ratepwr_table_cmd *)skb->data;
 
 	cmd->op = __cpu_to_le32(RATEPWR_TABLE_OPS_GET);
+
+	return ath10k_wmi_cmd_send(ar, skb, ar->wmi.cmd->pdev_ratepwr_table_cmdid);
+}
+
+int ath10k_wmi_request_powerctl_tbl(struct ath10k *ar)
+{
+	struct qca9880_pdev_ratepwr_table_cmd *cmd;
+	struct sk_buff *skb;
+
+	skb = ath10k_wmi_alloc_skb(ar, sizeof(*cmd));
+	if (!skb)
+		return ENOMEM;
+
+	cmd = (struct qca9880_pdev_ratepwr_table_cmd *)skb->data;
+
+	cmd->op = __cpu_to_le32(RATEPWR_TABLE_OPS_GET_CTL); /* CT FW only */
 
 	return ath10k_wmi_cmd_send(ar, skb, ar->wmi.cmd->pdev_ratepwr_table_cmdid);
 }

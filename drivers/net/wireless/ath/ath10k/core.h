@@ -819,7 +819,9 @@ struct ath10k_debug {
 	struct qc988xxEepromRateTbl ratepwr_tbl;
 	struct completion ratepwr_tbl_complete;
 
+	int powerctl_tbl_len;
 	struct qca9880_power_ctrl powerctl_tbl;
+	struct completion powerctl_tbl_complete;
 };
 
 enum ath10k_state {

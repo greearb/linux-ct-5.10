@@ -6277,8 +6277,9 @@ struct qc988xxEepromRateTbl {
 
 #define RATEPWR_TABLE_OPS_SET 0
 #define RATEPWR_TABLE_OPS_GET 1
+#define RATEPWR_TABLE_OPS_GET_CTL 2
 /* For 'get', only the 'op' is paid attention to.  The result comes
- * back as a WMI message (qc98xxEepromRateTbl)
+ * back as a WMI message (qc98xxEepromRateTbl, or qca9880_power_ctrl for 'GET_CTL')
  * For set, send the qc98xxEepromRateTbl in binary form.
  */
 struct qca9880_pdev_ratepwr_table_cmd {
@@ -7989,6 +7990,7 @@ void ath10k_wmi_event_tpc_final_table(struct ath10k *ar, struct sk_buff *skb);
 void ath10k_wmi_stop_scan_work(struct work_struct *work);
 int ath10k_wmi_consume_block_ack(struct ath10k *ar, struct ath10k_vif *arvif, struct sk_buff *skb);
 int ath10k_wmi_request_ratepwr_tbl(struct ath10k *ar);
+int ath10k_wmi_request_powerctl_tbl(struct ath10k *ar);
 
 #ifdef CONFIG_ATH10K_DEBUGFS
 /* TODO:  Should really enable this all the time, not just when DEBUGFS is enabled. --Ben */
