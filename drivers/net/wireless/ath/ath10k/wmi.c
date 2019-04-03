@@ -316,7 +316,7 @@ static struct wmi_cmd_map wmi_10x_cmd_map = {
 	.gpio_config_cmdid = WMI_10X_GPIO_CONFIG_CMDID,
 	.gpio_output_cmdid = WMI_10X_GPIO_OUTPUT_CMDID,
 	.pdev_get_temperature_cmdid = WMI_10X_PDEV_GET_TEMPERATURE_CMDID,
-	.pdev_enable_adaptive_cca_cmdid = WMI_CMD_UNSUPPORTED,
+	.pdev_enable_adaptive_cca_cmdid = WMI_10X_SET_CCA_PARAMS_CMDID, /* CT only */
 	.scan_update_request_cmdid = WMI_CMD_UNSUPPORTED,
 	.vdev_standby_response_cmdid = WMI_CMD_UNSUPPORTED,
 	.vdev_resume_response_cmdid = WMI_CMD_UNSUPPORTED,
@@ -10196,7 +10196,6 @@ static const struct wmi_ops wmi_10_1_ops = {
 	/* .gen_prb_tmpl not implemented */
 	/* .gen_p2p_go_bcn_ie not implemented */
 	/* .gen_adaptive_qcs not implemented */
-	/* .gen_pdev_enable_adaptive_cca not implemented */
 
 	/* Some CT 10.1 firmware supports this.  Non-CT 10.1 firmware will not
 	 * advertise WMI_SERVICE_BSS_CHANNEL_INFO_64, so it will never be called
@@ -10204,6 +10203,7 @@ static const struct wmi_ops wmi_10_1_ops = {
 	 */
 	.gen_pdev_bss_chan_info_req = ath10k_wmi_10_2_op_gen_pdev_bss_chan_info,
 	.gen_pdev_get_tpc_config = ath10k_wmi_10_2_4_op_gen_pdev_get_tpc_config,
+	.gen_pdev_enable_adaptive_cca = ath10k_wmi_op_gen_pdev_enable_adaptive_cca, /* CT only for wave-1 */
 };
 
 static const struct wmi_ops wmi_10_2_ops = {
