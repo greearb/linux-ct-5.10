@@ -1503,6 +1503,8 @@ struct ath10k {
 #endif
 	u32 wmi_get_temp_count;
 
+	u32 eeprom_configAddrs[24]; /* Store sticky eeprom register settings to re-apply after OTP */
+
 	u32 pktlog_filter;
 
 #ifdef CONFIG_DEV_COREDUMP

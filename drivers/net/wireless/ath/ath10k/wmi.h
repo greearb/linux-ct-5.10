@@ -7401,6 +7401,8 @@ struct wmi_pdev_set_special_cmd {
 						    * (see 'peers' debugfs for peer id listing)
 						    * val = peer_id << 16 | ant-mask-value
 						    */
+#define SET_SPECIAL_ID_EEPROM_CFG_ADDR_A      0x14 /* Append an address to the configAddr in the eeprom. */
+#define SET_SPECIAL_ID_EEPROM_CFG_ADDR_V      0x15 /* Append an value to the configAddr in the eeprom. */
 
 /* Requires specially compiled firmware (-T option) to have any useful effect. */
 #define SET_SPECIAL_ID_TX_DBG         0x99 /* 0x1 == enable, 0x2 == pkt-dbg, 0x0 == disable (default). */
