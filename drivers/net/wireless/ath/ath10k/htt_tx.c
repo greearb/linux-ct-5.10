@@ -1699,19 +1699,26 @@ skip_fixed_rate:
 	skb_len = msdu->len;
 	trace_ath10k_htt_tx(ar, msdu_id, msdu->len, vdev_id, tid);
 
-	if (ar->eeprom_overrides.tx_debug & 0x3)
+	if (ar->eeprom_overrides.tx_debug & 0x3) {
 		ath10k_warn(ar,
 			    "htt tx flags0 %hhu flags1 %hu (noack: %d) len %d id %hu frags_paddr %pad, msdu_paddr %pad vdev %hhu tid %hhu freq %hu\n",
 			    flags0, flags1, (flags1 & HTT_DATA_TX_DESC_FLAGS1_NO_ACK_CT), skb_len, msdu_id, &frags_paddr,
 			    &skb_cb->paddr, vdev_id, tid, freq);
-	else
+		if (ar->eeprom_overrides.tx_debug & 0x10) {
+			ath10k_dbg_dump(ar, ATH10K_DBG_BOOT, NULL, "htt tx msdu: ",
+					msdu->data, skb_len);
+		}
+	}
+	else {
 		ath10k_dbg(ar, ATH10K_DBG_HTT,
 			   "htt tx flags0 %hhu flags1 %hu len %d id %hu frags_paddr %pad, msdu_paddr %pad vdev %hhu tid %hhu freq %hu\n",
 			   flags0, flags1, skb_len, msdu_id, &frags_paddr,
 			   &skb_cb->paddr, vdev_id, tid, freq);
 
-	ath10k_dbg_dump(ar, ATH10K_DBG_HTT_DUMP, NULL, "htt tx msdu: ",
-			msdu->data, skb_len);
+		ath10k_dbg_dump(ar, ATH10K_DBG_HTT_DUMP, NULL, "htt tx msdu: ",
+				msdu->data, skb_len);
+	}
+
 	trace_ath10k_tx_hdr(ar, msdu->data, msdu->len);
 	trace_ath10k_tx_payload(ar, msdu->data, msdu->len);
 
