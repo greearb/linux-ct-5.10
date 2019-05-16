@@ -1500,21 +1500,23 @@ static int ath10k_htt_tx_32(struct ath10k_htt *htt,
 			/*ath10k_warn(ar, "qos-data: %d data: %d  qos-nullfunc: %d  nullfunc: %d\n",
 				    ieee80211_is_data_qos(fc), ieee80211_is_data(fc),
 				    ieee80211_is_qos_nullfunc(fc), ieee80211_is_nullfunc(fc));*/
-			if ((ieee80211_is_data_qos(fc) || ieee80211_is_data(fc)) &&
+			/* In order to allow ARP to work, don't mess with frames < 100 bytes in length, assume
+			 * test frames are larger.
+			 */
+			if ((msdu->len >= 100) &&
+			    (ieee80211_is_data_qos(fc) || ieee80211_is_data(fc)) &&
 			    (!(ieee80211_is_qos_nullfunc(fc) || ieee80211_is_nullfunc(fc)))) {
-				if (arvif && arvif->txo_active) {
-					tpc = arvif->txo_tpc;
-					sgi = arvif->txo_sgi;
-					mcs = arvif->txo_mcs;
-					nss = arvif->txo_nss;
-					pream_type = arvif->txo_pream;
-					num_retries = arvif->txo_retries;
-					dyn_bw = arvif->txo_dynbw;
-					bw = arvif->txo_bw;
-					rix = arvif->txo_rix;
-					/*ath10k_warn(ar, "gathering txrate info from arvif, tpc: %d mcs: %d nss: %d pream_type: %d num_retries: %d dyn_bw: %d bw: %d rix: %d\n",
-					  tpc, mcs, nss, pream_type, num_retries, dyn_bw, bw, rix);*/
-				}
+				tpc = arvif->txo_tpc;
+				sgi = arvif->txo_sgi;
+				mcs = arvif->txo_mcs;
+				nss = arvif->txo_nss;
+				pream_type = arvif->txo_pream;
+				num_retries = arvif->txo_retries;
+				dyn_bw = arvif->txo_dynbw;
+				bw = arvif->txo_bw;
+				rix = arvif->txo_rix;
+				/*ath10k_warn(ar, "gathering txrate info from arvif, tpc: %d mcs: %d nss: %d pream_type: %d num_retries: %d dyn_bw: %d bw: %d rix: %d\n",
+				  tpc, mcs, nss, pream_type, num_retries, dyn_bw, bw, rix);*/
 			}
 			else {
 				if (!(info->control.flags & IEEE80211_TX_CTRL_RATE_INJECT))
