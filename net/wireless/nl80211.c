@@ -5985,17 +5985,26 @@ int cfg80211_check_station_change(struct wiphy *wiphy,
 				  enum cfg80211_station_type statype)
 {
 	if (params->listen_interval != -1 &&
-	    statype != CFG80211_STA_AP_CLIENT_UNASSOC)
+	    statype != CFG80211_STA_AP_CLIENT_UNASSOC) {
+		pr_err("check-station-change, listen-interval: %d  statype not unassoc: %d\n",
+		       params->listen_interval, statype);
 		return -EINVAL;
+	}
 
 	if (params->support_p2p_ps != -1 &&
-	    statype != CFG80211_STA_AP_CLIENT_UNASSOC)
+	    statype != CFG80211_STA_AP_CLIENT_UNASSOC) {
+		pr_err("check-station-change, p2p-ps: %d  statype not unassoc: %d\n",
+		       params->support_p2p_ps, statype);
 		return -EINVAL;
+	}
 
 	if (params->aid &&
 	    !(params->sta_flags_set & BIT(NL80211_STA_FLAG_TDLS_PEER)) &&
-	    statype != CFG80211_STA_AP_CLIENT_UNASSOC)
+	    statype != CFG80211_STA_AP_CLIENT_UNASSOC) {
+		pr_err("check-station-change, aid: %d  not-tdls and statype not unassoc: %d\n",
+		       params->aid, statype);
 		return -EINVAL;
+	}
 
 	/* When you run into this, adjust the code below for the new flag */
 	BUILD_BUG_ON(NL80211_STA_FLAG_MAX != 7);
@@ -6011,31 +6020,44 @@ int cfg80211_check_station_change(struct wiphy *wiphy,
 		if (params->sta_flags_mask &
 				~(BIT(NL80211_STA_FLAG_AUTHENTICATED) |
 				  BIT(NL80211_STA_FLAG_MFP) |
-				  BIT(NL80211_STA_FLAG_AUTHORIZED)))
+				  BIT(NL80211_STA_FLAG_AUTHORIZED))) {
+			pr_err("check-station-change, mesh/tdls issue, flags: 0x%x\n",
+			       params->sta_flags_mask);
 			return -EINVAL;
+		}
 		break;
 	case CFG80211_STA_TDLS_PEER_SETUP:
 	case CFG80211_STA_TDLS_PEER_ACTIVE:
-		if (!(params->sta_flags_set & BIT(NL80211_STA_FLAG_TDLS_PEER)))
+		if (!(params->sta_flags_set & BIT(NL80211_STA_FLAG_TDLS_PEER))) {
+			pr_err("check-station-change, tdls change prohibitted\n");
 			return -EINVAL;
+		}
 		/* ignore since it can't change */
 		params->sta_flags_mask &= ~BIT(NL80211_STA_FLAG_TDLS_PEER);
 		break;
 	default:
 		/* disallow mesh-specific things */
-		if (params->plink_action != NL80211_PLINK_ACTION_NO_ACTION)
+		if (params->plink_action != NL80211_PLINK_ACTION_NO_ACTION) {
+			pr_err("check-station-change, mesh plink-action issue\n");
 			return -EINVAL;
-		if (params->local_pm)
+		}
+		if (params->local_pm) {
+			pr_err("check-station-change, mesh local-pm issue\n");
 			return -EINVAL;
-		if (params->sta_modify_mask & STATION_PARAM_APPLY_PLINK_STATE)
+		}
+		if (params->sta_modify_mask & STATION_PARAM_APPLY_PLINK_STATE) {
+			pr_err("check-station-change, mesh apply-plink issue\n");
 			return -EINVAL;
+		}
 	}
 
 	if (statype != CFG80211_STA_TDLS_PEER_SETUP &&
 	    statype != CFG80211_STA_TDLS_PEER_ACTIVE) {
 		/* TDLS can't be set, ... */
-		if (params->sta_flags_set & BIT(NL80211_STA_FLAG_TDLS_PEER))
+		if (params->sta_flags_set & BIT(NL80211_STA_FLAG_TDLS_PEER)) {
+			pr_err("check-station-change, tdls cannot be set\n");
 			return -EINVAL;
+		}
 		/*
 		 * ... but don't bother the driver with it. This works around
 		 * a hostapd/wpa_supplicant issue -- it always includes the
@@ -6047,28 +6069,40 @@ int cfg80211_check_station_change(struct wiphy *wiphy,
 	if (statype != CFG80211_STA_TDLS_PEER_SETUP &&
 	    statype != CFG80211_STA_AP_CLIENT_UNASSOC) {
 		/* reject other things that can't change */
-		if (params->sta_modify_mask & STATION_PARAM_APPLY_UAPSD)
+		if (params->sta_modify_mask & STATION_PARAM_APPLY_UAPSD) {
+			pr_err("check-station-change, uapsd cannot be set, statype: %d\n", statype);
 			return -EINVAL;
-		if (params->sta_modify_mask & STATION_PARAM_APPLY_CAPABILITY)
+		}
+		if (params->sta_modify_mask & STATION_PARAM_APPLY_CAPABILITY) {
+			pr_err("check-station-change, cannot apply capability, statype: %d\n", statype);
 			return -EINVAL;
-		if (params->supported_rates)
+		}
+		if (params->supported_rates) {
+			pr_err("check-station-change, supported-rates, statype: %d\n", statype);
 			return -EINVAL;
+		}
 		if (params->ext_capab || params->ht_capa || params->vht_capa ||
-		    params->he_capa)
+		    params->he_capa) {
+			pr_err("check-station-change, capabilities defined, statype: %d\n", statype);
 			return -EINVAL;
+		}
 	}
 
 	if (statype != CFG80211_STA_AP_CLIENT &&
 	    statype != CFG80211_STA_AP_CLIENT_UNASSOC) {
-		if (params->vlan)
+		if (params->vlan) {
+			pr_err("check-station-change, vlan specified, statype: %d\n", statype);
 			return -EINVAL;
+		}
 	}
 
 	switch (statype) {
 	case CFG80211_STA_AP_MLME_CLIENT:
 		/* Use this only for authorizing/unauthorizing a station */
-		if (!(params->sta_flags_mask & BIT(NL80211_STA_FLAG_AUTHORIZED)))
+		if (!(params->sta_flags_mask & BIT(NL80211_STA_FLAG_AUTHORIZED))) {
+			pr_err("check-station-change, not-auth, statype: %d\n", statype);
 			return -EOPNOTSUPP;
+		}
 		break;
 	case CFG80211_STA_AP_CLIENT:
 	case CFG80211_STA_AP_CLIENT_UNASSOC:
@@ -6079,43 +6113,58 @@ int cfg80211_check_station_change(struct wiphy *wiphy,
 				  BIT(NL80211_STA_FLAG_ASSOCIATED) |
 				  BIT(NL80211_STA_FLAG_SHORT_PREAMBLE) |
 				  BIT(NL80211_STA_FLAG_WME) |
-				  BIT(NL80211_STA_FLAG_MFP)))
+				  BIT(NL80211_STA_FLAG_MFP))) {
+			pr_err("check-station-change, sta-flags-mask invalid: 0x%x, statype: %d\n", params->sta_flags_mask, statype);
 			return -EINVAL;
+		}
 
 		/* but authenticated/associated only if driver handles it */
 		if (!(wiphy->features & NL80211_FEATURE_FULL_AP_CLIENT_STATE) &&
 		    params->sta_flags_mask &
 				(BIT(NL80211_STA_FLAG_AUTHENTICATED) |
-				 BIT(NL80211_STA_FLAG_ASSOCIATED)))
+				 BIT(NL80211_STA_FLAG_ASSOCIATED))) {
+			pr_err("check-station-change, not-full-ap, sta-flags-mask: 0x%x, statype: %d\n", params->sta_flags_mask, statype);
 			return -EINVAL;
+		}
 		break;
 	case CFG80211_STA_IBSS:
 	case CFG80211_STA_AP_STA:
 		/* reject any changes other than AUTHORIZED */
-		if (params->sta_flags_mask & ~BIT(NL80211_STA_FLAG_AUTHORIZED))
+		if (params->sta_flags_mask & ~BIT(NL80211_STA_FLAG_AUTHORIZED)) {
+			pr_err("check-station-change, not-auth, sta-flags-mask: 0x%x, statype: %d\n", params->sta_flags_mask, statype);
 			return -EINVAL;
+		}
 		break;
 	case CFG80211_STA_TDLS_PEER_SETUP:
 		/* reject any changes other than AUTHORIZED or WME */
 		if (params->sta_flags_mask & ~(BIT(NL80211_STA_FLAG_AUTHORIZED) |
-					       BIT(NL80211_STA_FLAG_WME)))
+					       BIT(NL80211_STA_FLAG_WME))) {
+			pr_err("check-station-change, tdls not auth/wme, sta-flags-mask: 0x%x, statype: %d\n", params->sta_flags_mask, statype);
 			return -EINVAL;
+		}
 		/* force (at least) rates when authorizing */
 		if (params->sta_flags_set & BIT(NL80211_STA_FLAG_AUTHORIZED) &&
-		    !params->supported_rates)
+		    !params->supported_rates) {
+			pr_err("check-station-change, tdls auth no rates, sta-flags-set: 0x%x, statype: %d\n", params->sta_flags_set, statype);
 			return -EINVAL;
+		}
 		break;
 	case CFG80211_STA_TDLS_PEER_ACTIVE:
 		/* reject any changes */
+		pr_err("check-station-change, tdls peer active, statype: %d\n", statype);
 		return -EINVAL;
 	case CFG80211_STA_MESH_PEER_KERNEL:
-		if (params->sta_modify_mask & STATION_PARAM_APPLY_PLINK_STATE)
+		if (params->sta_modify_mask & STATION_PARAM_APPLY_PLINK_STATE) {
+			pr_err("check-station-change, mesh-peer-kernel, statype: %d\n", statype);
 			return -EINVAL;
+		}
 		break;
 	case CFG80211_STA_MESH_PEER_USER:
 		if (params->plink_action != NL80211_PLINK_ACTION_NO_ACTION &&
-		    params->plink_action != NL80211_PLINK_ACTION_BLOCK)
+		    params->plink_action != NL80211_PLINK_ACTION_BLOCK) {
+			pr_err("check-station-change, mesh-peer-user, action: %d\n", params->plink_action);
 			return -EINVAL;
+		}
 		break;
 	}
 
@@ -6436,6 +6485,9 @@ static int nl80211_set_station(struct sk_buff *skb, struct genl_info *info)
 
 	/* driver will call cfg80211_check_station_change() */
 	err = rdev_change_station(rdev, dev, mac_addr, &params);
+
+	if (err)
+		pr_err("%s:  new-station failed due to rdev_change_station returing error: %d\n", dev->name, err);
 
  out_put_vlan:
 	if (params.vlan)

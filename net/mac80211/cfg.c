@@ -1748,6 +1748,7 @@ static int ieee80211_change_station(struct wiphy *wiphy,
 
 	sta = sta_info_get_bss(sdata, mac);
 	if (!sta) {
+		sdata_info(sdata, "change-station: Could not find bss: %pM\n", mac);
 		err = -ENOENT;
 		goto out_err;
 	}
@@ -1780,13 +1781,16 @@ static int ieee80211_change_station(struct wiphy *wiphy,
 			statype = CFG80211_STA_AP_CLIENT_UNASSOC;
 		break;
 	default:
+		sdata_info(sdata, "change-station: vif-type not supported: %d\n", sdata->vif.type);
 		err = -EOPNOTSUPP;
 		goto out_err;
 	}
 
 	err = cfg80211_check_station_change(wiphy, params, statype);
-	if (err)
+	if (err) {
+		sdata_info(sdata, "change-station: check-station-change failed: %d\n", err);
 		goto out_err;
+	}
 
 	if (params->vlan && params->vlan != sta->sdata->dev) {
 		vlansdata = IEEE80211_DEV_TO_SUB_IF(params->vlan);
@@ -1794,6 +1798,7 @@ static int ieee80211_change_station(struct wiphy *wiphy,
 		if (params->vlan->ieee80211_ptr->use_4addr) {
 			if (vlansdata->u.vlan.sta) {
 				err = -EBUSY;
+				sdata_info(sdata, "change-station: 4addr/vlan issue\n");
 				goto out_err;
 			}
 
@@ -1822,8 +1827,10 @@ static int ieee80211_change_station(struct wiphy *wiphy,
 	}
 
 	err = sta_apply_parameters(local, sta, params);
-	if (err)
+	if (err) {
+		sdata_info(sdata, "change-station: sta-appy-parameters failed: %d\n", err);
 		goto out_err;
+	}
 
 	mutex_unlock(&local->sta_mtx);
 
