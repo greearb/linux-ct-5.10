@@ -157,7 +157,7 @@ u32 ath10k_convert_hw_rate_to_rate_info(u8 tpc, u8 mcs, u8 sgi, u8 nss, u8 pream
 
 	/* Re-use logic from 10.4 firmware */
 	struct __ath10k_rate_info {
-		u32     power              : 6,   /* units of the power field is dbm */
+		u32     power              : 6,   /* units of the power field is 1/2 dbm */
 			unused             : 1,   /* Room for growth */
 			sgi                : 1,   /* Enable SGI or not, checked when valid_rate is enabled. */
 			mcs                : 4,    /* mcs = 0 ~ 9 */
