@@ -144,7 +144,6 @@ ieee80211_vht_cap_ie_to_sta_vht_cap(struct ieee80211_sub_if_data *sdata,
 	struct ieee80211_sta_vht_cap *vht_cap = &sta->sta.vht_cap;
 	struct ieee80211_sta_vht_cap own_cap;
 	u32 cap_info, i;
-	struct ieee80211_local *local = sdata->local;
 
 	memset(vht_cap, 0, sizeof(*vht_cap));
 
@@ -152,9 +151,6 @@ ieee80211_vht_cap_ie_to_sta_vht_cap(struct ieee80211_sub_if_data *sdata,
 		return;
 
 	if (!vht_cap_ie || !sband->vht_cap.vht_supported)
-		return;
-
-	if (!ieee80211_any_band_supports_80mhz(local))
 		return;
 
 	/*
