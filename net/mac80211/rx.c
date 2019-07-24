@@ -4800,7 +4800,7 @@ void ieee80211_rx_list(struct ieee80211_hw *hw, struct ieee80211_sta *pubsta,
 	 * The same happens when we're not even started,
 	 * but that's worth a warning.
 	 */
-	if (WARN_ON(!local->started))
+	if (WARN_ON_ONCE(!local->started))
 		goto drop;
 
 	if (likely(!(status->flag & RX_FLAG_FAILED_PLCP_CRC))) {
