@@ -10170,6 +10170,15 @@ static void ath10k_sta_statistics(struct ieee80211_hw *hw,
 	struct ath10k_sta *arsta = (struct ath10k_sta *)sta->drv_priv;
 	struct ath10k *ar = arsta->arvif->ar;
 
+	/* CT firmware has it's own per-packet tx status logic, don't bother using
+	 * this peer-stats stuff.
+	 */
+	if ((test_bit(ATH10K_FW_FEATURE_TXRATE_CT,
+		      ar->running_fw->fw_file.fw_features)) ||
+	    (test_bit(ATH10K_FW_FEATURE_TXRATE2_CT,
+		      ar->running_fw->fw_file.fw_features)))
+		return;
+
 	if (!ath10k_peer_stats_enabled(ar))
 		return;
 
