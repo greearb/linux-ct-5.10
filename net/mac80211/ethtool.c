@@ -166,7 +166,7 @@ static void ieee80211_get_stats2(struct net_device *dev,
 			i++; /* skip sta state */
 
 			if (sinfo.filled & BIT(NL80211_STA_INFO_TX_BITRATE)) {
-				tx_accum += 100000 *
+				tx_accum += 100000ULL *
 					cfg80211_calculate_bitrate(&sinfo.txrate);
 				amt_tx++;
 				data[i] = mac_div(tx_accum, amt_tx);
@@ -174,7 +174,7 @@ static void ieee80211_get_stats2(struct net_device *dev,
 			i++;
 
 			if (sinfo.filled & BIT(NL80211_STA_INFO_RX_BITRATE)) {
-				rx_accum += 100000 *
+				rx_accum += 100000ULL *
 					cfg80211_calculate_bitrate(&sinfo.rxrate);
 				amt_rx++;
 				data[i] = mac_div(rx_accum, amt_rx);
