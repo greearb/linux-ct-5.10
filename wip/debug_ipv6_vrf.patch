@@ -1,0 +1,391 @@
+diff --git a/drivers/net/vrf.c b/drivers/net/vrf.c
+index 97fb0cb1b97a..ed738845ad6b 100644
+--- a/drivers/net/vrf.c
++++ b/drivers/net/vrf.c
+@@ -974,13 +974,25 @@ static void vrf_ip6_input_dst(struct sk_buff *skb, struct net_device *vrf_dev,
+	struct net *net = dev_net(vrf_dev);
+	struct rt6_info *rt6;
+
++	pr_err("vrf-ip6-input-dst, daddr: %pI6c  saddr: %pI6c skb: %p\n",
++	       &fl6.daddr, &fl6.saddr, skb);
++
+	rt6 = vrf_ip6_route_lookup(net, vrf_dev, &fl6, ifindex, skb,
+				   RT6_LOOKUP_F_HAS_SADDR | RT6_LOOKUP_F_IFACE);
+-	if (unlikely(!rt6))
++	if (unlikely(!rt6)) {
++		pr_err("vrf-ip6-input-dst, no rt6.\n");
+		return;
++	}
+
+-	if (unlikely(&rt6->dst == &net->ipv6.ip6_null_entry->dst))
++	if (unlikely(&rt6->dst == &net->ipv6.ip6_null_entry->dst)) {
++		pr_err("vrf-ip6-input-dst, null entry dst.\n");
+		return;
++	}
++
++	pr_err("vrf-ip6-rcv, assigning dst, dst-key: %pI6c/%d src-key: %pI6c/%d table: %d dst-dev-name: %s dst-flags: 0x%x dst-input: %p dst-output: %p\n",
++	       &rt6->rt6i_dst.addr,   rt6->rt6i_dst.plen, &rt6->rt6i_src.addr, rt6->rt6i_src.plen,
++	       rt6->from->fib6_table->tb6_id, rt6->dst.dev->name, rt6->dst.flags,
++	       rt6->dst.input, rt6->dst.output);
+
+	skb_dst_set(skb, &rt6->dst);
+ }
+@@ -992,6 +1004,9 @@ static struct sk_buff *vrf_ip6_rcv(struct net_device *vrf_dev,
+	bool need_strict = rt6_need_strict(&ipv6_hdr(skb)->daddr);
+	bool is_ndisc = ipv6_ndisc_frame(skb);
+
++	pr_err("vrf-ip6-rcv, need_strict: %d  is-ndisc: %d  daddr: %pI6c\n",
++	       need_strict, is_ndisc, &ipv6_hdr(skb)->daddr);
++
+	/* loopback, multicast & non-ND link-local traffic; do not push through
+	 * packet taps again. Reset pkt_type for upper layers to process skb
+	 */
+@@ -1001,6 +1016,7 @@ static struct sk_buff *vrf_ip6_rcv(struct net_device *vrf_dev,
+		IP6CB(skb)->flags |= IP6SKB_L3SLAVE;
+		if (skb->pkt_type == PACKET_LOOPBACK)
+			skb->pkt_type = PACKET_HOST;
++		pr_err("vrf-ip6-rcv, loopback path.\n");
+		goto out;
+	}
+
+@@ -1023,6 +1039,7 @@ static struct sk_buff *vrf_ip6_rcv(struct net_device *vrf_dev,
+		vrf_ip6_input_dst(skb, vrf_dev, orig_iif);
+
+	skb = vrf_rcv_nfhook(NFPROTO_IPV6, NF_INET_PRE_ROUTING, skb, vrf_dev);
++	pr_err("skb after vrf_rcv_nfhook: %p\n", skb);
+ out:
+	return skb;
+ }
+diff --git a/net/ipv6/addrconf.c b/net/ipv6/addrconf.c
+index 081bb517e40d..fb59ab19260f 100644
+--- a/net/ipv6/addrconf.c
++++ b/net/ipv6/addrconf.c
+@@ -2145,6 +2145,8 @@ void addrconf_join_solict(struct net_device *dev, const struct in6_addr *addr)
+		return;
+
+	addrconf_addr_solict_mult(addr, &maddr);
++	pr_err("addrconf-join-solicit, dev: %s  maddr: %pI6c\n",
++	       dev->name, &maddr);
+	ipv6_dev_mc_inc(dev, &maddr);
+ }
+
+@@ -2156,6 +2158,9 @@ void addrconf_leave_solict(struct inet6_dev *idev, const struct in6_addr *addr)
+	if (idev->dev->flags&(IFF_LOOPBACK|IFF_NOARP))
+		return;
+
++	pr_err("addrconf-leave-solicit, dev: %s  maddr: %pI6c\n",
++	       idev->dev->name, &maddr);
++
+	addrconf_addr_solict_mult(addr, &maddr);
+	__ipv6_dev_mc_dec(idev, &maddr);
+ }
+@@ -2451,6 +2456,9 @@ static void addrconf_add_mroute(struct net_device *dev)
+
+	ipv6_addr_set(&cfg.fc_dst, htonl(0xFF000000), 0, 0, 0);
+
++	pr_err("addrconf-add-mroute, dev: %s ff00/8 table: %d\n",
++	       dev->name, cfg.fc_table);
++
+	ip6_route_add(&cfg, GFP_KERNEL, NULL);
+ }
+
+@@ -3933,6 +3941,8 @@ static void addrconf_dad_begin(struct inet6_ifaddr *ifp)
+	bool bump_id, notify = false;
+	struct net *net;
+
++	pr_err("addrconf-dad-begin: %s\n", dev->name);
++
+	addrconf_join_solict(dev, &ifp->addr);
+
+	prandom_seed((__force u32) ifp->addr.s6_addr32[3]);
+@@ -4113,6 +4123,7 @@ static void addrconf_dad_work(struct work_struct *w)
+	write_unlock_bh(&idev->lock);
+
+	/* send a neighbour solicitation for our addr */
++	pr_err("addrconf, ndisc-send-ns for our addr.\n");
+	addrconf_addr_solict_mult(&ifp->addr, &mcaddr);
+	ndisc_send_ns(ifp->idev->dev, &ifp->addr, &mcaddr, &in6addr_any,
+		      ifp->dad_nonce);
+diff --git a/net/ipv6/ip6_fib.c b/net/ipv6/ip6_fib.c
+index ca17e369cf97..3a7710a1989d 100644
+--- a/net/ipv6/ip6_fib.c
++++ b/net/ipv6/ip6_fib.c
+@@ -1771,6 +1771,10 @@ static void fib6_del_route(struct fib6_table *table, struct fib6_node *fn,
+
+	RT6_TRACE("fib6_del_route\n");
+
++	pr_err("fib6-del-route, table: %d  dst: %pI6c/%d  src %pI6c/%d\n",
++	       table->tb6_id, &rt->fib6_dst.addr, rt->fib6_dst.plen, &rt->fib6_src.addr, rt->fib6_src.plen);
++	WARN_ON(rt->fib6_dst.plen == 8);
++
+	/* Unlink it */
+	*rtp = rt->fib6_next;
+	rt->fib6_node = NULL;
+diff --git a/net/ipv6/ip6_input.c b/net/ipv6/ip6_input.c
+index fa014d5f1732..71741bae7c7f 100644
+--- a/net/ipv6/ip6_input.c
++++ b/net/ipv6/ip6_input.c
+@@ -54,13 +54,22 @@ static void ip6_rcv_finish_core(struct net *net, struct sock *sk,
+	if (net->ipv4.sysctl_ip_early_demux && !skb_dst(skb) && skb->sk == NULL) {
+		const struct inet6_protocol *ipprot;
+
++
+		ipprot = rcu_dereference(inet6_protos[ipv6_hdr(skb)->nexthdr]);
+-		if (ipprot && (edemux = READ_ONCE(ipprot->early_demux)))
++		if (ipprot && (edemux = READ_ONCE(ipprot->early_demux))) {
++			pr_err("ip6-rcv-finish-core, iearly-demux path, calling early demux\n");
+			INDIRECT_CALL_2(edemux, tcp_v6_early_demux,
+					udp_v6_early_demux, skb);
++		}
+	}
+-	if (!skb_valid_dst(skb))
++	if (!skb_valid_dst(skb)) {
++		pr_err("ip6-rcv-finish, calling route input.\n");
+		ip6_route_input(skb);
++	}
++	else {
++		pr_err("ip6-rcv-finish, skb-valid-dst returned != 0, skb->dst: %p dev: %s\n",
++		       skb_dst(skb), skb->dev->name);
++	}
+ }
+
+ int ip6_rcv_finish(struct net *net, struct sock *sk, struct sk_buff *skb)
+@@ -69,6 +78,7 @@ int ip6_rcv_finish(struct net *net, struct sock *sk, struct sk_buff *skb)
+	 * skb to its handler for processing
+	 */
+	skb = l3mdev_ip6_rcv(skb);
++	pr_err("ip6-rcv-finish, skb: %p\n", skb);
+	if (!skb)
+		return NET_RX_SUCCESS;
+	ip6_rcv_finish_core(net, sk, skb);
+@@ -125,6 +135,9 @@ static struct sk_buff *ip6_rcv_core(struct sk_buff *skb, struct net_device *dev,
+	u32 pkt_len;
+	struct inet6_dev *idev;
+
++	pr_err("ip6_rcv_core, dev: %s daddr: %pI6c  saddr: %pI6c\n",
++	       dev->name, &ipv6_hdr(skb)->daddr, &ipv6_hdr(skb)->saddr);
++
+	if (skb->pkt_type == PACKET_OTHERHOST) {
+		kfree_skb(skb);
+		return NULL;
+@@ -334,6 +347,9 @@ void ip6_protocol_deliver_rcu(struct net *net, struct sk_buff *skb, int nexthdr,
+	 *	Parse extension headers
+	 */
+
++	pr_err("ip6_protocol_deliver_rcu, dev: %s daddr: %pI6c  saddr: %pI6c\n",
++	       skb->dev->name, &ipv6_hdr(skb)->daddr, &ipv6_hdr(skb)->saddr);
++
+ resubmit:
+	idev = ip6_dst_idev(skb_dst(skb));
+	nhoff = IP6CB(skb)->nhoff;
+@@ -387,8 +403,11 @@ void ip6_protocol_deliver_rcu(struct net *net, struct sk_buff *skb, int nexthdr,
+			if (ipv6_addr_is_multicast(&hdr->daddr) &&
+			    !ipv6_chk_mcast_addr(dev, &hdr->daddr,
+						 &hdr->saddr) &&
+-			    !ipv6_is_mld(skb, nexthdr, skb_network_header_len(skb)))
++			    !ipv6_is_mld(skb, nexthdr, skb_network_header_len(skb))) {
++				pr_err("deliver-rcu, Discarding pkt, daddr: %pI6c  saddr: %pI6c, dev: %s\n",
++				       &hdr->daddr, &hdr->saddr, dev->name);
+				goto discard;
++			}
+		}
+		if (!(ipprot->flags & INET6_PROTO_NOPOLICY) &&
+		    !xfrm6_policy_check(NULL, XFRM_POLICY_IN, skb))
+@@ -457,6 +476,8 @@ int ip6_mc_input(struct sk_buff *skb)
+	struct net_device *dev;
+	bool deliver;
+
++	pr_err("ip6-mc-input, dev: %s\n", skb->dev->name);
++
+	__IP6_UPD_PO_STATS(dev_net(skb_dst(skb)->dev),
+			 __in6_dev_get_safely(skb->dev), IPSTATS_MIB_INMCAST,
+			 skb->len);
+@@ -476,6 +497,10 @@ int ip6_mc_input(struct sk_buff *skb)
+
+	hdr = ipv6_hdr(skb);
+	deliver = ipv6_chk_mcast_addr(dev, &hdr->daddr, NULL);
++
++	pr_err("ip6-mc-input, deliver: %d, daddr: %pI6c  saddr: %pI6c, dev: %s\n",
++	       deliver, &hdr->daddr, &hdr->saddr, dev->name);
++
+	if (sdif)
+		rcu_read_unlock();
+
+diff --git a/net/ipv6/mcast.c b/net/ipv6/mcast.c
+index 7f3f13c37916..8a4349f472ff 100644
+--- a/net/ipv6/mcast.c
++++ b/net/ipv6/mcast.c
+@@ -993,7 +993,7 @@ bool ipv6_chk_mcast_addr(struct net_device *dev, const struct in6_addr *group,
+			 const struct in6_addr *src_addr)
+ {
+	struct inet6_dev *idev;
+-	struct ifmcaddr6 *mc;
++	struct ifmcaddr6 *mc = NULL;
+	bool rv = false;
+
+	rcu_read_lock();
+@@ -1026,6 +1026,8 @@ bool ipv6_chk_mcast_addr(struct net_device *dev, const struct in6_addr *group,
+		read_unlock_bh(&idev->lock);
+	}
+	rcu_read_unlock();
++	pr_err("ipv6-chk-mcast-addr rv: %d dev: %s group: %pI6c  src-addr: %pI6c mc: %p\n",
++	       rv, dev->name, group, src_addr, mc);
+	return rv;
+ }
+
+diff --git a/net/ipv6/ndisc.c b/net/ipv6/ndisc.c
+index 09dd2edfb868..5f715b580fe7 100644
+--- a/net/ipv6/ndisc.c
++++ b/net/ipv6/ndisc.c
+@@ -362,6 +362,10 @@ static int ndisc_constructor(struct neighbour *neigh)
+		else
+			neigh->output = neigh->ops->output;
+	}
++
++	pr_err("ndisc-constructor, dev: %s  addr: %pI6c  mcast: %d\n",
++	       dev->name, addr, is_multicast);
++
+	in6_dev_put(in6_dev);
+	return 0;
+ }
+@@ -484,6 +488,7 @@ static void ndisc_send_skb(struct sk_buff *skb,
+		dst = icmp6_dst_alloc(skb->dev, &fl6);
+		if (IS_ERR(dst)) {
+			kfree_skb(skb);
++			pr_err("ndisc-send-skb, could not alloc dst.\n");
+			return;
+		}
+
+@@ -497,6 +502,9 @@ static void ndisc_send_skb(struct sk_buff *skb,
+
+	ip6_nd_hdr(skb, saddr, daddr, inet6_sk(sk)->hop_limit, skb->len);
+
++	pr_err("ndisc-send-skb, skb-dev: %s dst-dev: %s  saddr: %pI6c daddr: %pI6c type: %d\n",
++	       skb->dev->name, dst->dev->name, saddr, daddr, type);
++
+	rcu_read_lock();
+	idev = __in6_dev_get(dst->dev);
+	IP6_UPD_PO_STATS(net, idev, IPSTATS_MIB_OUT, skb->len);
+@@ -523,6 +531,9 @@ void ndisc_send_na(struct net_device *dev, const struct in6_addr *daddr,
+	struct nd_msg *msg;
+	int optlen = 0;
+
++	pr_err("ndisc-send-na, dev: %s  daddr: %pI6c  solicited-addr: %pI6c, router: %d  sol: %d override: %d  inc-opt: %d\n",
++	       dev->name, daddr, solicited_addr, router, solicited, override, inc_opt);
++
+	/* for anycast or proxy, solicited_addr != src_addr */
+	ifp = ipv6_get_ifaddr(dev_net(dev), solicited_addr, dev, 1);
+	if (ifp) {
+@@ -534,8 +545,10 @@ void ndisc_send_na(struct net_device *dev, const struct in6_addr *daddr,
+	} else {
+		if (ipv6_dev_get_saddr(dev_net(dev), dev, daddr,
+				       inet6_sk(dev_net(dev)->ipv6.ndisc_sk)->srcprefs,
+-				       &tmpaddr))
++				       &tmpaddr)) {
++			pr_err("ndisc-send-na, could not get saddr.\n");
+			return;
++		}
+		src_addr = &tmpaddr;
+	}
+
+@@ -611,6 +624,9 @@ void ndisc_send_ns(struct net_device *dev, const struct in6_addr *solicit,
+		saddr = &addr_buf;
+	}
+
++	pr_err("ndisc-send-ns, dev: %s  daddr: %pI6c  saddr: %pI6c\n",
++	       dev->name, daddr, saddr);
++
+	if (ipv6_addr_any(saddr))
+		inc_opt = false;
+	if (inc_opt)
+@@ -723,6 +739,10 @@ static void ndisc_solicit(struct neighbour *neigh, struct sk_buff *skb)
+					   dev, false, 1,
+					   IFA_F_TENTATIVE|IFA_F_OPTIMISTIC))
+		saddr = &ipv6_hdr(skb)->saddr;
++
++	pr_err("ndisc-solicit, dev: %s  saddr: %pI6c  target: %pI6c\n",
++	       dev->name, saddr, target);
++
+	probes -= NEIGH_VAR(neigh->parms, UCAST_PROBES);
+	if (probes < 0) {
+		if (!(neigh->nud_state & NUD_VALID)) {
+@@ -830,6 +850,7 @@ static void ndisc_recv_ns(struct sk_buff *skb)
+	inc = ipv6_addr_is_multicast(daddr);
+
+	ifp = ipv6_get_ifaddr(dev_net(dev), &msg->target, dev, 1);
++	pr_err("recv-ns, ifp: %p  target: %pI6c daddr: %pI6c dad: %d\n", ifp, &msg->target, daddr, dad);
+	if (ifp) {
+ have_ifp:
+		if (ifp->flags & (IFA_F_TENTATIVE|IFA_F_OPTIMISTIC)) {
+@@ -881,6 +902,7 @@ static void ndisc_recv_ns(struct sk_buff *skb)
+		idev = in6_dev_get(dev);
+		if (!idev) {
+			/* XXX: count this drop? */
++			pr_err("no idev found..\n");
+			return;
+		}
+
+@@ -933,6 +955,7 @@ static void ndisc_recv_ns(struct sk_buff *skb)
+			     NEIGH_UPDATE_F_WEAK_OVERRIDE|
+			     NEIGH_UPDATE_F_OVERRIDE,
+			     NDISC_NEIGHBOUR_SOLICITATION, &ndopts);
++	pr_err("neigh: %p  header-ops: %p\n", neigh, dev->header_ops);
+	if (neigh || !dev->header_ops) {
+		ndisc_send_na(dev, saddr, &msg->target, !!is_router,
+			      true, (ifp != NULL && inc), inc);
+@@ -961,6 +984,9 @@ static void ndisc_recv_na(struct sk_buff *skb)
+	struct inet6_ifaddr *ifp;
+	struct neighbour *neigh;
+
++	pr_err("ndisc-recv-na, dev: %s  daddr: %pI6c  saddr: %pI6c\n",
++	       dev->name, daddr, saddr);
++
+	if (skb->len < sizeof(struct nd_msg)) {
+		ND_PRINTK(2, warn, "NA: packet too short\n");
+		return;
+@@ -1723,6 +1749,8 @@ int ndisc_rcv(struct sk_buff *skb)
+ {
+	struct nd_msg *msg;
+
++	pr_err("ndisc-rcv on dev: %s\n", skb->dev->name);
++
+	if (ndisc_suppress_frag_ndisc(skb))
+		return 0;
+
+@@ -1745,6 +1773,8 @@ int ndisc_rcv(struct sk_buff *skb)
+		return 0;
+	}
+
++	pr_err("ndisc-rcv, icmp6-type: %d on dev: %s saddr: %pI6c daddr: %pI6c\n",
++	       msg->icmph.icmp6_type, skb->dev->name, &ipv6_hdr(skb)->saddr, &ipv6_hdr(skb)->daddr);
+	switch (msg->icmph.icmp6_type) {
+	case NDISC_NEIGHBOUR_SOLICITATION:
+		memset(NEIGH_CB(skb), 0, sizeof(struct neighbour_cb));
+diff --git a/net/ipv6/route.c b/net/ipv6/route.c
+index 5f5a0a42ce60..e8e80a230f18 100644
+--- a/net/ipv6/route.c
++++ b/net/ipv6/route.c
+@@ -2113,8 +2113,10 @@ void ip6_route_input(struct sk_buff *skb)
+	if (fib6_rules_early_flow_dissect(net, skb, &fl6, &_flkeys))
+		flkeys = &_flkeys;
+
+-	if (unlikely(fl6.flowi6_proto == IPPROTO_ICMPV6))
++	if (unlikely(fl6.flowi6_proto == IPPROTO_ICMPV6)) {
++		pr_err("ip6-route-input, ICMPV6 pkt\n");
+		fl6.mp_hash = rt6_multipath_hash(net, &fl6, skb, flkeys);
++	}
+	skb_dst_drop(skb);
+	skb_dst_set(skb,
+		    ip6_route_input_lookup(net, skb->dev, &fl6, skb, flags));
+@@ -3238,6 +3240,11 @@ int ip6_route_add(struct fib6_config *cfg, gfp_t gfp_flags,
+		return PTR_ERR(rt);
+
+	err = __ip6_ins_rt(rt, &cfg->fc_nlinfo, extack);
++
++	pr_err("route-ip6-route-add, table: %d  dst: %pI6c/%d  src %pI6c/%d err: %d\n",
++	       cfg->fc_table, &cfg->fc_dst, cfg->fc_dst_len, &cfg->fc_src, cfg->fc_src_len, err);
++	WARN_ON(cfg->fc_dst_len == 8);
++
+	fib6_info_release(rt);
+
+	return err;
