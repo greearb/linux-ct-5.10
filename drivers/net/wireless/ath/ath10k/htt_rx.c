@@ -1096,8 +1096,18 @@ ath10k_htt_rx_h_peer_channel(struct ath10k *ar, struct htt_rx_desc *rxd)
 	if (WARN_ON_ONCE(!arvif))
 		return NULL;
 
-	if (WARN_ON_ONCE(ath10k_mac_vif_chan(arvif->vif, &def)))
+	if (ath10k_mac_vif_chan(arvif->vif, &def)) {
+		/* This used to WARN_ON_ONCE, but that bothers users, and I am not sure this is really
+		 * a bug. --Ben
+		 */
+		static bool do_once = 1;
+		if (do_once) {
+			ath10k_warn(ar, "mac-vif-chan had error in htt_rx_h_vdev_channel, peer-id: %d  vdev-id: %d peer-addr: %pM.",
+				    peer_id, peer->vdev_id, peer->addr);
+			do_once = 0;
+		}
 		return NULL;
+	}
 
 	return def.chan;
 }
