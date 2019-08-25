@@ -4237,7 +4237,7 @@ bool ath10k_htt_t2h_msg_handler(struct ath10k *ar, struct sk_buff *skb)
 		break;
 	}
 	case HTT_T2H_MSG_TYPE_MGMT_TX_COMPLETION: {
-		struct htt_tx_done tx_done = {};
+		struct htt_tx_done tx_done = {0};
 		struct ath10k_htt *htt = &ar->htt;
 		struct ath10k_htc *htc = &ar->htc;
 		struct ath10k_htc_ep *ep = &ar->htc.endpoint[htt->eid];
