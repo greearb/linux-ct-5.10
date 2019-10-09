@@ -1458,7 +1458,7 @@ static void ath10k_pci_dump_bss_ram(struct ath10k *ar,
 	if (!crash_data)
 		return;
 
-	lockdep_assert_held(&ar->data_lock);
+	lockdep_assert_held(&ar->dump_mutex);
 
 	if (!(ar->running_fw && ar->running_fw->fw_file.ram_bss_addr))
 		return;
@@ -1483,7 +1483,7 @@ static void ath10k_pci_dump_bss_rom(struct ath10k *ar,
 	if (!crash_data)
 		return;
 
-	lockdep_assert_held(&ar->data_lock);
+	lockdep_assert_held(&ar->dump_mutex);
 
 	if (!(ar->running_fw && ar->running_fw->fw_file.rom_bss_addr))
 		return;
@@ -1507,7 +1507,7 @@ static void ath10k_pci_dump_stack(struct ath10k *ar,
 	if (!crash_data)
 		return;
 
-	lockdep_assert_held(&ar->data_lock);
+	lockdep_assert_held(&ar->dump_mutex);
 	BUILD_BUG_ON(ATH10K_FW_STACK_SIZE % 4);
 
 	ath10k_pci_diag_read_hi(ar, crash_data->stack_buf,
@@ -1522,7 +1522,7 @@ static void ath10k_pci_dump_exc_stack(struct ath10k *ar,
 	if (!crash_data)
 		return;
 
-	lockdep_assert_held(&ar->data_lock);
+	lockdep_assert_held(&ar->dump_mutex);
 
 	ath10k_pci_diag_read_hi(ar, crash_data->exc_stack_buf,
 				hi_err_stack, ATH10K_FW_STACK_SIZE);
@@ -1626,7 +1626,9 @@ static void ath10k_pci_dump_registers(struct ath10k *ar,
 		if (ath10k_ct_fw_crash_regs_harder(ar, buffer, len/4))
 			goto free_and_cont;
 
+		spin_lock_bh(&ar->data_lock);
 		ath10k_dbg_save_fw_dbg_buffer(ar, buffer, len/4);
+		spin_unlock_bh(&ar->data_lock);
 		ath10k_dbg_print_fw_dbg_buffer(ar, buffer, len/4, KERN_ERR);
 
 		/* See if the second one is available */
@@ -1642,7 +1644,9 @@ static void ath10k_pci_dump_registers(struct ath10k *ar,
 		if (ath10k_ct_fw_crash_regs_harder(ar, buffer, len/4))
 			goto free_and_cont;
 
+		spin_lock_bh(&ar->data_lock);
 		ath10k_dbg_save_fw_dbg_buffer(ar, buffer, len/4);
+		spin_unlock_bh(&ar->data_lock);
 		ath10k_dbg_print_fw_dbg_buffer(ar, buffer, len/4, KERN_ERR);
 
 	free_and_cont:
@@ -2026,7 +2030,9 @@ static void ath10k_pci_dump_dbglog(struct ath10k *ar)
 
 		WARN_ON(len & 0x3);
 
+		spin_lock_bh(&ar->data_lock);
 		ath10k_dbg_save_fw_dbg_buffer(ar, (__le32 *)(buffer), len >> 2);
+		spin_unlock_bh(&ar->data_lock);
 		ath10k_dbg_print_fw_dbg_buffer(ar, (__le32 *)(buffer),
 					       len / sizeof(__le32),
 					       KERN_ERR);
