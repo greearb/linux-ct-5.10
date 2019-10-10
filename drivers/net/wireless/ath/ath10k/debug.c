@@ -3380,6 +3380,12 @@ static ssize_t ath10k_write_ct_special(struct file *file,
 		ath10k_warn(ar, "Setting disable-ibss-cca to %d\n",
 			    ar->eeprom_overrides.disable_ibss_cca);
 	}
+	else if (id == SET_SPECIAL_ID_RC_DBG) {
+		/* Set Rate-Ctrl debugging */
+		ar->eeprom_overrides.rc_debug = val;
+
+		ath10k_warn(ar, "Setting firmware rc-debug to 0x%x.\n", val);
+	}
 	else if (id == SET_SPECIAL_ID_TX_DBG) {
 		/* Set TX debugging */
 		ar->eeprom_overrides.tx_debug = val;
@@ -3467,11 +3473,15 @@ static ssize_t ath10k_write_ct_special(struct file *file,
 	if ((id & 0xFF0000) == 0xFF0000) {
 		/* Send it to the firmware through the fwtest (stock-ish) API */
 		/* Search for WMI_FWTEST_CMDID in core.c */
-		ret = ath10k_wmi_pdev_set_fwtest(ar, id & 0xFFFF, val);
+		if (ar->state == ATH10K_STATE_ON) {
+			ret = ath10k_wmi_pdev_set_fwtest(ar, id & 0xFFFF, val);
+		}
 	}
 	else {
 		/* Send it to the firmware though ct-special API */
-		ret = ath10k_wmi_pdev_set_special(ar, id, val);
+		if (ar->state == ATH10K_STATE_ON) {
+			ret = ath10k_wmi_pdev_set_special(ar, id, val);
+		}
 	}
 unlock:
 	mutex_unlock(&ar->conf_mutex);
