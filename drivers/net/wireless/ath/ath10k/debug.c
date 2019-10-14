@@ -654,19 +654,21 @@ void ath10k_debug_fw_stats_process(struct ath10k *ar, struct sk_buff *skb)
 	is_started = !list_empty(&ar->debug.fw_stats.pdevs);
 
 	if (is_started && !is_end) {
-		if (num_peers >= ATH10K_MAX_NUM_PEER_IDS) {
+		if (num_peers > ATH10K_MAX_NUM_PEER_IDS) {
 			/* Although this is unlikely impose a sane limit to
 			 * prevent firmware from DoS-ing the host.
 			 */
 			ath10k_fw_stats_peers_free(&ar->debug.fw_stats.peers);
 			ath10k_fw_extd_stats_peers_free(&ar->debug.fw_stats.peers_extd);
-			ath10k_warn(ar, "dropping fw peer stats\n");
+			ath10k_warn(ar, "dropping fw peer stats, num_peers: %d  max-peer-ids: %d\n",
+				    (int)(num_peers), (int)(ATH10K_MAX_NUM_PEER_IDS));
 			goto free;
 		}
 
-		if (num_vdevs >= BITS_PER_LONG) {
+		if (num_vdevs > BITS_PER_LONG) {
 			ath10k_fw_stats_vdevs_free(&ar->debug.fw_stats.vdevs);
-			ath10k_warn(ar, "dropping fw vdev stats\n");
+			ath10k_warn(ar, "dropping fw vdev stats, num-vdevs: %d, bits-per-long: %d\n",
+				    (int)(num_vdevs), (int)(BITS_PER_LONG));
 			goto free;
 		}
 
