@@ -1496,6 +1496,10 @@ struct ath10k {
 
 	unsigned long tx_paused; /* see ATH10K_TX_PAUSE_ */
 
+	u32 last_wmi_cmds[4];
+	u32 last_wmi_jiffies[4];
+	u32 last_wmi_cmd_idx;
+
 #ifdef CONFIG_ATH10K_DEBUGFS
 	struct ath10k_debug debug;
 	struct {
