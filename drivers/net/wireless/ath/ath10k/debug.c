@@ -1571,7 +1571,14 @@ static ssize_t ath10k_write_set_rate_override(struct file *file,
 	}
 
 	if (vdev_id == 0xFFFF) {
-		ath10k_warn(ar, "set-rate-override, unknown netdev name: %s\n", buf);
+		if (strstr(buf, "active=0")) {
+			/* Ignore, we are disabling it anyway */
+			ret = count;
+			goto exit;
+		}
+		else {
+			ath10k_warn(ar, "set-rate-override, unknown netdev name: %s\n", buf);
+		}
 		ret = -EINVAL;
 		goto exit;
 	}
