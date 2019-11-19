@@ -868,7 +868,8 @@ nfs4_find_client_sessionid(struct net *net, const struct sockaddr *srcaddr,
 #else /* CONFIG_NFS_V4_1 */
 
 struct nfs_client *
-nfs4_find_client_sessionid(struct net *net, const struct sockaddr *addr,
+nfs4_find_client_sessionid(struct net *net, const struct sockaddr *srcaddr,
+			   const struct sockaddr *addr,
 			   struct nfs4_sessionid *sid, u32 minorversion)
 {
 	return NULL;
