@@ -4494,7 +4494,7 @@ EXPORT_SYMBOL(ath10k_htt_rx_hl_indication);
 int ath10k_htt_txrx_compl_task(struct ath10k *ar, int budget)
 {
 	struct ath10k_htt *htt = &ar->htt;
-	struct htt_tx_done tx_done = {};
+	struct htt_tx_done tx_done = {0};
 	struct sk_buff_head tx_ind_q;
 	struct sk_buff *skb;
 	unsigned long flags;
