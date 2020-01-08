@@ -76,6 +76,7 @@ static void wakeup_softirqd(void)
 		wake_up_process(tsk);
 }
 
+#if 0 /* BEN:  Disable this so that kwanlinks work again properly. */
 /*
  * If ksoftirqd is scheduled, we do not want to process pending softirqs
  * right now. Let ksoftirqd handle this at its own rate, to get fairness,
@@ -91,6 +92,7 @@ static bool ksoftirqd_running(unsigned long pending)
 	return tsk && (tsk->state == TASK_RUNNING) &&
 		!__kthread_should_park(tsk);
 }
+#endif
 
 /*
  * preempt_count and SOFTIRQ_OFFSET usage:
@@ -339,7 +341,7 @@ asmlinkage __visible void do_softirq(void)
 
 	pending = local_softirq_pending();
 
-	if (pending && !ksoftirqd_running(pending))
+	if (pending) /* && !ksoftirqd_running(pending)) */
 		do_softirq_own_stack();
 
 	local_irq_restore(flags);
@@ -373,8 +375,10 @@ void irq_enter(void)
 
 static inline void invoke_softirq(void)
 {
+#if 0
 	if (ksoftirqd_running(local_softirq_pending()))
 		return;
+#endif
 
 	if (!force_irqthreads) {
 #ifdef CONFIG_HAVE_IRQ_EXIT_ON_IRQ_STACK
