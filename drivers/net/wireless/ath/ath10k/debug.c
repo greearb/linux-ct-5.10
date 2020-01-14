@@ -504,7 +504,8 @@ void ath10k_debug_fw_stats_process(struct ath10k *ar, struct sk_buff *skb)
 			/* Post-process some stats */
 			if (ev->num_pdev_stats == WMI_STAT_CUSTOM_PDEV_EXT_STATS) {
 				/* These are in 2s compliment form, convert:  f = (0 - ((f ^ 0x1ff) +1)) */
-#define COMP2(a) ar->debug.pdev_ext_stats.a = (0 - ((ar->debug.pdev_ext_stats.a ^ 0x1ff) + 1))
+#define COMP2(a) ar->debug.pdev_ext_stats.a = (0 - ((ar->debug.pdev_ext_stats.a ^ 0x1ff) + 1)); \
+				if (ar->debug.pdev_ext_stats.a == -512) { ar->debug.pdev_ext_stats.a = 0x80; }
 				COMP2(chan_nf_0);
 				COMP2(chan_nf_1);
 				COMP2(chan_nf_2);
@@ -514,15 +515,16 @@ void ath10k_debug_fw_stats_process(struct ath10k *ar, struct sk_buff *skb)
 				COMP2(chan_nf_sec80_3);
 #undef COMP2
 				/* Calculate avg noise floor so we don't have to calculate it over and over in the rx path */
-				ar->debug.nf_avg[0] = ar->debug.pdev_ext_stats.chan_nf_0;
-				ar->debug.nf_avg[1] = (ar->debug.pdev_ext_stats.chan_nf_0 + ar->debug.pdev_ext_stats.chan_nf_1) / 2;
-				ar->debug.nf_avg[2] = (ar->debug.pdev_ext_stats.chan_nf_0
-						       + ar->debug.pdev_ext_stats.chan_nf_1
-						       + ar->debug.pdev_ext_stats.chan_nf_2) / 3;
-				ar->debug.nf_avg[3] = (ar->debug.pdev_ext_stats.chan_nf_0
-						       + ar->debug.pdev_ext_stats.chan_nf_1
-						       + ar->debug.pdev_ext_stats.chan_nf_2
-						       + ar->debug.pdev_ext_stats.chan_nf_3) / 4;
+				ar->debug.nf_sum[0] = ar->debug.pdev_ext_stats.chan_nf_0;
+				ar->debug.nf_sum[1] = ath10k_sum_sigs_2(ar->debug.pdev_ext_stats.chan_nf_0, ar->debug.pdev_ext_stats.chan_nf_1);
+				ar->debug.nf_sum[2] = ath10k_sum_sigs(ar->debug.pdev_ext_stats.chan_nf_0,
+								      ar->debug.pdev_ext_stats.chan_nf_1,
+								      ar->debug.pdev_ext_stats.chan_nf_2,
+								      0x80);
+				ar->debug.nf_sum[3] = ath10k_sum_sigs(ar->debug.pdev_ext_stats.chan_nf_0,
+								      ar->debug.pdev_ext_stats.chan_nf_1,
+								      ar->debug.pdev_ext_stats.chan_nf_2,
+								      ar->debug.pdev_ext_stats.chan_nf_3);
 			}
 		}
 		ar->debug.fw_stats_done = true;
@@ -1008,6 +1010,13 @@ static ssize_t ath10k_read_pdev_ext_ct_stats(struct file *file, char __user *use
 	PRINT_MY_STATS(chan_nf_sec80_1);
 	PRINT_MY_STATS(chan_nf_sec80_2);
 	PRINT_MY_STATS(chan_nf_sec80_3);
+
+#undef PRINT_MY_STATS
+#define PRINT_MY_STATS(a) len += scnprintf(buf + len, buf_len - len, "%30s %10d\n", #a, ar->debug.a)
+	PRINT_MY_STATS(nf_sum[0]);
+	PRINT_MY_STATS(nf_sum[1]);
+	PRINT_MY_STATS(nf_sum[2]);
+	PRINT_MY_STATS(nf_sum[3]);
 
 	if (len > buf_len)
 		len = buf_len;
@@ -3097,6 +3106,21 @@ int ath10k_debug_start(struct ath10k *ar)
 	int ret;
 
 	lockdep_assert_held(&ar->conf_mutex);
+
+	/* initilize this to defaults */
+	ar->debug.nf_sum[0] = 0x80;
+	ar->debug.nf_sum[1] = 0x80;
+	ar->debug.nf_sum[2] = 0x80;
+	ar->debug.nf_sum[3] = 0x80;
+
+	ar->debug.pdev_ext_stats.chan_nf_0 = 0x80;
+	ar->debug.pdev_ext_stats.chan_nf_1 = 0x80;
+	ar->debug.pdev_ext_stats.chan_nf_2 = 0x80;
+	ar->debug.pdev_ext_stats.chan_nf_3 = 0x80;
+
+	ar->debug.pdev_ext_stats.chan_nf_sec80_1 = 0x80;
+	ar->debug.pdev_ext_stats.chan_nf_sec80_2 = 0x80;
+	ar->debug.pdev_ext_stats.chan_nf_sec80_3 = 0x80;
 
 	ret = ath10k_debug_htt_stats_req(ar);
 	if (ret)

@@ -1181,48 +1181,6 @@ static bool ath10k_htt_rx_h_channel(struct ath10k *ar,
 	return true;
 }
 
-static int ath10k_sum_sigs_2(int a, int b) {
-	int diff;
-
-	/* 0x80 means value-is-not-set */
-	if (b == 0x80)
-		return a;
-
-	if (a >= b) {
-		/* a is largest value, add to it. */
-		diff = a - b;
-		if (diff == 0)
-			return a + 3;
-		else if (diff == 1)
-			return a + 2;
-		else if (diff == 2)
-			return a + 1;
-		return a;
-	}
-	else {
-		/* b is largest value, add to it. */
-		diff = b - a;
-		if (diff == 0)
-			return b + 3;
-		else if (diff == 1)
-			return b + 2;
-		else if (diff == 2)
-			return b + 1;
-		return b;
-	}
-}
-
-static int ath10k_sum_sigs(int p20, int e20, int e40, int e80) {
-	/* Hacky attempt at summing dbm without resorting to log(10) business */
-	/* 0x80 means value-is-not-set */
-	if (e40 != 0x80) {
-		return ath10k_sum_sigs_2(ath10k_sum_sigs_2(p20, e20), ath10k_sum_sigs_2(e40, e80));
-	}
-	else {
-		return ath10k_sum_sigs_2(p20, e20);
-	}
-}
-
 static void ath10k_htt_rx_h_signal(struct ath10k *ar,
 				   struct ieee80211_rx_status *status,
 				   struct htt_rx_desc *rxd)
@@ -1246,7 +1204,7 @@ static void ath10k_htt_rx_h_signal(struct ath10k *ar,
 
 		if (rxd->ppdu_start.rssi_chains[i].pri20_mhz != 0x80) {
 #ifdef CONFIG_ATH10K_DEBUGFS
-			if (nfa[i] && nfa[i] > -512)
+			if (nfa[i] != 0x80)
 				nf = nfa[i];
 #endif
 			status->chain_signal[i] = nf
@@ -1269,8 +1227,8 @@ static void ath10k_htt_rx_h_signal(struct ath10k *ar,
 	/* So, noise-floor is really per-chain, so I guess we average it here. */
 #ifdef CONFIG_ATH10K_DEBUGFS
 	nf = ATH10K_DEFAULT_NOISE_FLOOR;
-	if (my_ch && ar->debug.nf_avg)
-		nf = ar->debug.nf_avg[my_ch - 1];
+	if (my_ch && (ar->debug.nf_sum[my_ch - 1] != 0x80))
+		nf = ar->debug.nf_sum[my_ch - 1];
 #endif
 
 	/* 0x80 means value-is-not-set on wave-2 firmware.
