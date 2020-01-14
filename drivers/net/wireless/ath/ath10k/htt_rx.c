@@ -1186,13 +1186,15 @@ static void ath10k_htt_rx_h_signal(struct ath10k *ar,
 				   struct htt_rx_desc *rxd)
 {
 	int i;
-	int my_ch = 0;
 
 	int nf = ATH10K_DEFAULT_NOISE_FLOOR;
 
 #ifdef CONFIG_ATH10K_DEBUGFS
 	struct ath10k_pdev_ext_stats_ct *pes = &ar->debug.pdev_ext_stats;
 	s32* nfa = &(pes->chan_nf_0);
+	s32 sums[IEEE80211_MAX_CHAINS];
+	bool has_nf = false;
+	sums[0] = sums[1] = sums[2] = sums[3] = 0x80;
 
 	/* FIXME:  Need to figure out how to take the secondary 80Mhz noise floor into
 	 * account too when using 160Mhz, but not worrying about that for now.
@@ -1204,8 +1206,11 @@ static void ath10k_htt_rx_h_signal(struct ath10k *ar,
 
 		if (rxd->ppdu_start.rssi_chains[i].pri20_mhz != 0x80) {
 #ifdef CONFIG_ATH10K_DEBUGFS
-			if (nfa[i] != 0x80)
+			if (nfa[i] != 0x80) {
 				nf = nfa[i];
+				has_nf = true;
+			}
+			sums[i] =
 #endif
 			status->chain_signal[i] = nf
 				+ ath10k_sum_sigs(rxd->ppdu_start.rssi_chains[i].pri20_mhz,
@@ -1220,25 +1225,32 @@ static void ath10k_htt_rx_h_signal(struct ath10k *ar,
 			 */
 
 			status->chains |= BIT(i);
-			my_ch++;
 		}
 	}
 
 	/* So, noise-floor is really per-chain, so I guess we average it here. */
+	/* This does not yield good results for 80Mhz, but does for 20Mhz.  I'm thinking
+	 * the rssi_comb is for just the first 20Mhz perhaps?  So, just add up the per-chain
+	 * values if we have a valid noise floor.
+	 */
 #ifdef CONFIG_ATH10K_DEBUGFS
 	nf = ATH10K_DEFAULT_NOISE_FLOOR;
-	if (my_ch && (ar->debug.nf_sum[my_ch - 1] != 0x80))
-		nf = ar->debug.nf_sum[my_ch - 1];
-#endif
-
-	/* 0x80 means value-is-not-set on wave-2 firmware.
-	 * For wave-2 firmware, value is not defined and is set to zero. */
-	if (rxd->ppdu_start.rssi_comb_ht &&
-	    (rxd->ppdu_start.rssi_comb_ht != 0x80)) {
-		status->signal = nf + rxd->ppdu_start.rssi_comb_ht;
+	if (has_nf) {
+		status->signal = ath10k_sum_sigs(sums[0], sums[1], sums[2], sums[3]);
 	}
-	else {
-		status->signal = nf + rxd->ppdu_start.rssi_comb;
+	else
+#endif
+	{
+
+		/* 0x80 means value-is-not-set on wave-2 firmware.
+		 * For wave-2 firmware, value is not defined and is set to zero. */
+		if (rxd->ppdu_start.rssi_comb_ht &&
+		    (rxd->ppdu_start.rssi_comb_ht != 0x80)) {
+			status->signal = nf + rxd->ppdu_start.rssi_comb_ht;
+		}
+		else {
+			status->signal = nf + rxd->ppdu_start.rssi_comb;
+		}
 	}
 
 	/* ath10k_warn(ar, "rx-h-sig, signal: %d  chains: 0x%x  chain[0]: %d  chain[1]: %d  chain[2]: %d chain[3]: %d\n",
