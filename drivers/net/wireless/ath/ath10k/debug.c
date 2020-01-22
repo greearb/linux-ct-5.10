@@ -479,19 +479,28 @@ void ath10k_debug_fw_stats_process(struct ath10k *ar, struct sk_buff *skb)
 			stats_len =  (skb->len - sizeof(*ev)) / 4;
 		}
 
+		/*ath10k_err(ar, "id: %d stats_len: %d skb->len: %d\n",
+		             ev->num_pdev_stats, stats_len, skb->len);*/
+
 		if (ev->num_pdev_stats == WMI_STAT_CUSTOM_RX_REORDER_STATS) {
 			my_len = sizeof(ar->debug.rx_reorder_stats) / 4;
 			my_len = min(my_len, stats_len);
 			my_stats = (u32*)(&(ar->debug.rx_reorder_stats));
 		}
 		else if (ev->num_pdev_stats == WMI_STAT_CUSTOM_PDEV_EXT_STATS) {
-			struct ath10k_pdev_ext_stats_ct *pes = (void*)(data);
-
-			my_len = __le32_to_cpu(pes->count) + 2;
-			if (my_len > (sizeof(*pes) / 4)) {
-				my_len = sizeof(*pes) / 4;
+			if (stats_len >= 10) {
+				struct ath10k_pdev_ext_stats_ct *pes = (void*)(data);
+				/* A bug in wave-1 (at least) FW caused us to get stats here when
+				 * we should not.  Fortunately, the bad stats are all shorter than 10
+				 * 32-bit values, so we ignore those.
+				 */
+				my_len = __le32_to_cpu(pes->count) + 2;
+				if (my_len > (sizeof(*pes) / 4)) {
+					my_len = sizeof(*pes) / 4;
+				}
+				my_len = min(my_len, stats_len);
+				my_stats = (u32*)(&(ar->debug.pdev_ext_stats));
 			}
-			my_stats = (u32*)(&(ar->debug.pdev_ext_stats));
 		}
 
 		/* If we know about the stats, handle it here. */
