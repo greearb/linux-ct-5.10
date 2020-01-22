@@ -491,15 +491,17 @@ void ath10k_debug_fw_stats_process(struct ath10k *ar, struct sk_buff *skb)
 			if (stats_len >= 10) {
 				struct ath10k_pdev_ext_stats_ct *pes = (void*)(data);
 				/* A bug in wave-1 (at least) FW caused us to get stats here when
-				 * we should not.  Fortunately, the bad stats are all shorter than 10
+				 * we should not.  Fortunately, the bad stats are often shorter than 10
 				 * 32-bit values, so we ignore those.
 				 */
 				my_len = __le32_to_cpu(pes->count) + 2;
-				if (my_len > (sizeof(*pes) / 4)) {
-					my_len = sizeof(*pes) / 4;
+				if (my_len == stats_len) { /* make sure it is self-consistent */
+					if (my_len > (sizeof(*pes) / 4)) {
+						my_len = sizeof(*pes) / 4;
+					}
+					my_len = min(my_len, stats_len);
+					my_stats = (u32*)(&(ar->debug.pdev_ext_stats));
 				}
-				my_len = min(my_len, stats_len);
-				my_stats = (u32*)(&(ar->debug.pdev_ext_stats));
 			}
 		}
 
