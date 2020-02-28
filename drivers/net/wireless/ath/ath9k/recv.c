@@ -917,11 +917,23 @@ static int ath9k_rx_skb_preprocess(struct ath_softc *sc,
 		/*
 		 * No valid hardware bitrate found -- we should not get here
 		 * because hardware has already validated this frame as OK.
+		 * But, we can get here if something (buggy ath10k-wave-1, for instance)
+		 * is tranmitting CCK on 5Ghz.
 		 */
-		ath_dbg(common, ANY, "unsupported hw bitrate detected 0x%02x using 1 Mbit\n",
-			rx_stats->rs_rate);
+		static unsigned long next_jiffies = 0;
+		if (next_jiffies == 0 || time_after(jiffies, next_jiffies)) {
+			ath_dbg(common, ANY, "unsupported hw bitrate detected 0x%02x (%s)\n",
+				rx_stats->rs_rate,
+				(rx_stats->rs_rate == 0x1b) ? "1Mbps" :
+				(rx_stats->rs_rate == 0x1a) ? "2Mbps" :
+				(rx_stats->rs_rate == 0x19) ? "5.5Mbps" :
+				(rx_stats->rs_rate == 0x18) ? "11Mbps" : "Unknown");
+			next_jiffies = jiffies + HZ;
+		}
 		RX_STAT_INC(sc, rx_rate_err);
-		return -EINVAL;
+		/* Let frame be received up the stack, good for sniffing if nothing else, and really,
+		 * if it is otherwise OK, might as well accept CCK up the stack in 5Ghz.
+		 */
 	}
 
 	if (ath9k_is_chanctx_enabled()) {
