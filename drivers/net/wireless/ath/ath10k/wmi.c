@@ -26,6 +26,8 @@
 #define ATH10K_WMI_BARRIER_TIMEOUT_HZ (3 * HZ)
 #define ATH10K_WMI_DFS_CONF_TIMEOUT_HZ (HZ / 6)
 
+const char* cck_speed_by_idx[] = {"1Mbps", "2Mbps", "5.5Mbps", "11Mbps" };
+
 /* MAIN WMI cmd track */
 static struct wmi_cmd_map wmi_cmd_map = {
 	.init_cmdid = WMI_INIT_CMDID,
