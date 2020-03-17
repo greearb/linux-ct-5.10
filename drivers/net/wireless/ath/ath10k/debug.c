@@ -2830,8 +2830,21 @@ static ssize_t ath10k_write_nf_cal_period(struct file *file,
 		return -EINVAL;
 
 	/* there's no way to switch back to the firmware default */
-	if (period == 0)
-		return -EINVAL;
+	if (period == 0) {
+		/* if CT an 10.1 firmware, then it OK to set 0 */
+		if ((ar->running_fw->fw_file.wmi_op_version == ATH10K_FW_WMI_OP_VERSION_10_1) &&
+		    (test_bit(ATH10K_FW_FEATURE_CUST_STATS_CT, ar->running_fw->fw_file.fw_features))) {
+			/* wave-1 CT firmware (since March 11, 2020), will let you set the period
+			 * to zero (0) to disable calibration.  Older CT firmware will just ignore this
+			 * setting anyway.
+			 */
+			ath10k_warn(ar, "Disabling calibration (period == 0)\n");
+		}
+		else {
+			ath10k_warn(ar, "Calibration period of zero is not allowed on this firmware.\n");
+			return -EINVAL;
+		}
+	}
 
 	mutex_lock(&ar->conf_mutex);
 
@@ -2846,8 +2859,8 @@ static ssize_t ath10k_write_nf_cal_period(struct file *file,
 	ret = ath10k_wmi_pdev_set_param(ar, ar->wmi.pdev_param->cal_period,
 					ar->debug.nf_cal_period);
 	if (ret) {
-		ath10k_warn(ar, "cal period cfg failed from debugfs: %d\n",
-			    ret);
+		ath10k_warn(ar, "cal period %ld cfg failed from debugfs: %d\n",
+			    period, ret);
 		goto exit;
 	}
 
