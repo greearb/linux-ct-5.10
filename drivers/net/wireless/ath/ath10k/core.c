@@ -2515,7 +2515,7 @@ static int ath10k_core_init_firmware_features(struct ath10k *ar)
 		if (test_bit(ATH10K_FW_FEATURE_WMI_10X_CT, fw_file->fw_features)) {
 			ar->max_num_peers = TARGET_10X_NUM_PEERS_CT;
 			ar->max_num_stations = TARGET_10X_NUM_STATIONS;
-			ar->max_num_vdevs = TARGET_10X_NUM_VDEVS_CT;
+			ar->max_num_vdevs = ath10k_modparam_target_num_vdevs_ct;
 			ar->htt.max_num_pending_tx = TARGET_10X_NUM_MSDU_DESC_CT;
 		} else {
 			ar->max_num_peers = TARGET_10X_NUM_PEERS;

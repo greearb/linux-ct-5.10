@@ -6594,8 +6594,8 @@ static struct sk_buff *ath10k_wmi_op_gen_init(struct ath10k *ar)
 	struct wmi_resource_config config = {};
 	u32 val;
 
-	config.num_vdevs = __cpu_to_le32(TARGET_NUM_VDEVS);
-	config.num_peers = __cpu_to_le32(TARGET_NUM_PEERS);
+	config.num_vdevs = __cpu_to_le32(ar->max_num_vdevs);
+	config.num_peers = __cpu_to_le32(ar->max_num_peers);
 	config.num_offload_peers = __cpu_to_le32(TARGET_NUM_OFFLOAD_PEERS);
 
 	config.num_offload_reorder_bufs =
@@ -6668,11 +6668,11 @@ static struct sk_buff *ath10k_wmi_10_1_op_gen_init(struct ath10k *ar)
 	u32 skid_limit;
 
 	config.rx_decap_mode = __cpu_to_le32(ar->wmi.rx_decap_mode);
+	config.num_vdevs = __cpu_to_le32(ar->max_num_vdevs);
+	config.num_peers = __cpu_to_le32(ar->max_num_peers);
 
 	if (test_bit(ATH10K_FW_FEATURE_WMI_10X_CT,
 		     ar->running_fw->fw_file.fw_features)) {
-		config.num_vdevs = __cpu_to_le32(TARGET_10X_NUM_VDEVS_CT);
-		config.num_peers = __cpu_to_le32(TARGET_10X_NUM_PEERS_CT);
 		skid_limit = TARGET_10X_AST_SKID_LIMIT_CT;
 		if (test_bit(ATH10K_FW_FEATURE_CT_RXSWCRYPT,
 			     ar->running_fw->fw_file.fw_features) &&
@@ -6692,10 +6692,7 @@ static struct sk_buff *ath10k_wmi_10_1_op_gen_init(struct ath10k *ar)
 		config.roam_offload_max_vdev = 0; /* disable roaming */
 		config.roam_offload_max_ap_profiles = 0; /* disable roaming */
 		config.num_peer_keys = __cpu_to_le32(TARGET_10X_NUM_PEER_KEYS_CT);
-		config.num_msdu_desc = __cpu_to_le32(TARGET_10X_NUM_MSDU_DESC_CT);
 	} else {
-		config.num_vdevs = __cpu_to_le32(TARGET_10X_NUM_VDEVS);
-		config.num_peers = __cpu_to_le32(TARGET_10X_NUM_PEERS);
 		skid_limit = TARGET_10X_AST_SKID_LIMIT;
 		config.roam_offload_max_vdev =
 			__cpu_to_le32(TARGET_10X_ROAM_OFFLOAD_MAX_VDEV);
@@ -6703,8 +6700,8 @@ static struct sk_buff *ath10k_wmi_10_1_op_gen_init(struct ath10k *ar)
 		config.roam_offload_max_ap_profiles =
 			__cpu_to_le32(TARGET_10X_ROAM_OFFLOAD_MAX_AP_PROFILES);
 		config.num_peer_keys = __cpu_to_le32(TARGET_10X_NUM_PEER_KEYS);
-		config.num_msdu_desc = __cpu_to_le32(TARGET_10X_NUM_MSDU_DESC);
 	}
+	config.num_msdu_desc = __cpu_to_le32(ar->htt.max_num_pending_tx);
 	config.ast_skid_limit = __cpu_to_le32(skid_limit);
 
 	/* Firmware will crash if this is not even multiple of 8 */

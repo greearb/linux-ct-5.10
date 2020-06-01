@@ -16,6 +16,7 @@ enum wmi_tlv_tx_pause_id;
 enum wmi_tlv_tx_pause_action;
 
 extern int ath10k_modparam_nohwcrypt;
+extern int ath10k_modparam_target_num_vdevs_ct;
 
 struct ath10k_generic_iter {
 	struct ath10k *ar;

@@ -224,6 +224,9 @@ int ath10k_mac_ext_resource_config(struct ath10k *ar, u32 val)
 int ath10k_modparam_nohwcrypt;
 module_param_named(nohwcrypt, ath10k_modparam_nohwcrypt, int, 0444);
 MODULE_PARM_DESC(nohwcrypt, "Disable hardware rx decrypt feature");
+int ath10k_modparam_target_num_vdevs_ct = DEF_TARGET_10X_NUM_VDEVS_CT;
+module_param_named(num_vdevs_ct, ath10k_modparam_target_num_vdevs_ct, int, 0444);
+MODULE_PARM_DESC(num_vdevs_ct, "Maximum vdevs to request from firmware");
 
 /**********/
 /* Crypto */
@@ -3344,8 +3347,13 @@ static void ath10k_regd_update(struct ath10k *ar)
 	if (IS_ENABLED(CONFIG_ATH10K_DFS_CERTIFIED) && ar->dfs_detector) {
 		nl_dfs_reg = ar->dfs_detector->region;
 		wmi_dfs_reg = ath10k_mac_get_dfs_region(nl_dfs_reg);
+		ath10k_dbg(ar, ATH10K_DBG_REGULATORY,
+			   "nl_dfs_reg: %i  wmi_dfs_reg: %i\n",
+			    nl_dfs_reg, wmi_dfs_reg);
 	} else {
 		wmi_dfs_reg = WMI_UNINIT_DFS_DOMAIN;
+		ath10k_dbg(ar, ATH10K_DBG_REGULATORY,
+			   "not DFS_CERTIFIED or no dfs_detector.\n");
 	}
 
 	/* Target allows setting up per-band regdomain but ath_common provides
@@ -9435,9 +9443,9 @@ static const struct ieee80211_iface_limit ath10k_10x_if_limits[] = {
 	},
 };
 
-static const struct ieee80211_iface_limit ath10k_10x_ct_if_limits[] = {
+static struct ieee80211_iface_limit ath10k_10x_ct_if_limits[] = {
 	{
-	.max	= TARGET_10X_NUM_VDEVS_CT,
+	.max	= DEF_TARGET_10X_NUM_VDEVS_CT,
 	.types	= BIT(NL80211_IFTYPE_STATION)
 		| BIT(NL80211_IFTYPE_P2P_CLIENT)
 	},
@@ -9451,7 +9459,7 @@ static const struct ieee80211_iface_limit ath10k_10x_ct_if_limits[] = {
 	},
 };
 
-static const struct ieee80211_iface_combination ath10k_if_comb[] = {
+static struct ieee80211_iface_combination ath10k_if_comb[] = {
 	{
 		.limits = ath10k_if_limits,
 		.n_limits = ARRAY_SIZE(ath10k_if_limits),
@@ -9461,7 +9469,7 @@ static const struct ieee80211_iface_combination ath10k_if_comb[] = {
 	},
 };
 
-static const struct ieee80211_iface_combination ath10k_10x_if_comb[] = {
+static struct ieee80211_iface_combination ath10k_10x_if_comb[] = {
 	{
 		.limits = ath10k_10x_if_limits,
 		.n_limits = ARRAY_SIZE(ath10k_10x_if_limits),
@@ -9532,11 +9540,11 @@ static const struct ieee80211_iface_limit ath10k_tlv_if_limit_ibss[] = {
 	},
 };
 
-static const struct ieee80211_iface_combination ath10k_10x_ct_if_comb[] = {
+static struct ieee80211_iface_combination ath10k_10x_ct_if_comb[] = {
 	{
 		.limits = ath10k_10x_ct_if_limits,
 		.n_limits = ARRAY_SIZE(ath10k_10x_ct_if_limits),
-		.max_interfaces = TARGET_10X_NUM_VDEVS_CT,
+		.max_interfaces = DEF_TARGET_10X_NUM_VDEVS_CT,
 		.num_different_channels = 1,
 		.beacon_int_infra_match = true,
 #ifdef CONFIG_ATH10K_DFS_CERTIFIED
@@ -9772,6 +9780,14 @@ static int ath10k_mac_init_rd(struct ath10k *ar)
 	ar->ath_common.regulatory.current_rd = rd;
 	return 0;
 }
+
+/* Force over-ride const logic in core so we don't have to patch core. */
+#define ATH_ASSIGN_CONST_U16(a,b)                   \
+   do {                                             \
+      u16* __val_p = (u16*)(&(a));                  \
+      *__val_p = b;                                 \
+   } while (0)
+
 
 int ath10k_mac_register(struct ath10k *ar)
 {
@@ -10047,6 +10063,12 @@ int ath10k_mac_register(struct ath10k *ar)
 		if (test_bit(ATH10K_FW_FEATURE_WMI_10X_CT,
 			     ar->normal_mode_fw.fw_file.fw_features)) {
 			ar->hw->wiphy->iface_combinations = ath10k_10x_ct_if_comb;
+			ATH_ASSIGN_CONST_U16(ath10k_10x_ct_if_comb[0].limits[0].max, ar->max_num_vdevs);
+			ath10k_10x_ct_if_comb[0].max_interfaces =
+				ar->max_num_vdevs;
+
+			ar->hw->wiphy->iface_combinations =
+				ath10k_10x_ct_if_comb;
 			ar->hw->wiphy->n_iface_combinations =
 				ARRAY_SIZE(ath10k_10x_ct_if_comb);
 		} else {
