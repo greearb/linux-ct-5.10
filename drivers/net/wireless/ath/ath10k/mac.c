@@ -8266,66 +8266,110 @@ static int ath10k_mac_op_set_frag_threshold(struct ieee80211_hw *hw, u32 value)
 
 void ath10k_mac_wait_tx_complete(struct ath10k *ar)
 {
-	bool skip;
-	long time_left;
-	u8 peer_addr[ETH_ALEN] = {0};
+        bool skip;
+        long time_left;
+        int pending_tx = 0;
 
-	/* mac80211 doesn't care if we really xmit queued frames or not
-	 * we'll collect those frames either way if we stop/delete vdevs
-	 */
+        time_left = wait_event_timeout(ar->htt.empty_tx_wq, ({
+                        bool empty;
 
-	if (ar->state == ATH10K_STATE_WEDGED)
-		return;
+                        spin_lock_bh(&ar->htt.tx_lock);
+                        pending_tx = ar->htt.num_pending_tx;
+                        empty = (pending_tx == 0);
+                        spin_unlock_bh(&ar->htt.tx_lock);
 
-	/* If we are CT firmware, ask it to flush all tids on all peers on
-	 * all vdevs.  Normal firmware will just crash if you do this.
-	 */
-	if (test_bit(ATH10K_FW_FEATURE_WMI_10X_CT,
-		     ar->running_fw->fw_file.fw_features))
-		ath10k_wmi_peer_flush(ar, 0xFFFFFFFF, peer_addr, 0xFFFFFFFF);
+                        skip = (ar->state == ATH10K_STATE_WEDGED) ||
+                               test_bit(ATH10K_FLAG_CRASH_FLUSH,
+                                        &ar->dev_flags);
 
-	time_left = wait_event_timeout(ar->htt.empty_tx_wq, ({
-			bool empty;
+                        (empty || skip);
+                }), ATH10K_FLUSH_TIMEOUT_HZ);
 
-			spin_lock_bh(&ar->htt.tx_lock);
-			empty = (ar->htt.num_pending_tx == 0);
-			spin_unlock_bh(&ar->htt.tx_lock);
-
-			skip = (ar->state == ATH10K_STATE_WEDGED) ||
-			       test_bit(ATH10K_FLAG_CRASH_FLUSH,
-					&ar->dev_flags);
-
-			(empty || skip);
-		}), ATH10K_FLUSH_TIMEOUT_HZ);
-
-	if (time_left == 0 || skip)
-		ath10k_warn(ar, "failed to flush transmit queue (skip %i ar-state %i): %ld\n",
-			    skip, ar->state, time_left);
+        if (time_left == 0 || skip)
+                ath10k_warn(ar, "failed to flush transmit queue (skip %i ar-state %i pending-tx %d): %ld\n",
+                            skip, ar->state, pending_tx, time_left);
 }
 
 static void ath10k_flush(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
-			 u32 queues, bool drop)
+                         u32 queues, bool drop)
 {
-	struct ath10k *ar = hw->priv;
-	struct ath10k_vif *arvif;
-	u32 bitmap;
+        struct ath10k *ar = hw->priv;
+        struct ath10k_vif *arvif = NULL;
+        u8 peer_addr[ETH_ALEN] = {0};
+        u32 bitmap;
+        u32 vid = 0xFFFFFFFF;
 
-	if (drop) {
-		if (vif && vif->type == NL80211_IFTYPE_STATION) {
-			bitmap = ~(1 << WMI_MGMT_TID);
-			list_for_each_entry(arvif, &ar->arvifs, list) {
-				if (arvif->vdev_type == WMI_VDEV_TYPE_STA)
-					ath10k_wmi_peer_flush(ar, arvif->vdev_id,
-							      arvif->bssid, bitmap);
-			}
-			ath10k_htt_flush_tx(&ar->htt);
-		}
-		return;
-	}
+        mutex_lock(&ar->conf_mutex);
 
-	mutex_lock(&ar->conf_mutex);
-	ath10k_mac_wait_tx_complete(ar);
-	mutex_unlock(&ar->conf_mutex);
+        if (ar->state == ATH10K_STATE_WEDGED)
+                goto skip;
+
+        if (vif) {
+                arvif = (void *)vif->drv_priv;
+                vid = arvif->vdev_id;
+                ath10k_info(ar, "mac flush vdev %d drop %d queues 0x%x ar->paused: 0x%lx  arvif->paused: 0x%lx\n",
+                            arvif->vdev_id, drop, queues, ar->tx_paused, arvif->tx_paused);
+        }
+        else {
+                ath10k_info(ar, "mac flush null vif, drop %d queues 0x%x\n",
+                            drop, queues);
+        }
+
+
+        /* NOTE:  As of Aug 10, CT firmware supports flushing a single vdev
+         * by passing the vdev_id, and leaving peer_addr all zeros.  But the logic
+         * below would need to be changed to check if all pkts for a particular
+         * vdev have been flushed instead of the entire tx-q being flushed.
+         *
+         * In addition, this logic could be called even if 'drop' is requested.
+         * This might make the system act more optimally.
+         *
+         * --Ben
+         */
+
+        /* If we are CT firmware, ask it to flush all tids on all peers on
+         * all vdevs.  Normal firmware will just crash if you do this.
+         */
+        if (0 /* test_bit(ATH10K_FW_FEATURE_FLUSH_ALL_CT,
+		   ar->running_fw->fw_file.fw_features)*/) {
+                ath10k_wmi_peer_flush(ar, vid, peer_addr, 0xFFFFFFFF);
+                /* I am not sure the wave-2 push-tx logic works right with
+                 * flushing, so just bail out after making the proper
+                 * request to firmware.  From comment above, I guess this is just
+                 * like dropping all frames anyway.
+                 */
+                if (drop || test_bit(ATH10K_FW_FEATURE_PEER_FLOW_CONTROL,
+                                     ar->running_fw->fw_file.fw_features))
+                        goto skip;
+
+                /* I cannot find a good way to know if an individual vdev is flushed or
+                 * not.  So, if that is being requested, just skip the wait.
+                 */
+                if (arvif)
+                        goto skip;
+
+        }
+        else if (drop) {
+               /* Upstream QCA firmware can handle this I guess...seems weird logic
+                 * though...not paying attention to specific thing to flush?
+                 * --Ben
+                 */
+                if (vif && vif->type == NL80211_IFTYPE_STATION) {
+                        bitmap = ~(1 << WMI_MGMT_TID);
+                        list_for_each_entry(arvif, &ar->arvifs, list) {
+                                if (arvif->vdev_type == WMI_VDEV_TYPE_STA)
+                                        ath10k_wmi_peer_flush(ar, arvif->vdev_id,
+                                                              arvif->bssid, bitmap);
+                        }
+                }
+                goto skip;
+        }
+
+        /* Wait for entire tx-q to finish transmitting */
+        ath10k_mac_wait_tx_complete(ar);
+
+skip:
+        mutex_unlock(&ar->conf_mutex);
 }
 
 /* TODO: Implement this function properly
