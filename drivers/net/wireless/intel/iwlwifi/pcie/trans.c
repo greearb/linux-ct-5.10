@@ -223,8 +223,8 @@ static void iwl_pcie_alloc_fw_monitor_block(struct iwl_trans *trans,
 			continue;
 
 		IWL_INFO(trans,
-			 "Allocated 0x%08x bytes for firmware monitor.\n",
-			 size);
+			 "Allocated 0x%08x bytes for firmware monitor, max_power: %d  min_power: %d  power: %d.\n",
+			 size, max_power, min_power, power);
 		break;
 	}
 
@@ -244,6 +244,8 @@ static void iwl_pcie_alloc_fw_monitor_block(struct iwl_trans *trans,
 
 void iwl_pcie_alloc_fw_monitor(struct iwl_trans *trans, u8 max_power)
 {
+	pr_err("iwl_pcie_alloc_fw_monitor, monitor size max_power requested: %d\n",
+	       max_power);
 	if (!max_power) {
 		/* default max_power is maximum */
 		max_power = 26;
@@ -255,6 +257,13 @@ void iwl_pcie_alloc_fw_monitor(struct iwl_trans *trans, u8 max_power)
 		 "External buffer size for monitor is too big %d, check the FW TLV\n",
 		 max_power))
 		return;
+
+	/* Try to use less memory, there are other things in the system as well! */
+	if (max_power > 19) {
+		pr_err("iwl_pcie_alloc_fw_monitor, decreasing max-power from %d to 19 to save memory.\n",
+		       max_power);
+		max_power = 19;
+	}
 
 	if (trans->dbg.fw_mon.size)
 		return;
