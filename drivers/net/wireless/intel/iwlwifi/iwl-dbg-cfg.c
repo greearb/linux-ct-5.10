@@ -246,12 +246,16 @@ void iwl_dbg_cfg_load_ini(struct device *dev, struct iwl_dbg_cfg *dbgcfg)
 	const struct firmware *fw;
 	char *data, *end, *pos;
 	int err;
+	char fname[128];
 
 	if (dbgcfg->loaded)
 		return;
 
-	/* TODO: maybe add a per-device file? */
-	err = firmware_request_nowarn(&fw, "iwl-dbg-cfg.ini", dev);
+	snprintf(fname, 127, "iwl-dbg-cfg-%s.ini", dev_name(dev));
+	fname[127] = 0;
+
+	/* TODO: maybe add a per-device file?  Yes, did that. --Ben */
+	err = firmware_request_nowarn(&fw, fname, dev);
 	if (err)
 		return;
 
