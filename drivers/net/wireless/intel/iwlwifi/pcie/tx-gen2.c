@@ -355,7 +355,7 @@ static int iwl_pcie_gen2_send_hcmd_sync(struct iwl_trans *trans,
 	}
 
 	if (test_bit(STATUS_FW_ERROR, &trans->status)) {
-		IWL_ERR(trans, "FW error in SYNC CMD %s\n", cmd_str);
+		IWL_ERR(trans, "gen2: FW error in SYNC CMD %s\n", cmd_str);
 		dump_stack();
 		ret = -EIO;
 		goto cancel;
