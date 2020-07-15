@@ -2324,7 +2324,7 @@ static void ieee80211_flush_completed_scan(struct ieee80211_local *local,
 
 static void ieee80211_handle_reconfig_failure(struct ieee80211_local *local)
 {
-	struct ieee80211_sub_if_data *sdata;
+	struct ieee80211_sub_if_data *sdata, *sdata_tmp;
 	struct ieee80211_chanctx *ctx;
 
 	/*
@@ -2348,8 +2348,9 @@ static void ieee80211_handle_reconfig_failure(struct ieee80211_local *local)
 	 */
 	ieee80211_sched_scan_end(local);
 
-	list_for_each_entry(sdata, &local->interfaces, list)
-		sdata->flags &= ~IEEE80211_SDATA_IN_DRIVER;
+	list_for_each_entry_safe(sdata, sdata_tmp, &local->interfaces, list)
+		if (check_sdata_in_driver(sdata))
+			drv_remove_interface(local, sdata);
 
 	/* Mark channel contexts as not being in the driver any more to avoid
 	 * removing them from the driver during the shutdown process...
@@ -2515,6 +2516,10 @@ int ieee80211_reconfig(struct ieee80211_local *local)
 			WARN(1, "Hardware became unavailable upon resume. This could be a software issue prior to suspend or a hardware issue.\n");
 		else
 			WARN(1, "Hardware became unavailable during restart.\n");
+		/* TODO: Requires driver reload and/or reboot to recover at this point.  Need
+		 * to notify user-space or set debugfs flag to WDT can be kicked in non-attended
+		 * devices such as APs... --Ben
+		 */
 		ieee80211_handle_reconfig_failure(local);
 		return res;
 	}
@@ -2559,12 +2564,6 @@ int ieee80211_reconfig(struct ieee80211_local *local)
 	 * report failure.
 	 */
 	if (res) {
-		list_for_each_entry_continue_reverse(sdata, &local->interfaces,
-						     list)
-			if (sdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
-			    sdata->vif.type != NL80211_IFTYPE_MONITOR &&
-			    ieee80211_sdata_running(sdata))
-				drv_remove_interface(local, sdata);
 		ieee80211_handle_reconfig_failure(local);
 		return res;
 	}
