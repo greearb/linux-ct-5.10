@@ -797,6 +797,11 @@ iwl_op_mode_mvm_start(struct iwl_trans *trans, const struct iwl_cfg *cfg,
 	case IWL_AMSDU_DEF:
 		trans_cfg.rx_buf_size = rb_size_default;
 		break;
+	case IWL_AMSDU_2K:
+		/* ax200 blows up with this setting. */
+		if (mvm->trans->trans_cfg->device_family >= IWL_DEVICE_FAMILY_AX210)
+			trans_cfg.rx_buf_size = IWL_AMSDU_2K;
+		break;
 	case IWL_AMSDU_4K:
 		trans_cfg.rx_buf_size = IWL_AMSDU_4K;
 		break;

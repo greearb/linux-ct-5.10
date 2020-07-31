@@ -86,7 +86,7 @@ enum iwl_amsdu_size {
 	IWL_AMSDU_8K = 2,
 	IWL_AMSDU_12K = 3,
 	/* Add 2K at the end to avoid breaking current API */
-	IWL_AMSDU_2K = 4,
+	IWL_AMSDU_2K = 4, /* ax200 blows up if you set it to this */
 };
 
 enum iwl_uapsd_disable {
