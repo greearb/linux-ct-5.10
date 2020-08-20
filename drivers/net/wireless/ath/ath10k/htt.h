@@ -150,8 +150,8 @@ enum htt_data_tx_desc_flags1 {
 	HTT_DATA_TX_DESC_FLAGS1_MORE_IN_BATCH    = 1 << 12,
 	HTT_DATA_TX_DESC_FLAGS1_CKSUM_L3_OFFLOAD = 1 << 13,
 	HTT_DATA_TX_DESC_FLAGS1_CKSUM_L4_OFFLOAD = 1 << 14,
-	HTT_DATA_TX_DESC_FLAGS1_TX_COMPLETE      = 1 << 15,
-	/* TODO:  Now we have collision it seems, investigate this. --Ben */
+	HTT_DATA_TX_DESC_FLAGS1_TX_COMPLETE_SDIO      = 1 << 15,
+	/* Now we have collision it seems, but -ct firmware doesn't support SDIO anyway, so OK for now. --Ben */
 	HTT_DATA_TX_DESC_FLAGS1_NO_ACK_CT /*RSVD1*/ = 1 << 15 /* Using this for no-ack flag, raw-tx only. --Ben */
 };
 

@@ -171,7 +171,6 @@ int ath10k_htc_send(struct ath10k_htc *htc,
 	struct wmi_cmd_hdr* hdr;
 	unsigned int cmd_id;
 
-
 	if (htc->ar->state == ATH10K_STATE_WEDGED)
 		return -ECOMM;
 

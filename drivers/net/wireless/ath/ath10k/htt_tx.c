@@ -589,7 +589,7 @@ void ath10k_htt_htc_tx_complete(struct ath10k *ar, struct sk_buff *skb)
 		   "htt tx complete msdu id:%u ,flags1:%x\n",
 		   __le16_to_cpu(desc_hdr->id), flags1);
 
-	if (flags1 & HTT_DATA_TX_DESC_FLAGS1_TX_COMPLETE)
+	if (flags1 & HTT_DATA_TX_DESC_FLAGS1_TX_COMPLETE_SDIO)
 		return;
 
 	tx_done.status = HTT_TX_COMPL_STATE_ACK;
@@ -1380,7 +1380,7 @@ static int ath10k_htt_tx_hl(struct ath10k_htt *htt, struct ieee80211_vif *vif,
 		flags0 |= HTT_DATA_TX_DESC_FLAGS0_MAC_HDR_PRESENT;
 
 		if (htt->disable_tx_comp)
-			flags1 |= HTT_DATA_TX_DESC_FLAGS1_TX_COMPLETE;
+			flags1 |= HTT_DATA_TX_DESC_FLAGS1_TX_COMPLETE_SDIO;
 		break;
 	}
 
