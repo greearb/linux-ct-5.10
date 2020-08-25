@@ -14,6 +14,8 @@
 #include "debug.h"
 #include "hw.h"
 
+#if ((defined CONFIG_DEV_COREDUMP) || defined (CONFIG_ATH10K_DEBUGFS))
+
 static const struct ath10k_mem_section qca6174_hw21_register_sections[] = {
 	{0x800, 0x810},
 	{0x820, 0x82C},
@@ -1686,7 +1688,23 @@ int ath10k_coredump_submit(struct ath10k *ar)
 		return -ENODATA;
 	}
 
+#ifdef CONFIG_ATH10K_DEBUGFS
+#ifdef CONFIG_DEV_COREDUMP
+	if (ar->coredump.dump)
+		vfree(ar->coredump.dump); /* guess nothing read the last one, clean it up. */
+        ar->coredump.dump = vzalloc(le32_to_cpu(dump->len)); /* second one for debugfs */
+	if (ar->coredump.dump) {
+		memcpy(ar->coredump.dump, dump, le32_to_cpu(dump->len));
+	}
+#else
+	/* no coredump use what we have already allocated */
+	ar->coredump.dump = dump;
+#endif
+#endif
+
+#ifdef CONFIG_DEV_COREDUMP
 	dev_coredumpv(ar->dev, dump, le32_to_cpu(dump->len), GFP_KERNEL);
+#endif
 
 	return 0;
 }
@@ -1727,6 +1745,7 @@ void ath10k_coredump_unregister(struct ath10k *ar)
 	struct ath10k_fw_crash_data *crash_data = ar->coredump.fw_crash_data;
 
 	vfree(crash_data->ramdump_buf);
+	crash_data->ramdump_buf = NULL;
 }
 
 void ath10k_coredump_destroy(struct ath10k *ar)
@@ -1739,4 +1758,10 @@ void ath10k_coredump_destroy(struct ath10k *ar)
 
 	vfree(ar->coredump.fw_crash_data);
 	ar->coredump.fw_crash_data = NULL;
+
+	vfree(ar->coredump.dump);
+	ar->coredump.dump = NULL;
 }
+
+
+#endif /* debugfs or coredump */
