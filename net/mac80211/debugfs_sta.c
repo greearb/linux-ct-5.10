@@ -513,9 +513,59 @@ static ssize_t sta_vht_capa_read(struct file *file, char __user *userbuf,
 	char buf[512], *p = buf;
 	struct sta_info *sta = file->private_data;
 	struct ieee80211_sta_vht_cap *vhtc = &sta->sta.vht_cap;
+	struct cfg80211_chan_def *chandef = &sta->sdata->vif.bss_conf.chandef;
 
-	p += scnprintf(p, sizeof(buf) + buf - p, "VHT %ssupported\n",
+	p += scnprintf(p, sizeof(buf) + buf - p, "VHT %ssupported\nSta-Cur-Max-Bandwidth:\t",
 			vhtc->vht_supported ? "" : "not ");
+	switch (sta->cur_max_bandwidth) {
+	case IEEE80211_STA_RX_BW_20:
+		p += scnprintf(p, sizeof(buf) + buf - p, "20Mhz\n");
+		break;
+	case IEEE80211_STA_RX_BW_40:
+		p += scnprintf(p, sizeof(buf) + buf - p, "40Mhz\n");
+		break;
+	case IEEE80211_STA_RX_BW_80:
+		p += scnprintf(p, sizeof(buf) + buf - p, "80Mhz\n");
+		break;
+	case IEEE80211_STA_RX_BW_160:
+		p += scnprintf(p, sizeof(buf) + buf - p, "160Mhz\n");
+		break;
+	}
+
+	p += scnprintf(p, sizeof(buf) + buf - p, "Chandef-Bandwidth:\t");
+	switch (chandef->width) {
+	case NL80211_CHAN_WIDTH_20_NOHT:
+		p += scnprintf(p, sizeof(buf) + buf - p, "20Mhz-NOHT\n");
+		break;
+	case NL80211_CHAN_WIDTH_20:
+		p += scnprintf(p, sizeof(buf) + buf - p, "20Mhz\n");
+		break;
+	case NL80211_CHAN_WIDTH_40:
+		p += scnprintf(p, sizeof(buf) + buf - p, "40Mhz\n");
+		break;
+	case NL80211_CHAN_WIDTH_80:
+		p += scnprintf(p, sizeof(buf) + buf - p, "80Mhz\n");
+		break;
+	case NL80211_CHAN_WIDTH_80P80:
+		p += scnprintf(p, sizeof(buf) + buf - p, "80p80Mhz\n");
+		break;
+	case NL80211_CHAN_WIDTH_160:
+		p += scnprintf(p, sizeof(buf) + buf - p, "160Mhz\n");
+		break;
+	case NL80211_CHAN_WIDTH_5:
+		p += scnprintf(p, sizeof(buf) + buf - p, "5Mhz\n");
+		break;
+	case NL80211_CHAN_WIDTH_10:
+		p += scnprintf(p, sizeof(buf) + buf - p, "10Mhz\n");
+		break;
+	case NL80211_CHAN_WIDTH_5_NOHT:
+		p += scnprintf(p, sizeof(buf) + buf - p, "5Mhz-NOHT\n");
+		break;
+	case NL80211_CHAN_WIDTH_10_NOHT:
+		p += scnprintf(p, sizeof(buf) + buf - p, "10Mhz-NOHT\n");
+		break;
+	}
+
 	if (vhtc->vht_supported) {
 		p += scnprintf(p, sizeof(buf) + buf - p, "cap: %#.8x\n",
 			       vhtc->cap);
