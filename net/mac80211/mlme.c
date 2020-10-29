@@ -56,6 +56,12 @@ module_param(max_probe_tries, int, 0644);
 MODULE_PARM_DESC(max_probe_tries,
 		 "Maximum probe tries before disconnecting (reason 4).");
 
+static int debug_beacon_rssi = 0;
+module_param(debug_beacon_rssi, int, 0644);
+MODULE_PARM_DESC(debug_beacon_rssi,
+		 "Enable debugging for beacon rssi debugging.");
+
+
 /*
  * Beacon loss timeout is calculated as N frames times the
  * advertised beacon interval.  This may need to be somewhat
@@ -3870,6 +3876,11 @@ static void ieee80211_handle_beacon_sig(struct ieee80211_sub_if_data *sdata,
 	}
 
 	ewma_beacon_signal_add(&ifmgd->ave_beacon_signal, -rx_status->signal);
+	if (debug_beacon_rssi) {
+		sdata_info(sdata, "rcvd beacon, signal: %d  ewma-avg: %ld\n",
+			   rx_status->signal,
+			   -ewma_beacon_signal_read(&ifmgd->ave_beacon_signal));
+	}
 
 	if (ifmgd->rssi_min_thold != ifmgd->rssi_max_thold &&
 	    ifmgd->count_beacon_signal >= IEEE80211_SIGNAL_AVE_MIN_COUNT) {
