@@ -1659,6 +1659,9 @@ static inline bool ath10k_peer_stats_enabled(struct ath10k *ar)
 
 extern unsigned long ath10k_coredump_mask;
 
+/* Get noise floor of chain-1, ie for mgmt frames over wmi */
+int ath10k_get_noisefloor(int chain, struct ath10k *ar);
+
 struct ath10k *ath10k_core_create(size_t priv_size, struct device *dev,
 				  enum ath10k_bus bus,
 				  enum ath10k_hw_rev hw_rev,
