@@ -640,6 +640,7 @@ struct ath10k_vif {
 	struct ath10k *ar;
 	struct ieee80211_vif *vif;
 
+	bool rts_enabled;
 	bool is_started;
 	bool is_up;
 	bool spectral_enabled;
