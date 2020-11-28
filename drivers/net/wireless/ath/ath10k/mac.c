@@ -950,6 +950,48 @@ static int ath10k_mac_set_kickout(struct ath10k_vif *arvif)
 	return 0;
 }
 
+/* This method overrides other rts/cts settings, so it should be called last */
+static int ath10k_recalc_rtscts_prot(struct ath10k_vif *arvif)
+{
+	struct ath10k *ar = arvif->ar;
+	u32 vdev_param, rts_cts = 0;
+
+	lockdep_assert_held(&ar->conf_mutex);
+
+	vdev_param = ar->wmi.vdev_param->enable_rtscts;
+
+	/* Should we do rts/cts protection */
+	if (arvif->use_cts_prot) {
+		if (arvif->rts_enabled)
+			rts_cts |= SM(WMI_RTSCTS_ENABLED, WMI_RTSCTS_SET);
+		else
+			rts_cts |= SM(WMI_CTSTOSELF_ENABLED, WMI_RTSCTS_SET);
+
+		/* And since rts/cts is enabled, how should it be used? */
+		/* The firmware already restricts rts/cts in situation where peer is HT,
+		 * as far as I can tell, so no need to check that here.
+		 */
+		/* if (arvif->num_legacy_stations > 0) { */
+			/* I don't think we have enough information to know if we want to force for all
+			 * rate series or not, so just set for retries for now.  In future, an additional
+			 * flag could be set via debugfs or similar to force for all rate series if
+			 * desired.
+			 */
+			rts_cts |= SM(WMI_RTSCTS_ACROSS_SW_RETRIES, WMI_RTSCTS_PROFILE);
+			/* rts_cts |= SM(WMI_RTSCTS_FOR_ALL_RATESERIES, WMI_RTSCTS_PROFILE); */
+		/* } */
+	}
+	else {
+		rts_cts |= SM(WMI_RTSCTS_FOR_NO_RATESERIES, WMI_RTSCTS_PROFILE);
+	}
+
+	ath10k_dbg(ar, ATH10K_DBG_MAC, "mac vdev %d recalc rts/cts  use-cts-prot: %d  rts-enabled: %d prot %d\n",
+		   arvif->vdev_id, arvif->use_cts_prot, arvif->rts_enabled, rts_cts);
+
+	return ath10k_wmi_vdev_set_param(ar, arvif->vdev_id, vdev_param,
+					 rts_cts);
+}
+
 static int ath10k_mac_set_rts(struct ath10k_vif *arvif, u32 value)
 {
 	struct ath10k *ar = arvif->ar;
@@ -1534,48 +1576,6 @@ static int ath10k_mac_set_cts_prot(struct ath10k_vif *arvif)
 		   arvif->vdev_id, arvif->use_cts_prot, val);
 
 	return ath10k_wmi_vdev_set_param(ar, arvif->vdev_id, vdev_param, val);
-}
-
-/* This method overrides other rts/cts settings, so it should be called last */
-static int ath10k_recalc_rtscts_prot(struct ath10k_vif *arvif)
-{
-	struct ath10k *ar = arvif->ar;
-	u32 vdev_param, rts_cts = 0;
-
-	lockdep_assert_held(&ar->conf_mutex);
-
-	vdev_param = ar->wmi.vdev_param->enable_rtscts;
-
-	/* Should we do rts/cts protection */
-	if (arvif->use_cts_prot) {
-		if (arvif->rts_enabled)
-			rts_cts |= SM(WMI_RTSCTS_ENABLED, WMI_RTSCTS_SET);
-		else
-			rts_cts |= SM(WMI_CTSTOSELF_ENABLED, WMI_RTSCTS_SET);
-
-		/* And since rts/cts is enabled, how should it be used? */
-		/* The firmware already restricts rts/cts in situation where peer is HT,
-		 * as far as I can tell, so no need to check that here.
-		 */
-		/* if (arvif->num_legacy_stations > 0) { */
-			/* I don't think we have enough information to know if we want to force for all
-			 * rate series or not, so just set for retries for now.  In future, an additional
-			 * flag could be set via debugfs or similar to force for all rate series if
-			 * desired.
-			 */
-			rts_cts |= SM(WMI_RTSCTS_ACROSS_SW_RETRIES, WMI_RTSCTS_PROFILE);
-			/* rts_cts |= SM(WMI_RTSCTS_FOR_ALL_RATESERIES, WMI_RTSCTS_PROFILE); */
-		/* } */
-	}
-	else {
-		rts_cts |= SM(WMI_RTSCTS_FOR_NO_RATESERIES, WMI_RTSCTS_PROFILE);
-	}
-
-	ath10k_dbg(ar, ATH10K_DBG_MAC, "mac vdev %d recalc rts/cts  use-cts-prot: %d  rts-enabled: %d prot %d\n",
-		   arvif->vdev_id, arvif->use_cts_prot, arvif->rts_enabled, rts_cts);
-
-	return ath10k_wmi_vdev_set_param(ar, arvif->vdev_id, vdev_param,
-					 rts_cts);
 }
 
 static int ath10k_start_cac(struct ath10k *ar)
