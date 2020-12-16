@@ -1,0 +1,306 @@
+From 75066b8e017cfa564d9136825219dd73fc163e0b Mon Sep 17 00:00:00 2001
+From: Ben Greear <greearb@candelatech.com>
+Date: Tue, 15 Dec 2020 13:31:18 -0800
+Subject: [PATCH 7/7] ax200:  Fix build in kernel 5.10
+
+Signed-off-by: Ben Greear <greearb@candelatech.com>
+---
+ drivers/net/wireless/intel/iwlwifi/fw/testmode.c   |  2 +-
+ drivers/net/wireless/intel/iwlwifi/iwl-config.h    |  8 ++++++++
+ drivers/net/wireless/intel/iwlwifi/iwl-tm-gnl.c    | 14 ++++----------
+ drivers/net/wireless/intel/iwlwifi/mvm/Makefile    |  2 +-
+ .../net/wireless/intel/iwlwifi/mvm/debugfs-vif.c   | 13 -------------
+ drivers/net/wireless/intel/iwlwifi/mvm/debugfs.c   |  6 ------
+ drivers/net/wireless/intel/iwlwifi/mvm/mac-ctxt.c  |  6 +++---
+ drivers/net/wireless/intel/iwlwifi/mvm/mac80211.c  |  2 --
+ .../net/wireless/intel/iwlwifi/mvm/time-event.c    |  2 +-
+ drivers/net/wireless/intel/iwlwifi/pcie/rx.c       |  2 --
+ drivers/net/wireless/intel/iwlwifi/pcie/trans.c    |  4 ----
+ drivers/net/wireless/intel/iwlwifi/xvt/Makefile    |  2 +-
+ drivers/net/wireless/intel/iwlwifi/xvt/user-infc.c |  2 +-
+ drivers/net/wireless/intel/iwlwifi/xvt/xvt.c       |  2 +-
+ 14 files changed, 21 insertions(+), 46 deletions(-)
+
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/testmode.c b/drivers/net/wireless/intel/iwlwifi/fw/testmode.c
+index 0198f65ccf9cc..3d91129b27d99 100644
+--- a/drivers/net/wireless/intel/iwlwifi/fw/testmode.c
++++ b/drivers/net/wireless/intel/iwlwifi/fw/testmode.c
+@@ -196,7 +196,7 @@ static int iwl_tm_get_dev_info(struct iwl_testmode *testmode,
+			       struct iwl_tm_data *data_out)
+ {
+	struct iwl_tm_dev_info *dev_info;
+-	const u8 driver_ver[] = BACKPORTS_GIT_TRACKED;
++	const u8 driver_ver[] = __AX200_VER;
+
+	dev_info = kzalloc(sizeof(*dev_info) + (strlen(driver_ver) + 1) *
+			   sizeof(u8), GFP_KERNEL);
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-config.h b/drivers/net/wireless/intel/iwlwifi/iwl-config.h
+index dce157b47ad51..ea3778ec49ea5 100644
+--- a/drivers/net/wireless/intel/iwlwifi/iwl-config.h
++++ b/drivers/net/wireless/intel/iwlwifi/iwl-config.h
+@@ -66,7 +66,15 @@
+ #include <linux/nl80211.h>
+ #include "iwl-csr.h"
+
++/* Backports related stuff to make it work in 5.10 kernel */
++#define __AX200_VER "5.10.0-ct-core56"
+ #define kzfree kfree_sensitive
++#define CONFIG_IWL_TIMEOUT_FACTOR 1 /* Factor to multiple timeouts by, default is 1 in ax200 backports Kconfig */
++#define genl_info_snd_portid(__genl_info) (__genl_info->snd_portid)
++#define netlink_notify_portid(__notify) (__notify->portid)
++#define NETLINK_CB_PORTID(__skb) NETLINK_CB(__skb).portid
++#define __genl_ro_after_init __ro_after_init
++#define ktime_get_boot_ns ktime_get_boottime_ns
+
+ enum iwl_device_family {
+	IWL_DEVICE_FAMILY_UNDEFINED,
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-tm-gnl.c b/drivers/net/wireless/intel/iwlwifi/iwl-tm-gnl.c
+index e71815814138e..f85c4ccb2316e 100644
+--- a/drivers/net/wireless/intel/iwlwifi/iwl-tm-gnl.c
++++ b/drivers/net/wireless/intel/iwlwifi/iwl-tm-gnl.c
+@@ -432,13 +432,13 @@ static int iwl_tm_gnl_get_build_info(struct iwl_trans *trans,
+	resp = (struct iwl_tm_build_info *)data_out->data;
+
+	memset(resp, 0 , sizeof(*resp));
+-	strncpy(resp->driver_version, BACKPORTS_GIT_TRACKED,
++	strncpy(resp->driver_version, __AX200_VER,
+		sizeof(resp->driver_version));
+ #ifdef BACKPORTS_BRANCH_TSTAMP
+	strncpy(resp->branch_time, BACKPORTS_BRANCH_TSTAMP,
+		sizeof(resp->branch_time));
+ #endif
+-	strncpy(resp->build_time, BACKPORTS_BUILD_TSTAMP,
++	strncpy(resp->build_time, "unknown", /*BACKPORTS_BUILD_TSTAMP, */
+		sizeof(resp->build_time));
+
+	return 0;
+@@ -524,7 +524,7 @@ enum iwl_tm_gnl_cmd_attr_t {
+
+ /* TM GNL family definition */
+ static struct genl_family iwl_tm_gnl_family;
+-static __genl_const struct genl_multicast_group iwl_tm_gnl_mcgrps[] = {
++static struct genl_multicast_group iwl_tm_gnl_mcgrps[] = {
+	{ .name = IWL_TM_GNL_MC_GRP_NAME, },
+ };
+
+@@ -1076,23 +1076,17 @@ static int iwl_tm_gnl_cmd_subscribe(struct sk_buff *skb, struct genl_info *info)
+  * There is only one NL command, and only one callback,
+  * which handles all NL messages.
+  */
+-static __genl_const struct genl_ops iwl_tm_gnl_ops[] = {
++static struct genl_ops iwl_tm_gnl_ops[] = {
+	{
+	  .cmd = IWL_TM_GNL_CMD_EXECUTE,
+-#if LINUX_VERSION_IS_GEQ(5,2,0)
+	  .validate = GENL_DONT_VALIDATE_STRICT | GENL_DONT_VALIDATE_DUMP,
+-#endif
+-
+	  .doit = iwl_tm_gnl_cmd_do,
+	  .dumpit = iwl_tm_gnl_dump,
+	  .done = iwl_tm_gnl_done,
+	},
+	{
+		.cmd = IWL_TM_GNL_CMD_SUBSCRIBE_EVENTS,
+-#if LINUX_VERSION_IS_GEQ(5,2,0)
+		.validate = GENL_DONT_VALIDATE_STRICT | GENL_DONT_VALIDATE_DUMP,
+-#endif
+-
+		.doit = iwl_tm_gnl_cmd_subscribe,
+	},
+ };
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/Makefile b/drivers/net/wireless/intel/iwlwifi/mvm/Makefile
+index f03e350cbdb43..2e036c19d4eac 100644
+--- a/drivers/net/wireless/intel/iwlwifi/mvm/Makefile
++++ b/drivers/net/wireless/intel/iwlwifi/mvm/Makefile
+@@ -12,7 +12,7 @@ iwlmvm-$(CONFIG_IWLWIFI_DEBUGFS) += debugfs.o debugfs-vif.o
+ iwlmvm-$(CONFIG_IWLWIFI_LEDS) += led.o
+ iwlmvm-$(CONFIG_PM) += d3.o
+
+-ccflags-y += -I$(src)/../
++ccflags-y += -I $(srctree)/$(src)/../
+
+ # non-upstream things
+ iwlmvm-$(CONFIG_IWLMVM_VENDOR_CMDS) += vendor-cmd.o
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/debugfs-vif.c b/drivers/net/wireless/intel/iwlwifi/mvm/debugfs-vif.c
+index 77f9cfa4d9c9d..ef63d02abfb74 100644
+--- a/drivers/net/wireless/intel/iwlwifi/mvm/debugfs-vif.c
++++ b/drivers/net/wireless/intel/iwlwifi/mvm/debugfs-vif.c
+@@ -782,13 +782,8 @@ void iwl_mvm_vif_dbgfs_register(struct iwl_mvm *mvm, struct ieee80211_vif *vif)
+
+	mvmvif->dbgfs_dir = debugfs_create_dir("iwlmvm", dbgfs_dir);
+	if (IS_ERR_OR_NULL(mvmvif->dbgfs_dir)) {
+-#if LINUX_VERSION_IS_GEQ(3,12,0)
+		IWL_ERR(mvm, "Failed to create debugfs directory under %pd\n",
+			dbgfs_dir);
+-#else
+-		IWL_ERR(mvm, "Failed to create debugfs directory under %s\n",
+-			dbgfs_dir->d_name.name);
+-#endif
+		return;
+	}
+
+@@ -817,17 +812,9 @@ void iwl_mvm_vif_dbgfs_register(struct iwl_mvm *mvm, struct ieee80211_vif *vif)
+	 * find
+	 * netdev:wlan0 -> ../../../ieee80211/phy0/netdev:wlan0/iwlmvm/
+	 */
+-#if LINUX_VERSION_IS_GEQ(3,12,0)
+	snprintf(buf, 100, "../../../%pd3/%pd",
+		 dbgfs_dir,
+		 mvmvif->dbgfs_dir);
+-#else
+-	snprintf(buf, 100, "../../../%s/%s/%s/%s",
+-		 dbgfs_dir->d_parent->d_parent->d_name.name,
+-		 dbgfs_dir->d_parent->d_name.name,
+-		 dbgfs_dir->d_name.name,
+-		 mvmvif->dbgfs_dir->d_name.name);
+-#endif
+
+	mvmvif->dbgfs_slink = debugfs_create_symlink(dbgfs_dir->d_name.name,
+						     mvm->debugfs_dir, buf);
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/debugfs.c b/drivers/net/wireless/intel/iwlwifi/mvm/debugfs.c
+index 3c234e23c6ff4..58f8a8e302349 100644
+--- a/drivers/net/wireless/intel/iwlwifi/mvm/debugfs.c
++++ b/drivers/net/wireless/intel/iwlwifi/mvm/debugfs.c
+@@ -2530,12 +2530,6 @@ void iwl_mvm_dbgfs_register(struct iwl_mvm *mvm, struct dentry *dbgfs_dir)
+	 * Create a symlink with mac80211. It will be removed when mac80211
+	 * exists (before the opmode exists which removes the target.)
+	 */
+-#if LINUX_VERSION_IS_GEQ(3,12,0)
+	snprintf(buf, 100, "../../%pd2", dbgfs_dir->d_parent);
+-#else
+-	snprintf(buf, 100, "../../%s/%s",
+-		 dbgfs_dir->d_parent->d_parent->d_name.name,
+-		 dbgfs_dir->d_parent->d_name.name);
+-#endif
+	debugfs_create_symlink("iwlwifi", mvm->hw->wiphy->debugfsdir, buf);
+ }
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/mac-ctxt.c b/drivers/net/wireless/intel/iwlwifi/mvm/mac-ctxt.c
+index f9ce85b7b798f..b837f071e5668 100644
+--- a/drivers/net/wireless/intel/iwlwifi/mvm/mac-ctxt.c
++++ b/drivers/net/wireless/intel/iwlwifi/mvm/mac-ctxt.c
+@@ -1331,8 +1331,8 @@ static void iwl_mvm_csa_count_down(struct iwl_mvm *mvm,
+
+	mvmvif->csa_countdown = true;
+
+-	if (!ieee80211_csa_is_complete(csa_vif)) {
+-		int c = ieee80211_csa_update_counter(csa_vif);
++	if (!ieee80211_beacon_cntdwn_is_complete(csa_vif)) {
++		int c = ieee80211_beacon_update_cntdwn(csa_vif);
+
+		iwl_mvm_mac_ctxt_beacon_changed(mvm, csa_vif);
+		if (csa_vif->p2p &&
+@@ -1574,7 +1574,7 @@ void iwl_mvm_probe_resp_data_notif(struct iwl_mvm *mvm,
+
+	if (notif->csa_counter != IWL_PROBE_RESP_DATA_NO_CSA &&
+	    notif->csa_counter >= 1)
+-		ieee80211_csa_set_counter(vif, notif->csa_counter);
++		ieee80211_beacon_set_cntdwn(vif, notif->csa_counter);
+ }
+
+ void iwl_mvm_channel_switch_noa_notif(struct iwl_mvm *mvm,
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/mac80211.c b/drivers/net/wireless/intel/iwlwifi/mvm/mac80211.c
+index b69e17ef20781..1b3160ff8a220 100644
+--- a/drivers/net/wireless/intel/iwlwifi/mvm/mac80211.c
++++ b/drivers/net/wireless/intel/iwlwifi/mvm/mac80211.c
+@@ -481,10 +481,8 @@ int iwl_mvm_mac_setup_register(struct iwl_mvm *mvm)
+	if (mvm->trans->num_rx_queues > 1)
+		ieee80211_hw_set(hw, USES_RSS);
+
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
+	if (mvm->trans->max_skb_frags)
+		hw->netdev_features = NETIF_F_HIGHDMA | NETIF_F_SG;
+-#endif
+
+	hw->queues = IEEE80211_MAX_QUEUES;
+	hw->offchannel_tx_hw_queue = IWL_MVM_OFFCHANNEL_QUEUE;
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/time-event.c b/drivers/net/wireless/intel/iwlwifi/mvm/time-event.c
+index 883d476abcc74..b52af1922360e 100644
+--- a/drivers/net/wireless/intel/iwlwifi/mvm/time-event.c
++++ b/drivers/net/wireless/intel/iwlwifi/mvm/time-event.c
+@@ -175,7 +175,7 @@ static void iwl_mvm_csa_noa_start(struct iwl_mvm *mvm)
+	 * So we just do nothing here and the switch
+	 * will be performed on the last TBTT.
+	 */
+-	if (!ieee80211_csa_is_complete(csa_vif)) {
++	if (!ieee80211_beacon_cntdwn_is_complete(csa_vif)) {
+		IWL_WARN(mvm, "CSA NOA started too early\n");
+		goto out_unlock;
+	}
+diff --git a/drivers/net/wireless/intel/iwlwifi/pcie/rx.c b/drivers/net/wireless/intel/iwlwifi/pcie/rx.c
+index 9347a939fe1d4..11005b97520ce 100644
+--- a/drivers/net/wireless/intel/iwlwifi/pcie/rx.c
++++ b/drivers/net/wireless/intel/iwlwifi/pcie/rx.c
+@@ -1609,13 +1609,11 @@ static void iwl_pcie_rx_handle(struct iwl_trans *trans, int queue)
+	if (napi->poll) {
+		napi_gro_flush(napi, false);
+
+-#if LINUX_VERSION_IS_GEQ(5,4,0)
+		if (napi->rx_count) {
+			netif_receive_skb_list(&napi->rx_list);
+			INIT_LIST_HEAD(&napi->rx_list);
+			napi->rx_count = 0;
+		}
+-#endif
+	}
+
+	iwl_pcie_rxq_restock(trans, rxq);
+diff --git a/drivers/net/wireless/intel/iwlwifi/pcie/trans.c b/drivers/net/wireless/intel/iwlwifi/pcie/trans.c
+index 34a1be69e2d5e..fb185bff4dd3c 100644
+--- a/drivers/net/wireless/intel/iwlwifi/pcie/trans.c
++++ b/drivers/net/wireless/intel/iwlwifi/pcie/trans.c
+@@ -2047,9 +2047,6 @@ static void iwl_trans_pcie_removal_wk(struct work_struct *wk)
+		container_of(wk, struct iwl_trans_pcie_removal, work);
+	struct pci_dev *pdev = removal->pdev;
+
+-#if LINUX_VERSION_IS_LESS(3,14,0)
+-	dev_err(&pdev->dev, "Device gone - can't remove on old kernels.\n");
+-#else
+	static char *prop[] = {"EVENT=INACCESSIBLE", NULL};
+
+	dev_err(&pdev->dev, "Device gone - attempting removal\n");
+@@ -2058,7 +2055,6 @@ static void iwl_trans_pcie_removal_wk(struct work_struct *wk)
+	pci_dev_put(pdev);
+	pci_stop_and_remove_bus_device(pdev);
+	pci_unlock_rescan_remove();
+-#endif /* LINUX_VERSION_IS_LESS(3,14,0) */
+
+	kfree(removal);
+	module_put(THIS_MODULE);
+diff --git a/drivers/net/wireless/intel/iwlwifi/xvt/Makefile b/drivers/net/wireless/intel/iwlwifi/xvt/Makefile
+index 44a521747833a..0bbcc01c6eef0 100644
+--- a/drivers/net/wireless/intel/iwlwifi/xvt/Makefile
++++ b/drivers/net/wireless/intel/iwlwifi/xvt/Makefile
+@@ -2,4 +2,4 @@ obj-$(CONFIG_IWLXVT)   += iwlxvt.o
+ iwlxvt-y += xvt.o user-infc.o utils.o fw.o nvm.o rx.o
+ iwlxvt-$(CONFIG_IWLWIFI_DEBUGFS) += debugfs.o
+
+-ccflags-y += -D__CHECK_ENDIAN__ -I$(src)/../
++ccflags-y += -D__CHECK_ENDIAN__ -I $(srctree)/$(src)/../
+diff --git a/drivers/net/wireless/intel/iwlwifi/xvt/user-infc.c b/drivers/net/wireless/intel/iwlwifi/xvt/user-infc.c
+index 0e14f7510082f..9fe029422d00f 100644
+--- a/drivers/net/wireless/intel/iwlwifi/xvt/user-infc.c
++++ b/drivers/net/wireless/intel/iwlwifi/xvt/user-infc.c
+@@ -272,7 +272,7 @@ static int iwl_xvt_get_dev_info(struct iwl_xvt *xvt,
+ {
+	struct iwl_tm_dev_info_req *dev_info_req;
+	struct iwl_tm_dev_info *dev_info;
+-	const u8 driver_ver[] = BACKPORTS_GIT_TRACKED;
++	const u8 driver_ver[] = __AX200_VER;
+	int sv_step = 0x00;
+	int dev_info_size;
+	bool read_sv_drop = true;
+diff --git a/drivers/net/wireless/intel/iwlwifi/xvt/xvt.c b/drivers/net/wireless/intel/iwlwifi/xvt/xvt.c
+index 5a4ba6fccffcc..0815500ed6f2e 100644
+--- a/drivers/net/wireless/intel/iwlwifi/xvt/xvt.c
++++ b/drivers/net/wireless/intel/iwlwifi/xvt/xvt.c
+@@ -60,7 +60,7 @@
+ #include <linux/module.h>
+ #include <linux/types.h>
+
+-#include "iwl-drv.h"
++#include <iwl-drv.h>
+ #include "iwl-trans.h"
+ #include "iwl-op-mode.h"
+ #include "fw/img.h"
+--
+2.26.2

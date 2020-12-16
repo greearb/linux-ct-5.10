@@ -1,0 +1,1032 @@
+From 1742fd26a6a760a097bc87f9e8438b5539422c6f Mon Sep 17 00:00:00 2001
+From: Ben Greear <greearb@candelatech.com>
+Date: Tue, 15 Dec 2020 07:28:04 -0800
+Subject: [PATCH 1/7] ax200:  Rename iwlwifi driver before attempting to import
+ backports driver.
+
+Signed-off-by: Ben Greear <greearb@candelatech.com>
+---
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/Kconfig      | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/Makefile     | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/cfg/1000.c   | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/cfg/2000.c   | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/cfg/22000.c  | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/cfg/5000.c   | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/cfg/6000.c   | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/cfg/7000.c   | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/cfg/8000.c   | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/cfg/9000.c   | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/Makefile | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/agn.h    | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/calib.c  | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/calib.h  | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/commands.h   | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/debugfs.c    | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/dev.h    | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/devices.c    | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/led.c    | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/led.h    | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/lib.c    | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/mac80211.c   | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/main.c   | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/power.c  | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/power.h  | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/rs.c     | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/rs.h     | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/rx.c     | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/rxon.c   | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/scan.c   | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/sta.c    | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/tt.c     | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/tt.h     | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/tx.c     | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/ucode.c  | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/acpi.c    | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/acpi.h    | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/alive.h   | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/binding.h | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/cmdhdr.h  | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/coex.h    | 0
+ .../wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/commands.h    | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/config.h  | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/context.h | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/d3.h  | 0
+ .../wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/datapath.h    | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/dbg-tlv.h | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/debug.h   | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/filter.h  | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/led.h | 0
+ .../wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/location.h    | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/mac-cfg.h | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/mac.h | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/nvm-reg.h | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/offload.h | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/paging.h  | 0
+ .../wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/phy-ctxt.h    | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/phy.h | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/power.h   | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/rs.h  | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/rx.h  | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/scan.h    | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/sf.h  | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/soc.h | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/sta.h | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/stats.h   | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/tdls.h    | 0
+ .../wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/time-event.h  | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/tx.h  | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/txq.h | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/dbg.c     | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/dbg.h     | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/debugfs.c | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/debugfs.h | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/error-dump.h  | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/file.h    | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/img.c     | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/img.h     | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/init.c    | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/notif-wait.c  | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/notif-wait.h  | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/paging.c  | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/pnvm.c    | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/pnvm.h    | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/runtime.h | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/smem.c    | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-agn-hw.h | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-config.h | 0
+ .../intel/{iwlwifi => iwlwifi.orig}/iwl-context-info-gen3.h       | 0
+ .../wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-context-info.h   | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-csr.h    | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-dbg-tlv.c    | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-dbg-tlv.h    | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-debug.c  | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-debug.h  | 0
+ .../wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-devtrace-data.h  | 0
+ .../wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-devtrace-io.h    | 0
+ .../intel/{iwlwifi => iwlwifi.orig}/iwl-devtrace-iwlwifi.h        | 0
+ .../wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-devtrace-msg.h   | 0
+ .../wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-devtrace-ucode.h | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-devtrace.c   | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-devtrace.h   | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-drv.c    | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-drv.h    | 0
+ .../wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-eeprom-parse.c   | 0
+ .../wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-eeprom-parse.h   | 0
+ .../wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-eeprom-read.c    | 0
+ .../wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-eeprom-read.h    | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-fh.h     | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-io.c     | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-io.h     | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-modparams.h  | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-nvm-parse.c  | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-nvm-parse.h  | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-op-mode.h    | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-phy-db.c | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-phy-db.h | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-prph.h   | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-scd.h    | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-trans.c  | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-trans.h  | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/Makefile | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/binding.c    | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/coex.c   | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/constants.h  | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/d3.c     | 0
+ .../wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/debugfs-vif.c    | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/debugfs.c    | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/debugfs.h    | 0
+ .../wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/ftm-initiator.c  | 0
+ .../wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/ftm-responder.c  | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/fw-api.h | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/fw.c     | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/led.c    | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/mac-ctxt.c   | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/mac80211.c   | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/mvm.h    | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/nvm.c    | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/offloading.c | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/ops.c    | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/phy-ctxt.c   | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/power.c  | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/quota.c  | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/rs-fw.c  | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/rs.c     | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/rs.h     | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/rx.c     | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/rxmq.c   | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/scan.c   | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/sf.c     | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/sta.c    | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/sta.h    | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/tdls.c   | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/testmode.h   | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/time-event.c | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/time-event.h | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/tt.c     | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/tx.c     | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/utils.c  | 0
+ .../intel/{iwlwifi => iwlwifi.orig}/pcie/ctxt-info-gen3.c         | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/pcie/ctxt-info.c | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/pcie/drv.c   | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/pcie/internal.h  | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/pcie/rx.c    | 0
+ .../wireless/intel/{iwlwifi => iwlwifi.orig}/pcie/trans-gen2.c    | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/pcie/trans.c | 0
+ .../net/wireless/intel/{iwlwifi => iwlwifi.orig}/pcie/tx-gen2.c   | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/pcie/tx.c    | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/queue/tx.c   | 0
+ drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/queue/tx.h   | 0
+ 170 files changed, 0 insertions(+), 0 deletions(-)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/Kconfig (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/Makefile (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/cfg/1000.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/cfg/2000.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/cfg/22000.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/cfg/5000.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/cfg/6000.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/cfg/7000.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/cfg/8000.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/cfg/9000.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/Makefile (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/agn.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/calib.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/calib.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/commands.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/debugfs.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/dev.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/devices.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/led.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/led.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/lib.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/mac80211.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/main.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/power.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/power.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/rs.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/rs.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/rx.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/rxon.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/scan.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/sta.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/tt.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/tt.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/tx.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/dvm/ucode.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/acpi.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/acpi.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/alive.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/binding.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/cmdhdr.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/coex.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/commands.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/config.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/context.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/d3.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/datapath.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/dbg-tlv.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/debug.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/filter.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/led.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/location.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/mac-cfg.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/mac.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/nvm-reg.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/offload.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/paging.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/phy-ctxt.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/phy.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/power.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/rs.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/rx.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/scan.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/sf.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/soc.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/sta.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/stats.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/tdls.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/time-event.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/tx.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/api/txq.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/dbg.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/dbg.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/debugfs.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/debugfs.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/error-dump.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/file.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/img.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/img.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/init.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/notif-wait.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/notif-wait.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/paging.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/pnvm.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/pnvm.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/runtime.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/fw/smem.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-agn-hw.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-config.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-context-info-gen3.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-context-info.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-csr.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-dbg-tlv.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-dbg-tlv.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-debug.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-debug.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-devtrace-data.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-devtrace-io.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-devtrace-iwlwifi.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-devtrace-msg.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-devtrace-ucode.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-devtrace.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-devtrace.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-drv.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-drv.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-eeprom-parse.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-eeprom-parse.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-eeprom-read.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-eeprom-read.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-fh.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-io.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-io.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-modparams.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-nvm-parse.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-nvm-parse.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-op-mode.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-phy-db.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-phy-db.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-prph.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-scd.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-trans.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/iwl-trans.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/Makefile (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/binding.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/coex.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/constants.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/d3.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/debugfs-vif.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/debugfs.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/debugfs.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/ftm-initiator.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/ftm-responder.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/fw-api.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/fw.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/led.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/mac-ctxt.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/mac80211.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/mvm.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/nvm.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/offloading.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/ops.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/phy-ctxt.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/power.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/quota.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/rs-fw.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/rs.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/rs.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/rx.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/rxmq.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/scan.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/sf.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/sta.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/sta.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/tdls.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/testmode.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/time-event.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/time-event.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/tt.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/tx.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/mvm/utils.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/pcie/ctxt-info-gen3.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/pcie/ctxt-info.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/pcie/drv.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/pcie/internal.h (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/pcie/rx.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/pcie/trans-gen2.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/pcie/trans.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/pcie/tx-gen2.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/pcie/tx.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/queue/tx.c (100%)
+ rename drivers/net/wireless/intel/{iwlwifi => iwlwifi.orig}/queue/tx.h (100%)
+
+diff --git a/drivers/net/wireless/intel/iwlwifi/Kconfig b/drivers/net/wireless/intel/iwlwifi.orig/Kconfig
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/Kconfig
+rename to drivers/net/wireless/intel/iwlwifi.orig/Kconfig
+diff --git a/drivers/net/wireless/intel/iwlwifi/Makefile b/drivers/net/wireless/intel/iwlwifi.orig/Makefile
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/Makefile
+rename to drivers/net/wireless/intel/iwlwifi.orig/Makefile
+diff --git a/drivers/net/wireless/intel/iwlwifi/cfg/1000.c b/drivers/net/wireless/intel/iwlwifi.orig/cfg/1000.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/cfg/1000.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/cfg/1000.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/cfg/2000.c b/drivers/net/wireless/intel/iwlwifi.orig/cfg/2000.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/cfg/2000.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/cfg/2000.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/cfg/22000.c b/drivers/net/wireless/intel/iwlwifi.orig/cfg/22000.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/cfg/22000.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/cfg/22000.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/cfg/5000.c b/drivers/net/wireless/intel/iwlwifi.orig/cfg/5000.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/cfg/5000.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/cfg/5000.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/cfg/6000.c b/drivers/net/wireless/intel/iwlwifi.orig/cfg/6000.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/cfg/6000.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/cfg/6000.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/cfg/7000.c b/drivers/net/wireless/intel/iwlwifi.orig/cfg/7000.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/cfg/7000.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/cfg/7000.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/cfg/8000.c b/drivers/net/wireless/intel/iwlwifi.orig/cfg/8000.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/cfg/8000.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/cfg/8000.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/cfg/9000.c b/drivers/net/wireless/intel/iwlwifi.orig/cfg/9000.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/cfg/9000.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/cfg/9000.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/dvm/Makefile b/drivers/net/wireless/intel/iwlwifi.orig/dvm/Makefile
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/dvm/Makefile
+rename to drivers/net/wireless/intel/iwlwifi.orig/dvm/Makefile
+diff --git a/drivers/net/wireless/intel/iwlwifi/dvm/agn.h b/drivers/net/wireless/intel/iwlwifi.orig/dvm/agn.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/dvm/agn.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/dvm/agn.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/dvm/calib.c b/drivers/net/wireless/intel/iwlwifi.orig/dvm/calib.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/dvm/calib.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/dvm/calib.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/dvm/calib.h b/drivers/net/wireless/intel/iwlwifi.orig/dvm/calib.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/dvm/calib.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/dvm/calib.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/dvm/commands.h b/drivers/net/wireless/intel/iwlwifi.orig/dvm/commands.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/dvm/commands.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/dvm/commands.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/dvm/debugfs.c b/drivers/net/wireless/intel/iwlwifi.orig/dvm/debugfs.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/dvm/debugfs.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/dvm/debugfs.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/dvm/dev.h b/drivers/net/wireless/intel/iwlwifi.orig/dvm/dev.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/dvm/dev.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/dvm/dev.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/dvm/devices.c b/drivers/net/wireless/intel/iwlwifi.orig/dvm/devices.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/dvm/devices.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/dvm/devices.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/dvm/led.c b/drivers/net/wireless/intel/iwlwifi.orig/dvm/led.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/dvm/led.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/dvm/led.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/dvm/led.h b/drivers/net/wireless/intel/iwlwifi.orig/dvm/led.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/dvm/led.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/dvm/led.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/dvm/lib.c b/drivers/net/wireless/intel/iwlwifi.orig/dvm/lib.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/dvm/lib.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/dvm/lib.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/dvm/mac80211.c b/drivers/net/wireless/intel/iwlwifi.orig/dvm/mac80211.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/dvm/mac80211.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/dvm/mac80211.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/dvm/main.c b/drivers/net/wireless/intel/iwlwifi.orig/dvm/main.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/dvm/main.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/dvm/main.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/dvm/power.c b/drivers/net/wireless/intel/iwlwifi.orig/dvm/power.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/dvm/power.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/dvm/power.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/dvm/power.h b/drivers/net/wireless/intel/iwlwifi.orig/dvm/power.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/dvm/power.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/dvm/power.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/dvm/rs.c b/drivers/net/wireless/intel/iwlwifi.orig/dvm/rs.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/dvm/rs.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/dvm/rs.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/dvm/rs.h b/drivers/net/wireless/intel/iwlwifi.orig/dvm/rs.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/dvm/rs.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/dvm/rs.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/dvm/rx.c b/drivers/net/wireless/intel/iwlwifi.orig/dvm/rx.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/dvm/rx.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/dvm/rx.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/dvm/rxon.c b/drivers/net/wireless/intel/iwlwifi.orig/dvm/rxon.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/dvm/rxon.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/dvm/rxon.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/dvm/scan.c b/drivers/net/wireless/intel/iwlwifi.orig/dvm/scan.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/dvm/scan.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/dvm/scan.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/dvm/sta.c b/drivers/net/wireless/intel/iwlwifi.orig/dvm/sta.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/dvm/sta.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/dvm/sta.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/dvm/tt.c b/drivers/net/wireless/intel/iwlwifi.orig/dvm/tt.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/dvm/tt.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/dvm/tt.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/dvm/tt.h b/drivers/net/wireless/intel/iwlwifi.orig/dvm/tt.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/dvm/tt.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/dvm/tt.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/dvm/tx.c b/drivers/net/wireless/intel/iwlwifi.orig/dvm/tx.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/dvm/tx.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/dvm/tx.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/dvm/ucode.c b/drivers/net/wireless/intel/iwlwifi.orig/dvm/ucode.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/dvm/ucode.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/dvm/ucode.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/acpi.c b/drivers/net/wireless/intel/iwlwifi.orig/fw/acpi.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/acpi.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/acpi.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/acpi.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/acpi.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/acpi.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/acpi.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/alive.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/alive.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/alive.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/alive.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/binding.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/binding.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/binding.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/binding.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/cmdhdr.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/cmdhdr.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/cmdhdr.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/cmdhdr.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/coex.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/coex.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/coex.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/coex.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/commands.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/commands.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/commands.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/commands.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/config.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/config.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/config.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/config.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/context.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/context.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/context.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/context.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/d3.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/d3.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/d3.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/d3.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/datapath.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/datapath.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/datapath.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/datapath.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/dbg-tlv.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/dbg-tlv.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/dbg-tlv.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/dbg-tlv.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/debug.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/debug.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/debug.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/debug.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/filter.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/filter.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/filter.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/filter.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/led.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/led.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/led.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/led.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/location.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/location.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/location.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/location.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/mac-cfg.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/mac-cfg.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/mac-cfg.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/mac-cfg.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/mac.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/mac.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/mac.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/mac.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/nvm-reg.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/nvm-reg.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/nvm-reg.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/nvm-reg.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/offload.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/offload.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/offload.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/offload.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/paging.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/paging.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/paging.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/paging.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/phy-ctxt.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/phy-ctxt.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/phy-ctxt.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/phy-ctxt.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/phy.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/phy.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/phy.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/phy.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/power.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/power.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/power.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/power.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/rs.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/rs.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/rs.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/rs.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/rx.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/rx.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/rx.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/rx.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/scan.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/scan.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/scan.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/scan.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/sf.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/sf.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/sf.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/sf.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/soc.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/soc.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/soc.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/soc.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/sta.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/sta.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/sta.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/sta.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/stats.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/stats.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/stats.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/stats.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/tdls.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/tdls.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/tdls.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/tdls.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/time-event.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/time-event.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/time-event.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/time-event.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/tx.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/tx.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/tx.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/tx.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/api/txq.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/api/txq.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/api/txq.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/api/txq.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/dbg.c b/drivers/net/wireless/intel/iwlwifi.orig/fw/dbg.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/dbg.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/dbg.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/dbg.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/dbg.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/dbg.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/dbg.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/debugfs.c b/drivers/net/wireless/intel/iwlwifi.orig/fw/debugfs.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/debugfs.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/debugfs.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/debugfs.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/debugfs.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/debugfs.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/debugfs.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/error-dump.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/error-dump.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/error-dump.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/error-dump.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/file.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/file.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/file.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/file.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/img.c b/drivers/net/wireless/intel/iwlwifi.orig/fw/img.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/img.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/img.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/img.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/img.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/img.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/img.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/init.c b/drivers/net/wireless/intel/iwlwifi.orig/fw/init.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/init.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/init.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/notif-wait.c b/drivers/net/wireless/intel/iwlwifi.orig/fw/notif-wait.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/notif-wait.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/notif-wait.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/notif-wait.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/notif-wait.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/notif-wait.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/notif-wait.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/paging.c b/drivers/net/wireless/intel/iwlwifi.orig/fw/paging.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/paging.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/paging.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/pnvm.c b/drivers/net/wireless/intel/iwlwifi.orig/fw/pnvm.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/pnvm.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/pnvm.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/pnvm.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/pnvm.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/pnvm.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/pnvm.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/runtime.h b/drivers/net/wireless/intel/iwlwifi.orig/fw/runtime.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/runtime.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/runtime.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/fw/smem.c b/drivers/net/wireless/intel/iwlwifi.orig/fw/smem.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/fw/smem.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/fw/smem.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-agn-hw.h b/drivers/net/wireless/intel/iwlwifi.orig/iwl-agn-hw.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-agn-hw.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-agn-hw.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-config.h b/drivers/net/wireless/intel/iwlwifi.orig/iwl-config.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-config.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-config.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-context-info-gen3.h b/drivers/net/wireless/intel/iwlwifi.orig/iwl-context-info-gen3.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-context-info-gen3.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-context-info-gen3.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-context-info.h b/drivers/net/wireless/intel/iwlwifi.orig/iwl-context-info.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-context-info.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-context-info.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-csr.h b/drivers/net/wireless/intel/iwlwifi.orig/iwl-csr.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-csr.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-csr.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-dbg-tlv.c b/drivers/net/wireless/intel/iwlwifi.orig/iwl-dbg-tlv.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-dbg-tlv.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-dbg-tlv.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-dbg-tlv.h b/drivers/net/wireless/intel/iwlwifi.orig/iwl-dbg-tlv.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-dbg-tlv.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-dbg-tlv.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-debug.c b/drivers/net/wireless/intel/iwlwifi.orig/iwl-debug.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-debug.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-debug.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-debug.h b/drivers/net/wireless/intel/iwlwifi.orig/iwl-debug.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-debug.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-debug.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-devtrace-data.h b/drivers/net/wireless/intel/iwlwifi.orig/iwl-devtrace-data.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-devtrace-data.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-devtrace-data.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-devtrace-io.h b/drivers/net/wireless/intel/iwlwifi.orig/iwl-devtrace-io.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-devtrace-io.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-devtrace-io.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-devtrace-iwlwifi.h b/drivers/net/wireless/intel/iwlwifi.orig/iwl-devtrace-iwlwifi.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-devtrace-iwlwifi.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-devtrace-iwlwifi.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-devtrace-msg.h b/drivers/net/wireless/intel/iwlwifi.orig/iwl-devtrace-msg.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-devtrace-msg.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-devtrace-msg.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-devtrace-ucode.h b/drivers/net/wireless/intel/iwlwifi.orig/iwl-devtrace-ucode.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-devtrace-ucode.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-devtrace-ucode.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-devtrace.c b/drivers/net/wireless/intel/iwlwifi.orig/iwl-devtrace.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-devtrace.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-devtrace.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-devtrace.h b/drivers/net/wireless/intel/iwlwifi.orig/iwl-devtrace.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-devtrace.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-devtrace.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-drv.c b/drivers/net/wireless/intel/iwlwifi.orig/iwl-drv.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-drv.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-drv.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-drv.h b/drivers/net/wireless/intel/iwlwifi.orig/iwl-drv.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-drv.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-drv.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-eeprom-parse.c b/drivers/net/wireless/intel/iwlwifi.orig/iwl-eeprom-parse.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-eeprom-parse.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-eeprom-parse.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-eeprom-parse.h b/drivers/net/wireless/intel/iwlwifi.orig/iwl-eeprom-parse.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-eeprom-parse.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-eeprom-parse.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-eeprom-read.c b/drivers/net/wireless/intel/iwlwifi.orig/iwl-eeprom-read.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-eeprom-read.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-eeprom-read.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-eeprom-read.h b/drivers/net/wireless/intel/iwlwifi.orig/iwl-eeprom-read.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-eeprom-read.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-eeprom-read.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-fh.h b/drivers/net/wireless/intel/iwlwifi.orig/iwl-fh.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-fh.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-fh.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-io.c b/drivers/net/wireless/intel/iwlwifi.orig/iwl-io.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-io.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-io.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-io.h b/drivers/net/wireless/intel/iwlwifi.orig/iwl-io.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-io.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-io.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-modparams.h b/drivers/net/wireless/intel/iwlwifi.orig/iwl-modparams.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-modparams.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-modparams.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-nvm-parse.c b/drivers/net/wireless/intel/iwlwifi.orig/iwl-nvm-parse.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-nvm-parse.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-nvm-parse.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-nvm-parse.h b/drivers/net/wireless/intel/iwlwifi.orig/iwl-nvm-parse.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-nvm-parse.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-nvm-parse.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-op-mode.h b/drivers/net/wireless/intel/iwlwifi.orig/iwl-op-mode.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-op-mode.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-op-mode.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-phy-db.c b/drivers/net/wireless/intel/iwlwifi.orig/iwl-phy-db.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-phy-db.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-phy-db.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-phy-db.h b/drivers/net/wireless/intel/iwlwifi.orig/iwl-phy-db.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-phy-db.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-phy-db.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-prph.h b/drivers/net/wireless/intel/iwlwifi.orig/iwl-prph.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-prph.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-prph.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-scd.h b/drivers/net/wireless/intel/iwlwifi.orig/iwl-scd.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-scd.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-scd.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-trans.c b/drivers/net/wireless/intel/iwlwifi.orig/iwl-trans.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-trans.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-trans.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-trans.h b/drivers/net/wireless/intel/iwlwifi.orig/iwl-trans.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/iwl-trans.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/iwl-trans.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/Makefile b/drivers/net/wireless/intel/iwlwifi.orig/mvm/Makefile
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/Makefile
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/Makefile
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/binding.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/binding.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/binding.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/binding.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/coex.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/coex.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/coex.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/coex.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/constants.h b/drivers/net/wireless/intel/iwlwifi.orig/mvm/constants.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/constants.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/constants.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/d3.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/d3.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/d3.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/d3.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/debugfs-vif.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/debugfs-vif.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/debugfs-vif.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/debugfs-vif.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/debugfs.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/debugfs.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/debugfs.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/debugfs.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/debugfs.h b/drivers/net/wireless/intel/iwlwifi.orig/mvm/debugfs.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/debugfs.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/debugfs.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/ftm-initiator.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/ftm-initiator.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/ftm-initiator.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/ftm-initiator.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/ftm-responder.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/ftm-responder.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/ftm-responder.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/ftm-responder.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/fw-api.h b/drivers/net/wireless/intel/iwlwifi.orig/mvm/fw-api.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/fw-api.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/fw-api.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/fw.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/fw.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/fw.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/fw.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/led.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/led.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/led.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/led.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/mac-ctxt.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/mac-ctxt.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/mac-ctxt.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/mac-ctxt.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/mac80211.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/mac80211.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/mac80211.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/mac80211.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/mvm.h b/drivers/net/wireless/intel/iwlwifi.orig/mvm/mvm.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/mvm.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/mvm.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/nvm.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/nvm.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/nvm.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/nvm.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/offloading.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/offloading.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/offloading.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/offloading.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/ops.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/ops.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/ops.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/ops.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/phy-ctxt.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/phy-ctxt.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/phy-ctxt.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/phy-ctxt.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/power.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/power.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/power.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/power.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/quota.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/quota.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/quota.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/quota.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/rs-fw.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/rs-fw.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/rs-fw.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/rs-fw.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/rs.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/rs.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/rs.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/rs.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/rs.h b/drivers/net/wireless/intel/iwlwifi.orig/mvm/rs.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/rs.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/rs.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/rx.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/rx.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/rx.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/rx.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/rxmq.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/rxmq.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/rxmq.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/rxmq.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/scan.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/scan.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/scan.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/scan.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/sf.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/sf.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/sf.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/sf.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/sta.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/sta.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/sta.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/sta.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/sta.h b/drivers/net/wireless/intel/iwlwifi.orig/mvm/sta.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/sta.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/sta.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/tdls.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/tdls.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/tdls.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/tdls.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/testmode.h b/drivers/net/wireless/intel/iwlwifi.orig/mvm/testmode.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/testmode.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/testmode.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/time-event.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/time-event.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/time-event.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/time-event.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/time-event.h b/drivers/net/wireless/intel/iwlwifi.orig/mvm/time-event.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/time-event.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/time-event.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/tt.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/tt.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/tt.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/tt.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/tx.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/tx.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/tx.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/tx.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/mvm/utils.c b/drivers/net/wireless/intel/iwlwifi.orig/mvm/utils.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/mvm/utils.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/mvm/utils.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/pcie/ctxt-info-gen3.c b/drivers/net/wireless/intel/iwlwifi.orig/pcie/ctxt-info-gen3.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/pcie/ctxt-info-gen3.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/pcie/ctxt-info-gen3.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/pcie/ctxt-info.c b/drivers/net/wireless/intel/iwlwifi.orig/pcie/ctxt-info.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/pcie/ctxt-info.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/pcie/ctxt-info.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/pcie/drv.c b/drivers/net/wireless/intel/iwlwifi.orig/pcie/drv.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/pcie/drv.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/pcie/drv.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/pcie/internal.h b/drivers/net/wireless/intel/iwlwifi.orig/pcie/internal.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/pcie/internal.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/pcie/internal.h
+diff --git a/drivers/net/wireless/intel/iwlwifi/pcie/rx.c b/drivers/net/wireless/intel/iwlwifi.orig/pcie/rx.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/pcie/rx.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/pcie/rx.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/pcie/trans-gen2.c b/drivers/net/wireless/intel/iwlwifi.orig/pcie/trans-gen2.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/pcie/trans-gen2.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/pcie/trans-gen2.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/pcie/trans.c b/drivers/net/wireless/intel/iwlwifi.orig/pcie/trans.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/pcie/trans.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/pcie/trans.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/pcie/tx-gen2.c b/drivers/net/wireless/intel/iwlwifi.orig/pcie/tx-gen2.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/pcie/tx-gen2.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/pcie/tx-gen2.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/pcie/tx.c b/drivers/net/wireless/intel/iwlwifi.orig/pcie/tx.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/pcie/tx.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/pcie/tx.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/queue/tx.c b/drivers/net/wireless/intel/iwlwifi.orig/queue/tx.c
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/queue/tx.c
+rename to drivers/net/wireless/intel/iwlwifi.orig/queue/tx.c
+diff --git a/drivers/net/wireless/intel/iwlwifi/queue/tx.h b/drivers/net/wireless/intel/iwlwifi.orig/queue/tx.h
+similarity index 100%
+rename from drivers/net/wireless/intel/iwlwifi/queue/tx.h
+rename to drivers/net/wireless/intel/iwlwifi.orig/queue/tx.h
+--
+2.26.2

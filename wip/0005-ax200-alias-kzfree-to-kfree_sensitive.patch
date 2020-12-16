@@ -1,0 +1,25 @@
+From 391fb16a6bcb250f180267a6230c44763aebc6a4 Mon Sep 17 00:00:00 2001
+From: Ben Greear <greearb@candelatech.com>
+Date: Tue, 15 Dec 2020 08:49:20 -0800
+Subject: [PATCH 5/7] ax200: alias kzfree to kfree_sensitive
+
+Signed-off-by: Ben Greear <greearb@candelatech.com>
+---
+ drivers/net/wireless/intel/iwlwifi/iwl-config.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-config.h b/drivers/net/wireless/intel/iwlwifi/iwl-config.h
+index a542d0c0a2e6c..dce157b47ad51 100644
+--- a/drivers/net/wireless/intel/iwlwifi/iwl-config.h
++++ b/drivers/net/wireless/intel/iwlwifi/iwl-config.h
+@@ -66,6 +66,8 @@
+ #include <linux/nl80211.h>
+ #include "iwl-csr.h"
+
++#define kzfree kfree_sensitive
++
+ enum iwl_device_family {
+	IWL_DEVICE_FAMILY_UNDEFINED,
+	IWL_DEVICE_FAMILY_1000,
+--
+2.26.2

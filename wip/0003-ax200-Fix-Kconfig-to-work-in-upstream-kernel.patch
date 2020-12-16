@@ -1,0 +1,74 @@
+From 3cae943fb86de0371e7fa04e566bdf4b84b97ee6 Mon Sep 17 00:00:00 2001
+From: Ben Greear <greearb@candelatech.com>
+Date: Tue, 15 Dec 2020 08:18:10 -0800
+Subject: [PATCH 3/7] ax200:  Fix Kconfig to work in upstream kernel.
+
+Signed-off-by: Ben Greear <greearb@candelatech.com>
+---
+ drivers/net/wireless/intel/iwlwifi/Kconfig            | 10 +++++-----
+ drivers/net/wireless/intel/iwlwifi/Kconfig.noupstream |  2 +-
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/net/wireless/intel/iwlwifi/Kconfig b/drivers/net/wireless/intel/iwlwifi/Kconfig
+index b959c55123b10..0d0c10a2c4dcd 100644
+--- a/drivers/net/wireless/intel/iwlwifi/Kconfig
++++ b/drivers/net/wireless/intel/iwlwifi/Kconfig
+@@ -4,7 +4,7 @@ config IWLWIFI
+	depends on m
+	depends on ((PCI && HAS_IOMEM) || VIRTIO) && CFG80211
+	depends on FW_LOADER
+-	---help---
++	help
+	  Select to build the driver supporting the:
+
+	  Intel Wireless WiFi Link Next-Gen AGN
+@@ -50,14 +50,14 @@ config IWLWIFI_LEDS
+	bool
+	depends on LEDS_CLASS=y || LEDS_CLASS=IWLWIFI
+	depends on IWLMVM || IWLDVM
+-	select BPAUTO_LEDS_TRIGGERS
++	select LEDS_TRIGGERS
+	select MAC80211_LEDS
+	default y
+
+ config IWLMVM
+	tristate "Intel Wireless WiFi MVM Firmware support"
+	depends on m
+-	select BPAUTO_WANT_DEV_COREDUMP
++	select WANT_DEV_COREDUMP
+	depends on MAC80211
+	help
+	  This is the driver that supports the MVM firmware. The list
+@@ -92,7 +92,7 @@ menu "Debugging Options"
+
+ config IWLWIFI_DEBUG
+	bool "Enable full debugging output in the iwlwifi driver"
+-	---help---
++	help
+	  This option will enable debug tracing output for the iwlwifi drivers
+
+	  This will result in the kernel module being ~100k larger.  You can
+@@ -117,7 +117,7 @@ config IWLWIFI_DEBUG
+ config IWLWIFI_DEBUGFS
+	bool "iwlwifi debugfs support"
+	depends on MAC80211_DEBUGFS
+-	---help---
++	help
+	  Enable creation of debugfs files for the iwlwifi drivers. This
+	  is a low-impact option that allows getting insight into the
+	  driver's state at runtime.
+diff --git a/drivers/net/wireless/intel/iwlwifi/Kconfig.noupstream b/drivers/net/wireless/intel/iwlwifi/Kconfig.noupstream
+index 5413dbf133431..f104a452545de 100644
+--- a/drivers/net/wireless/intel/iwlwifi/Kconfig.noupstream
++++ b/drivers/net/wireless/intel/iwlwifi/Kconfig.noupstream
+@@ -53,7 +53,7 @@ config IWLWIFI_FORCE_OFDM_RATE
+ config IWLMVM_P2P_OPPPS_TEST_WA
+	bool "Use WA to pass P2P OPPPS certification test"
+	depends on IWLMVM
+-	---help---
++	help
+	  This option enables a WA to pass P2P OPPPS certification test.
+	  This test verifies P2P client power management behavior when
+	  connected to P2P GO that advertises OPPPS. Since P2P client power
+--
+2.26.2
