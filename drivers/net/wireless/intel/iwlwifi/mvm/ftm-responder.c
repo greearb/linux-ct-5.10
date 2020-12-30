@@ -154,6 +154,17 @@ iwl_mvm_ftm_responder_cmd(struct iwl_mvm *mvm,
 
 	lockdep_assert_held(&mvm->mutex);
 
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+	cmd.cmd_valid_fields |= cpu_to_le32(IWL_MVM_FTM_RESP_VALID);
+	cmd.responder_cfg_flags |= cpu_to_le32(IWL_MVM_FTM_RESP_FLAGS);
+
+	if (IWL_MVM_FTM_RESP_TOA_OFFSET) {
+		cmd.cmd_valid_fields |=
+			cpu_to_le32(IWL_TOF_RESPONDER_FLAGS_TOA_OFFSET_MODE);
+		cmd.toa_offset = cpu_to_le16(IWL_MVM_FTM_RESP_TOA_OFFSET);
+	}
+#endif
+
 	if (cmd_ver == 7)
 		err = iwl_mvm_ftm_responder_set_bw_v2(chandef, &cmd.format_bw,
 						      &cmd.ctrl_ch_position);

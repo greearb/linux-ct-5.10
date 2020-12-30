@@ -20,6 +20,7 @@ iwlwifi-objs		+= fw/dbg.o fw/pnvm.o
 iwlwifi-$(CONFIG_IWLMVM) += fw/paging.o fw/smem.o fw/init.o
 iwlwifi-$(CONFIG_ACPI) += fw/acpi.o
 iwlwifi-$(CONFIG_IWLWIFI_DEBUGFS) += fw/debugfs.o
+iwlwifi-$(CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES) += iwl-dbg-cfg.o
 
 iwlwifi-objs += $(iwlwifi-m)
 

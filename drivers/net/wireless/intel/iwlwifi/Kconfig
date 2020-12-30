@@ -143,6 +143,11 @@ config IWLWIFI_DEVICE_TRACING
 
 	  If unsure, say Y so we can help you better when problems
 	  occur.
+
+config IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+	depends on IWLWIFI
+	bool "enable default value override (for debugging)"
+
 endmenu
 
 endif

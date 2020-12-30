@@ -74,6 +74,9 @@
 #include "fw/img.h"
 #include "iwl-op-mode.h"
 #include <linux/firmware.h>
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+#include "iwl-dbg-cfg.h"
+#endif
 #include "fw/api/cmdhdr.h"
 #include "fw/api/txq.h"
 #include "fw/api/dbg-tlv.h"
@@ -113,7 +116,11 @@
  *	6) Eventually, the free function will be called.
  */
 
+#ifndef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
 #define IWL_TRANS_FW_DBG_DOMAIN(trans)	IWL_FW_INI_DOMAIN_ALWAYS_ON
+#else
+#define IWL_TRANS_FW_DBG_DOMAIN(trans)	((trans)->dbg_cfg.FW_DBG_DOMAIN)
+#endif
 
 #define FH_RSCSR_FRAME_SIZE_MSK		0x00003FFF	/* bits 0-13 */
 #define FH_RSCSR_FRAME_INVALID		0x55550000
@@ -1027,6 +1034,9 @@ struct iwl_trans {
 	struct lockdep_map sync_cmd_lockdep_map;
 #endif
 
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+	struct iwl_dbg_cfg dbg_cfg;
+#endif
 	struct iwl_trans_debug dbg;
 	struct iwl_self_init_dram init_dram;
 

@@ -604,9 +604,19 @@ static int iwl_send_phy_cfg_cmd(struct iwl_mvm *mvm)
 	struct iwl_phy_specific_cfg phy_filters = {};
 	u8 cmd_ver;
 	size_t cmd_size;
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+	u32 override_mask, flow_override, flow_src;
+	u32 event_override, event_src;
+	const struct iwl_tlv_calib_ctrl *default_calib =
+		&mvm->fw->default_calib[ucode_type];
+#endif
 
 	if (iwl_mvm_has_unified_ucode(mvm) &&
-	    !mvm->trans->cfg->tx_with_siso_diversity)
+	    !mvm->trans->cfg->tx_with_siso_diversity
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+	    && !mvm->trans->dbg_cfg.MVM_CALIB_OVERRIDE_CONTROL
+#endif
+	   )
 		return 0;
 
 	if (mvm->trans->cfg->tx_with_siso_diversity) {
@@ -638,6 +648,73 @@ static int iwl_send_phy_cfg_cmd(struct iwl_mvm *mvm)
 		memcpy(&phy_cfg_cmd.phy_specific_cfg, &phy_filters,
 		       sizeof(struct iwl_phy_specific_cfg));
 	}
+
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+	override_mask = mvm->trans->dbg_cfg.MVM_CALIB_OVERRIDE_CONTROL;
+	if (override_mask) {
+		IWL_DEBUG_INFO(mvm,
+			       "calib settings overriden by user, control=0x%x\n",
+			       override_mask);
+
+		switch (ucode_type) {
+		case IWL_UCODE_INIT:
+			flow_override = mvm->trans->dbg_cfg.MVM_CALIB_INIT_FLOW;
+			event_override =
+				mvm->trans->dbg_cfg.MVM_CALIB_INIT_EVENT;
+			IWL_DEBUG_CALIB(mvm,
+					"INIT: flow_override %x, event_override %x\n",
+					flow_override, event_override);
+			break;
+		case IWL_UCODE_REGULAR:
+			flow_override = mvm->trans->dbg_cfg.MVM_CALIB_D0_FLOW;
+			event_override = mvm->trans->dbg_cfg.MVM_CALIB_D0_EVENT;
+			IWL_DEBUG_CALIB(mvm,
+					"REGULAR: flow_override %x, event_override %x\n",
+					flow_override, event_override);
+			break;
+		case IWL_UCODE_WOWLAN:
+			flow_override = mvm->trans->dbg_cfg.MVM_CALIB_D3_FLOW;
+			event_override = mvm->trans->dbg_cfg.MVM_CALIB_D3_EVENT;
+			IWL_DEBUG_CALIB(mvm,
+					"WOWLAN: flow_override %x, event_override %x\n",
+					flow_override, event_override);
+			break;
+		default:
+			IWL_ERR(mvm, "ERROR: calib case isn't valid\n");
+			flow_override = 0;
+			event_override = 0;
+			break;
+		}
+
+		IWL_DEBUG_CALIB(mvm, "override_mask %x\n", override_mask);
+
+		/* find the new calib setting for the flow calibrations */
+		flow_src = le32_to_cpu(default_calib->flow_trigger);
+		IWL_DEBUG_CALIB(mvm, "flow_src %x\n", flow_src);
+
+		flow_override &= override_mask;
+		flow_src &= ~override_mask;
+		flow_override |= flow_src;
+
+		phy_cfg_cmd.calib_control.flow_trigger =
+			cpu_to_le32(flow_override);
+		IWL_DEBUG_CALIB(mvm, "new flow calib setting = %x\n",
+				flow_override);
+
+		/* find the new calib setting for the event calibrations */
+		event_src = le32_to_cpu(default_calib->event_trigger);
+		IWL_DEBUG_CALIB(mvm, "event_src %x\n", event_src);
+
+		event_override &= override_mask;
+		event_src &= ~override_mask;
+		event_override |= event_src;
+
+		phy_cfg_cmd.calib_control.event_trigger =
+			cpu_to_le32(event_override);
+		IWL_DEBUG_CALIB(mvm, "new event calib setting = %x\n",
+				event_override);
+	}
+#endif
 
 	IWL_DEBUG_INFO(mvm, "Sending Phy CFG command: 0x%x\n",
 		       phy_cfg_cmd.phy_cfg);

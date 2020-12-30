@@ -583,6 +583,11 @@ int iwl_mvm_mac_setup_register(struct iwl_mvm *mvm)
 	num_mac = (mvm->nvm_data->n_hw_addrs > 1) ?
 		min(IWL_MVM_MAX_ADDRESSES, mvm->nvm_data->n_hw_addrs) : 1;
 
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+	if (mvm->trans->dbg_cfg.hw_address.len)
+		num_mac = IWL_MVM_MAX_ADDRESSES;
+#endif
+
 	for (i = 1; i < num_mac; i++) {
 		memcpy(mvm->addresses[i].addr, mvm->addresses[i-1].addr,
 		       ETH_ALEN);
@@ -2249,6 +2254,27 @@ static void iwl_mvm_cfg_he_sta(struct iwl_mvm *mvm,
 		sta_ctxt_cmd.rand_alloc_ecwmax =
 			(vif->bss_conf.uora_ocw_range >> 3) & 0x7;
 	}
+
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+	if (mvm->trans->dbg_cfg.no_ack_en & 0x2)
+		flags &= ~STA_CTXT_HE_ACK_ENABLED;
+
+	/* MU EDCA override */
+	if (mvm->trans->dbg_cfg.mu_edca) {
+		u32 mu_edca = mvm->trans->dbg_cfg.mu_edca;
+
+		for (i = 0; i < IEEE80211_NUM_ACS; i++) {
+			sta_ctxt_cmd.trig_based_txf[i].aifsn =
+				cpu_to_le16(mu_edca & 0xf);
+			sta_ctxt_cmd.trig_based_txf[i].cwmin =
+				cpu_to_le16((mu_edca >> 4) & 0xf);
+			sta_ctxt_cmd.trig_based_txf[i].cwmax =
+				cpu_to_le16((mu_edca >> 8) & 0xf);
+			sta_ctxt_cmd.trig_based_txf[i].mu_time =
+				cpu_to_le16((mu_edca >> 12) & 0xff);
+		}
+	}
+#endif
 
 	if (vif->bss_conf.nontransmitted) {
 		flags |= STA_CTXT_HE_REF_BSSID_VALID;

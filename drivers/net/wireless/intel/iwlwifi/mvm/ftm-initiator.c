@@ -265,6 +265,15 @@ static void iwl_mvm_ftm_cmd_v5(struct iwl_mvm *mvm, struct ieee80211_vif *vif,
 	cmd->request_id = req->cookie;
 	cmd->num_of_ap = req->n_peers;
 
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+	if (IWL_MVM_FTM_INITIATOR_COMMON_CALIB) {
+		cmd->common_calib =
+			cpu_to_le16(IWL_MVM_FTM_INITIATOR_COMMON_CALIB);
+		cmd->initiator_flags =
+			cpu_to_le32(IWL_TOF_INITIATOR_FLAGS_COMMON_CALIB);
+	}
+#endif
+
 	/* use maximum for "no timeout" or bigger than what we can do */
 	if (!req->timeout || req->timeout > 255 * 100)
 		cmd->req_timeout = 255;
@@ -312,6 +321,12 @@ static void iwl_mvm_ftm_cmd_common(struct iwl_mvm *mvm,
 	for (i = 0; i < ETH_ALEN; i++)
 		cmd->macaddr_mask[i] = ~req->mac_addr_mask[i];
 
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+	if (IWL_MVM_FTM_INITIATOR_FAST_ALGO_DISABLE)
+		cmd->initiator_flags |=
+			cpu_to_le32(IWL_TOF_INITIATOR_FLAGS_FAST_ALGO_DISABLED);
+#endif
+
 	if (vif->bss_conf.assoc) {
 		memcpy(cmd->range_req_bssid, vif->bss_conf.bssid, ETH_ALEN);
 
@@ -338,6 +353,15 @@ static void iwl_mvm_ftm_cmd_v8(struct iwl_mvm *mvm, struct ieee80211_vif *vif,
 			       struct cfg80211_pmsr_request *req)
 {
 	iwl_mvm_ftm_cmd_common(mvm, vif, (void *)cmd, req);
+
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+	if (IWL_MVM_FTM_INITIATOR_COMMON_CALIB) {
+		cmd->common_calib =
+			cpu_to_le16(IWL_MVM_FTM_INITIATOR_COMMON_CALIB);
+		cmd->initiator_flags |=
+			cpu_to_le32(IWL_TOF_INITIATOR_FLAGS_COMMON_CALIB);
+	}
+#endif
 }
 
 static int
@@ -447,6 +471,9 @@ iwl_mvm_ftm_put_target_v2(struct iwl_mvm *mvm,
 		target->location_req |= IWL_TOF_LOC_CIVIC;
 
 	target->algo_type = IWL_MVM_FTM_INITIATOR_ALGO;
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+	target->notify_mcsi = IWL_MVM_FTM_INITIATOR_MCSI_ENABLED;
+#endif
 
 	return 0;
 }
@@ -488,6 +515,11 @@ iwl_mvm_ftm_put_target_common(struct iwl_mvm *mvm,
 		FTM_PUT_FLAG(TB);
 	else if (peer->ftm.non_trigger_based)
 		FTM_PUT_FLAG(NON_TB);
+
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+	if (IWL_MVM_FTM_INITIATOR_MCSI_ENABLED)
+		FTM_PUT_FLAG(MCSI_REPORT);
+#endif
 }
 
 static int
@@ -658,6 +690,28 @@ static int iwl_mvm_ftm_start_v8(struct iwl_mvm *mvm, struct ieee80211_vif *vif,
 	return iwl_mvm_ftm_send_cmd(mvm, &hcmd);
 }
 
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+static void iwl_mvm_ftm_set_calib(struct iwl_mvm *mvm,
+                                  struct iwl_tof_range_req_ap_entry_v6 *target)
+{
+        if (IWL_MVM_FTM_INITIATOR_COMMON_CALIB) {
+                int j;
+
+                /*
+                 * The driver API only supports one calibration value.
+                 * For now, use it for all bandwidths.
+                 * TODO: Add support for per bandwidth calibration
+                 * values.
+                 */
+                for (j = 0; j < IWL_TOF_BW_NUM; j++)
+                        target->calib[j] =
+                                cpu_to_le16(IWL_MVM_FTM_INITIATOR_COMMON_CALIB);
+
+                FTM_PUT_FLAG(USE_CALIB);
+        }
+}
+#endif
+
 static int iwl_mvm_ftm_start_v9(struct iwl_mvm *mvm, struct ieee80211_vif *vif,
 				struct cfg80211_pmsr_request *req)
 {
@@ -680,6 +734,10 @@ static int iwl_mvm_ftm_start_v9(struct iwl_mvm *mvm, struct ieee80211_vif *vif,
 		err = iwl_mvm_ftm_put_target(mvm, vif, peer, target);
 		if (err)
 			return err;
+
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+		iwl_mvm_ftm_set_calib(mvm, target);
+#endif
 	}
 
 	return iwl_mvm_ftm_send_cmd(mvm, &hcmd);

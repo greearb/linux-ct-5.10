@@ -76,6 +76,9 @@
 #include "iwl-config.h"
 #include "iwl-modparams.h"
 #include "fw/api/alive.h"
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+#include "iwl-dbg-cfg.h"
+#endif
 #include "fw/api/mac.h"
 
 /******************************************************************************
@@ -216,6 +219,9 @@ static int iwl_request_firmware(struct iwl_drv *drv, bool first)
 {
 	const struct iwl_cfg *cfg = drv->trans->cfg;
 	char tag[8];
+#if defined(CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES)
+	char fw_name_temp[64];
+#endif
 
 	if (drv->trans->trans_cfg->device_family == IWL_DEVICE_FAMILY_9000 &&
 	    (CSR_HW_REV_STEP(drv->trans->hw_rev) != SILICON_B_STEP &&
@@ -254,6 +260,15 @@ static int iwl_request_firmware(struct iwl_drv *drv, bool first)
 
 	snprintf(drv->firmware_name, sizeof(drv->firmware_name), "%s%s.ucode",
 		 cfg->fw_name_pre, tag);
+
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+	if (drv->trans->dbg_cfg.fw_file_pre) {
+		snprintf(fw_name_temp, sizeof(fw_name_temp), "%s%s",
+			 drv->trans->dbg_cfg.fw_file_pre, drv->firmware_name);
+		strncpy(drv->firmware_name, fw_name_temp,
+			sizeof(drv->firmware_name));
+	}
+#endif /* CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES */
 
 	IWL_DEBUG_FW_INFO(drv, "attempting to load firmware '%s'\n",
 			  drv->firmware_name);
@@ -625,6 +640,17 @@ static int iwl_parse_tlv_firmware(struct iwl_drv *drv,
 	int num_of_cpus;
 	bool usniffer_req = false;
 
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+	if (ucode->magic == cpu_to_le32(IWL_TLV_FW_DBG_MAGIC)) {
+		size_t dbg_data_ofs = offsetof(struct iwl_tlv_ucode_header,
+					       human_readable);
+		data = (void *)ucode_raw->data + dbg_data_ofs;
+		len -= dbg_data_ofs;
+
+		goto fw_dbg_conf;
+	}
+#endif
+
 	if (len < sizeof(*ucode)) {
 		IWL_ERR(drv, "uCode has invalid length: %zd\n", len);
 		return -EINVAL;
@@ -658,6 +684,10 @@ static int iwl_parse_tlv_firmware(struct iwl_drv *drv,
 	data = ucode->data;
 
 	len -= sizeof(*ucode);
+
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+fw_dbg_conf:
+#endif
 
 	while (len >= sizeof(*tlv)) {
 		len -= sizeof(*tlv);
@@ -842,6 +872,27 @@ static int iwl_parse_tlv_firmware(struct iwl_drv *drv,
 			if (tlv_len != sizeof(u32))
 				goto invalid_tlv_len;
 			drv->fw.phy_config = le32_to_cpup((__le32 *)tlv_data);
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+			if (drv->trans->dbg_cfg.valid_ants & ~ANT_ABC)
+				IWL_ERR(drv,
+					"Invalid value for antennas: 0x%x\n",
+					drv->trans->dbg_cfg.valid_ants);
+			/* Make sure value stays in range */
+			drv->trans->dbg_cfg.valid_ants &= ANT_ABC;
+			if (drv->trans->dbg_cfg.valid_ants) {
+				u32 phy_config = ~(FW_PHY_CFG_TX_CHAIN |
+						   FW_PHY_CFG_RX_CHAIN);
+
+				phy_config |=
+					(drv->trans->dbg_cfg.valid_ants <<
+					 FW_PHY_CFG_TX_CHAIN_POS);
+				phy_config |=
+					(drv->trans->dbg_cfg.valid_ants <<
+					 FW_PHY_CFG_RX_CHAIN_POS);
+
+				drv->fw.phy_config &= phy_config;
+			}
+#endif
 			drv->fw.valid_tx_ant = (drv->fw.phy_config &
 						FW_PHY_CFG_TX_CHAIN) >>
 						FW_PHY_CFG_TX_CHAIN_POS;
@@ -1358,6 +1409,11 @@ static void iwl_req_fw_callback(const struct firmware *ucode_raw, void *context)
 	bool load_module = false;
 	bool usniffer_images = false;
 
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+	const struct firmware *fw_dbg_config;
+	int load_fw_dbg_err = -ENOENT;
+#endif
+
 	fw->ucode_capa.max_probe_length = IWL_DEFAULT_MAX_PROBE_LENGTH;
 	fw->ucode_capa.standard_phy_calibration_size =
 			IWL_DEFAULT_STANDARD_PHY_CALIBRATE_TBL_SIZE;
@@ -1393,6 +1449,23 @@ static void iwl_req_fw_callback(const struct firmware *ucode_raw, void *context)
 
 	if (err)
 		goto try_again;
+
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+	if (!ucode->ver && drv->trans->dbg_cfg.fw_dbg_conf) {
+		load_fw_dbg_err =
+			request_firmware(&fw_dbg_config,
+					 drv->trans->dbg_cfg.fw_dbg_conf,
+					 drv->trans->dev);
+		if (!load_fw_dbg_err) {
+			err = iwl_parse_tlv_firmware(drv, fw_dbg_config, pieces,
+						     &fw->ucode_capa,
+						     &usniffer_images);
+			if (err)
+				IWL_ERR(drv,
+					"Failed to configure FW DBG data!\n");
+		}
+	}
+#endif
 
 	if (fw_has_api(&drv->fw.ucode_capa, IWL_UCODE_TLV_API_NEW_VERSION))
 		api_ver = drv->fw.ucode_ver;
@@ -1572,6 +1645,11 @@ static void iwl_req_fw_callback(const struct firmware *ucode_raw, void *context)
 	/* We have our copies now, allow OS release its copies */
 	release_firmware(ucode_raw);
 
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+	if (!load_fw_dbg_err)
+		release_firmware(fw_dbg_config);
+#endif
+
 	mutex_lock(&iwlwifi_opmode_table_mtx);
 	switch (fw->type) {
 	case IWL_FW_DVM:
@@ -1666,6 +1744,12 @@ struct iwl_drv *iwl_drv_start(struct iwl_trans *trans)
 	init_completion(&drv->request_firmware_complete);
 	INIT_LIST_HEAD(&drv->list);
 
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+        trans->dbg_cfg = current_dbg_config;
+        iwl_dbg_cfg_load_ini(drv->trans->dev, &drv->trans->dbg_cfg);
+#endif
+
+
 #ifdef CONFIG_IWLWIFI_DEBUGFS
 	/* Create the device debugfs entries. */
 	drv->dbgfs_drv = debugfs_create_dir(dev_name(trans->dev),
@@ -1719,6 +1803,9 @@ void iwl_drv_stop(struct iwl_drv *drv)
 	debugfs_remove_recursive(drv->dbgfs_drv);
 #endif
 
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+	iwl_dbg_cfg_free(&drv->trans->dbg_cfg);
+#endif
 	iwl_dbg_tlv_free(drv->trans);
 
 	kfree(drv);

@@ -774,6 +774,13 @@ void iwl_init_ht_hw_capab(struct iwl_trans *trans,
 	ht_info->ampdu_factor = cfg->max_ht_ampdu_exponent;
 	ht_info->ampdu_density = IEEE80211_HT_MPDU_DENSITY_4;
 
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+	if (trans->dbg_cfg.ampdu_exponent_p1) {
+		ht_info->ampdu_factor = min((u16)(trans->dbg_cfg.ampdu_exponent_p1 - 1),
+					    (u16)(ht_info->ampdu_factor));
+	}
+#endif
+
 	ht_info->mcs.rx_mask[0] = 0xFF;
 	if (rx_chains >= 2)
 		ht_info->mcs.rx_mask[1] = 0xFF;

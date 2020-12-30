@@ -561,6 +561,34 @@ unlock:
 	mutex_unlock(&mvm->mutex);
 }
 
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+static void iwl_mvm_init_modparams(struct iwl_mvm *mvm)
+{
+#define IWL_DBG_CFG(t, n)			/* nothing */
+#define IWL_DBG_CFG_STR(n)			/* nothing */
+#define IWL_DBG_CFG_NODEF(t, n)			/* nothing */
+#define IWL_DBG_CFG_BIN(n)			/* nothing */
+#define IWL_DBG_CFG_BINA(n, max)		/* nothing */
+#define IWL_DBG_CFG_RANGE(t, n, min, max)	/* nothing */
+#define IWL_MOD_PARAM(t, n)			/* nothing */
+#define IWL_MVM_MOD_PARAM(t, n)				\
+	if (mvm->trans->dbg_cfg.__mvm_mod_param_##n)	\
+		iwlmvm_mod_params.n = mvm->trans->dbg_cfg.mvm_##n;
+#define IWL_DBG_CFG_FN(n, fn)			/* nothing */
+#define DBG_CFG_REINCLUDE
+#include "../iwl-dbg-cfg.h"
+#undef IWL_DBG_CFG
+#undef IWL_DBG_CFG_STR
+#undef IWL_DBG_CFG_NODEF
+#undef IWL_DBG_CFG_BIN
+#undef IWL_DBG_CFG_BINA
+#undef IWL_DBG_CFG_RANGE
+#undef IWL_MOD_PARAM
+#undef IWL_MVM_MOD_PARAM
+#undef IWL_DBG_CFG_FN
+}
+#endif
+
 static int iwl_mvm_fwrt_dump_start(void *ctx)
 {
 	struct iwl_mvm *mvm = ctx;
@@ -641,10 +669,27 @@ iwl_op_mode_mvm_start(struct iwl_trans *trans, const struct iwl_cfg *cfg,
 
 	hw->max_rx_aggregation_subframes = IEEE80211_MAX_AMPDU_BUF;
 
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+	if (trans->dbg_cfg.rx_agg_subframes)
+		hw->max_rx_aggregation_subframes =
+			trans->dbg_cfg.rx_agg_subframes;
+#endif
+
 	if (cfg->max_tx_agg_size)
 		hw->max_tx_aggregation_subframes = cfg->max_tx_agg_size;
 	else
 		hw->max_tx_aggregation_subframes = IEEE80211_MAX_AMPDU_BUF;
+
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+	if (trans->dbg_cfg.tx_agg_subframes)
+		hw->max_tx_aggregation_subframes =
+			trans->dbg_cfg.tx_agg_subframes;
+
+	pr_err("hw->max_tx_aggregation_subframes: %d  cfg->max-tx-agg-size: %d  ampdu-exponent-p1: %d\n",
+	       hw->max_tx_aggregation_subframes, cfg->max_tx_agg_size,
+	       trans->dbg_cfg.ampdu_exponent_p1);
+
+#endif
 
 	op_mode = hw->priv;
 
@@ -819,6 +864,10 @@ iwl_op_mode_mvm_start(struct iwl_trans *trans, const struct iwl_cfg *cfg,
 
 	if (iwlwifi_mod_params.nvm_file)
 		mvm->nvm_file_name = iwlwifi_mod_params.nvm_file;
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+	else if (trans->dbg_cfg.nvm_file)
+		mvm->nvm_file_name = trans->dbg_cfg.nvm_file;
+#endif
 	else
 		IWL_DEBUG_EEPROM(mvm->trans->dev,
 				 "working without external nvm file\n");
@@ -867,6 +916,10 @@ iwl_op_mode_mvm_start(struct iwl_trans *trans, const struct iwl_cfg *cfg,
 		       sizeof(struct mvm_statistics_rx_v3));
 	else
 		memset(&mvm->rx_stats, 0, sizeof(struct mvm_statistics_rx));
+
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+	iwl_mvm_init_modparams(mvm);
+#endif
 
 	iwl_mvm_toggle_tx_ant(mvm, &mvm->mgmt_last_antenna_idx);
 
