@@ -591,7 +591,7 @@ static void iwl_init_vht_hw_capab(struct iwl_trans *trans,
 		cpu_to_le16(IEEE80211_VHT_EXT_NSS_BW_CAPABLE);
 }
 
-static struct ieee80211_sband_iftype_data iwl_he_capa[] = {
+static const struct ieee80211_sband_iftype_data iwl_he_capa_const[] = {
 	{
 		.types_mask = BIT(NL80211_IFTYPE_STATION),
 		.he_cap = {
@@ -754,31 +754,62 @@ static struct ieee80211_sband_iftype_data iwl_he_capa[] = {
 	},
 };
 
+static struct ieee80211_sband_iftype_data iwl_he_capa_cur[2];
+
 static void iwl_init_he_hw_capab(struct iwl_trans *trans,
 				 struct iwl_nvm_data *data,
 				 struct ieee80211_supported_band *sband,
 				 u8 tx_chains, u8 rx_chains)
 {
-	sband->iftype_data = iwl_he_capa;
-	sband->n_iftype_data = ARRAY_SIZE(iwl_he_capa);
+	int i;
 
-	/* If not 2x2, we need to indicate 1x1 in the Midamble RX Max NSTS */
-	if ((tx_chains & rx_chains) != ANT_AB) {
-		int i;
+	BUILD_BUG_ON(sizeof(iwl_he_capa_cur) != sizeof(iwl_he_capa_const));
+	memcpy(iwl_he_capa_cur, iwl_he_capa_const, sizeof(iwl_he_capa_cur));
 
-		for (i = 0; i < sband->n_iftype_data; i++) {
-			iwl_he_capa[i].he_cap.he_cap_elem.phy_cap_info[1] &=
-				~IEEE80211_HE_PHY_CAP1_MIDAMBLE_RX_TX_MAX_NSTS;
-			iwl_he_capa[i].he_cap.he_cap_elem.phy_cap_info[2] &=
-				~IEEE80211_HE_PHY_CAP2_MIDAMBLE_RX_TX_MAX_NSTS;
-			iwl_he_capa[i].he_cap.he_cap_elem.phy_cap_info[7] &=
-				~IEEE80211_HE_PHY_CAP7_MAX_NC_MASK;
-		}
+	sband->iftype_data = iwl_he_capa_cur;
+	sband->n_iftype_data = ARRAY_SIZE(iwl_he_capa_cur);
+
+	if ((tx_chains & rx_chains) == ANT_AB)
+		return;
+
+	for (i = 0; i < sband->n_iftype_data; i++) {
+		/* If not 2x2, we need to indicate 1x1 in the Midamble RX Max NSTS */
+		iwl_he_capa_cur[i].he_cap.he_cap_elem.phy_cap_info[1] &=
+			~IEEE80211_HE_PHY_CAP1_MIDAMBLE_RX_TX_MAX_NSTS;
+		iwl_he_capa_cur[i].he_cap.he_cap_elem.phy_cap_info[2] &=
+			~IEEE80211_HE_PHY_CAP2_MIDAMBLE_RX_TX_MAX_NSTS;
+		iwl_he_capa_cur[i].he_cap.he_cap_elem.phy_cap_info[7] &=
+			~IEEE80211_HE_PHY_CAP7_MAX_NC_MASK;
+
+		/*
+		 * If antennas were forced - make sure not declaring MIMO when
+		 * we actually are SISO
+		 * Recall that there are 2 bits per stream in the "HE Tx/Rx HE
+		 * MCS NSS Support Field", so if some antenna is forced on but
+		 * not both A and B - we should work in SISO mode, so mark the
+		 * 2nd SS as not supported
+		 */
+		iwl_he_capa_cur[i].he_cap.he_mcs_nss_supp.rx_mcs_80 |=
+			cpu_to_le16(IEEE80211_HE_MCS_NOT_SUPPORTED << 2);
+		iwl_he_capa_cur[i].he_cap.he_mcs_nss_supp.tx_mcs_80 |=
+			cpu_to_le16(IEEE80211_HE_MCS_NOT_SUPPORTED << 2);
+		iwl_he_capa_cur[i].he_cap.he_mcs_nss_supp.rx_mcs_160 |=
+			cpu_to_le16(IEEE80211_HE_MCS_NOT_SUPPORTED << 2);
+		iwl_he_capa_cur[i].he_cap.he_mcs_nss_supp.tx_mcs_160 |=
+			cpu_to_le16(IEEE80211_HE_MCS_NOT_SUPPORTED << 2);
+		iwl_he_capa_cur[i].he_cap.he_mcs_nss_supp.rx_mcs_80p80 |=
+			cpu_to_le16(IEEE80211_HE_MCS_NOT_SUPPORTED << 2);
+		iwl_he_capa_cur[i].he_cap.he_mcs_nss_supp.tx_mcs_80p80 |=
+			cpu_to_le16(IEEE80211_HE_MCS_NOT_SUPPORTED << 2);
+
+
 #ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
 		if (trans->dbg_cfg.ampdu_exponent_p1) {
 			/* Use whatever is set in the VHT element. */
-			iwl_he_capa[i].he_cap.he_cap_elem.mac_cap_info[3] &= ~IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_MASK;
-			iwl_he_capa[i].he_cap.he_cap_elem.mac_cap_info[3] |= IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_USE_VHT;
+			iwl_he_capa_cur[i].he_cap.he_cap_elem.mac_cap_info[3] &=
+				~IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_MASK;
+			iwl_he_capa_cur[i].he_cap.he_cap_elem.mac_cap_info[3] |=
+				IEEE80211_HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_USE_VHT;
 		}
 #endif
 	}
@@ -797,14 +828,14 @@ static bool iwl_he_mcs_greater(u16 a, u16 b)
 	return false;
 }
 
-static void iwl_init_he_override(struct iwl_trans *trans,
-				 struct ieee80211_supported_band *sband)
+void iwl_init_he_override(struct iwl_trans *trans,
+			  struct ieee80211_supported_band *sband)
 {
 	struct ieee80211_sband_iftype_data *iftype_data;
 	int i;
 
-	for (i = 0; i < ARRAY_SIZE(iwl_he_capa); i++) {
-		iftype_data = &iwl_he_capa[i];
+	for (i = 0; i < ARRAY_SIZE(iwl_he_capa_cur); i++) {
+		iftype_data = &iwl_he_capa_cur[i];
 
 		if (trans->dbg_cfg.rx_mcs_80) {
 			if (iwl_he_mcs_greater(trans->dbg_cfg.rx_mcs_80,
@@ -845,30 +876,6 @@ static void iwl_init_he_override(struct iwl_trans *trans,
 			else
 				iftype_data->he_cap.he_mcs_nss_supp.tx_mcs_160 =
 					cpu_to_le16(trans->dbg_cfg.tx_mcs_160);
-		}
-
-		/*
-		 * If antennas were forced - make sure not declaring MIMO when
-		 * we actually are SISO
-		 * Recall that there are 2 bits per stream in the "HE Tx/Rx HE
-		 * MCS NSS Support Field", so if some antenna is forced on but
-		 * not both A and B - we should work in SISO mode, so mark the
-		 * 2nd SS as not supported
-		 */
-		if (trans->dbg_cfg.valid_ants &&
-		    (trans->dbg_cfg.valid_ants & ANT_AB) != ANT_AB) {
-			iftype_data->he_cap.he_mcs_nss_supp.rx_mcs_80 |=
-				cpu_to_le16(IEEE80211_HE_MCS_NOT_SUPPORTED << 2);
-			iftype_data->he_cap.he_mcs_nss_supp.tx_mcs_80 |=
-				cpu_to_le16(IEEE80211_HE_MCS_NOT_SUPPORTED << 2);
-			iftype_data->he_cap.he_mcs_nss_supp.rx_mcs_160 |=
-				cpu_to_le16(IEEE80211_HE_MCS_NOT_SUPPORTED << 2);
-			iftype_data->he_cap.he_mcs_nss_supp.tx_mcs_160 |=
-				cpu_to_le16(IEEE80211_HE_MCS_NOT_SUPPORTED << 2);
-			iftype_data->he_cap.he_mcs_nss_supp.rx_mcs_80p80 |=
-				cpu_to_le16(IEEE80211_HE_MCS_NOT_SUPPORTED << 2);
-			iftype_data->he_cap.he_mcs_nss_supp.tx_mcs_80p80 |=
-				cpu_to_le16(IEEE80211_HE_MCS_NOT_SUPPORTED << 2);
 		}
 
 		if (trans->dbg_cfg.no_ldpc)
@@ -926,10 +933,51 @@ static void iwl_init_he_override(struct iwl_trans *trans,
 }
 #endif
 
-static void iwl_init_sbands(struct iwl_trans *trans,
-			    struct iwl_nvm_data *data,
-			    const void *nvm_ch_flags, u8 tx_chains,
-			    u8 rx_chains, u32 sbands_flags, bool v4)
+void iwl_reinit_capab(struct iwl_trans *trans,
+		      struct iwl_nvm_data *data,
+		      u8 tx_chains, u8 rx_chains) {
+	struct ieee80211_supported_band *sband;
+
+	sband = &data->bands[NL80211_BAND_2GHZ];
+	iwl_init_ht_hw_capab(trans, data, &sband->ht_cap, NL80211_BAND_2GHZ,
+			     tx_chains, rx_chains);
+
+	if (data->sku_cap_11ax_enable && !iwlwifi_mod_params.disable_11ax) {
+		iwl_init_he_hw_capab(trans, data, sband, tx_chains, rx_chains);
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+		iwl_init_he_override(trans, sband);
+#endif
+	}
+	else {
+		sband->iftype_data = NULL;
+	}
+
+	sband = &data->bands[NL80211_BAND_5GHZ];
+	iwl_init_ht_hw_capab(trans, data, &sband->ht_cap, NL80211_BAND_5GHZ,
+			     tx_chains, rx_chains);
+	if (data->sku_cap_11ac_enable && !iwlwifi_mod_params.disable_11ac)
+		iwl_init_vht_hw_capab(trans, data, &sband->vht_cap,
+				      tx_chains, rx_chains);
+	else
+		sband->vht_cap.vht_supported = false;
+
+	if (data->sku_cap_11ax_enable && !iwlwifi_mod_params.disable_11ax) {
+		iwl_init_he_hw_capab(trans, data, sband, tx_chains, rx_chains);
+
+#ifdef CONFIG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES
+		iwl_init_he_override(trans, sband);
+#endif
+	}
+	else {
+		sband->iftype_data = NULL;
+	}
+}
+IWL_EXPORT_SYMBOL(iwl_reinit_capab);
+
+void iwl_init_sbands(struct iwl_trans *trans,
+		     struct iwl_nvm_data *data,
+		     const void *nvm_ch_flags, u8 tx_chains,
+		     u8 rx_chains, u32 sbands_flags, bool v4)
 {
 	struct device *dev = trans->dev;
 	const struct iwl_cfg *cfg = trans->cfg;

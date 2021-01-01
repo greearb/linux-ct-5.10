@@ -135,4 +135,15 @@ void iwl_nvm_fixups(u32 hw_id, unsigned int section, u8 *data,
  */
 struct iwl_nvm_data *iwl_get_nvm(struct iwl_trans *trans,
 				 const struct iwl_fw *fw);
+
+/**
+ * iwl_reinit_capab - Re-initialize the current HT, VHT and/or HE capabilities
+ *
+ * This should be called when changing values that affect the capabilities, such
+ * as number of spatial streams.
+ */
+void iwl_reinit_capab(struct iwl_trans *trans,
+		      struct iwl_nvm_data *data,
+		      u8 tx_chains, u8 rx_chains);
+
 #endif /* __iwl_nvm_parse_h__ */

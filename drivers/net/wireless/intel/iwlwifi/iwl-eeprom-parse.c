@@ -784,8 +784,13 @@ void iwl_init_ht_hw_capab(struct iwl_trans *trans,
 	ht_info->mcs.rx_mask[0] = 0xFF;
 	if (rx_chains >= 2)
 		ht_info->mcs.rx_mask[1] = 0xFF;
+	else
+		ht_info->mcs.rx_mask[1] = 0;
+
 	if (rx_chains >= 3)
 		ht_info->mcs.rx_mask[2] = 0xFF;
+	else
+		ht_info->mcs.rx_mask[2] = 0;
 
 	if (cfg->ht_params->ht_greenfield_support)
 		ht_info->cap |= IEEE80211_HT_CAP_GRN_FLD;

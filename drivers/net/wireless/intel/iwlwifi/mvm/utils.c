@@ -208,6 +208,23 @@ static const u8 fw_rate_idx_to_plcp[IWL_RATE_COUNT] = {
 	IWL_DECLARE_RATE_INFO(54),
 };
 
+int iwl_mvm_set_valid_ant(struct iwl_mvm *mvm, u32 tx_ant, u32 rx_ant)
+{
+	if (mvm->nvm_data) {
+		mvm->nvm_data->valid_rx_ant = (rx_ant & ANT_ABC);
+		mvm->nvm_data->valid_tx_ant = (tx_ant & ANT_ABC);
+
+		iwl_reinit_capab(mvm->trans, mvm->nvm_data, mvm->nvm_data->valid_tx_ant,
+				 mvm->nvm_data->valid_rx_ant);
+
+		return 0;
+	}
+	else {
+		pr_err("ERROR:  iwl-mvm-set-valid-ant:  mvm->nvm_data is NULL\n");
+		return -EINVAL;
+	}
+}
+
 int iwl_mvm_legacy_rate_to_mac80211_idx(u32 rate_n_flags,
 					enum nl80211_band band)
 {
