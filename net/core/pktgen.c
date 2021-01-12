@@ -569,6 +569,7 @@ static const struct proc_ops pktgen_proc_ops = {
 	.proc_lseek	= seq_lseek,
 	.proc_write	= pgctrl_write,
 	.proc_release	= single_release,
+	.proc_ioctl     = pktgen_proc_ioctl,
 };
 
 static int pktgen_if_show(struct seq_file *seq, void *v)
@@ -1938,6 +1939,7 @@ static const struct proc_ops pktgen_if_proc_ops = {
 	.proc_lseek	= seq_lseek,
 	.proc_write	= pktgen_if_write,
 	.proc_release	= single_release,
+	.proc_ioctl     = pktgen_proc_ioctl,
 };
 
 static int pktgen_thread_show(struct seq_file *seq, void *v)
@@ -2103,6 +2105,7 @@ static const struct proc_ops pktgen_thread_proc_ops = {
 	.proc_lseek	= seq_lseek,
 	.proc_write	= pktgen_thread_write,
 	.proc_release	= single_release,
+	.proc_ioctl     = pktgen_proc_ioctl,
 };
 
 /* Think find or remove for NN */
